@@ -119,4 +119,62 @@ export const deleteMenuItem = async (vendorId, itemId) => {
   }
 };
 
+// NEW: Vendor fetching functions
+// Get all vendors
+export const getAllVendors = async () => {
+  try {
+    const response = await vendorApi.get('/vendors');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching vendors:', error);
+    throw error;
+  }
+};
+
+// Get vendor by ID
+export const getVendorById = async (vendorId) => {
+  try {
+    const response = await vendorApi.get(`/vendors/${vendorId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching vendor:', error);
+    throw error;
+  }
+};
+
+// Search vendors
+export const searchVendors = async (query) => {
+  try {
+    const response = await vendorApi.get('/vendors/search', {
+      params: { q: query }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error searching vendors:', error);
+    throw error;
+  }
+};
+
+// Create new vendor
+export const createVendor = async (vendorData) => {
+  try {
+    const response = await vendorApi.post('/vendors', vendorData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating vendor:', error);
+    throw error;
+  }
+};
+
+// Update vendor
+export const updateVendor = async (vendorId, vendorData) => {
+  try {
+    const response = await vendorApi.put(`/vendors/${vendorId}`, vendorData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating vendor:', error);
+    throw error;
+  }
+};
+
 export default api;

@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
   StatusBar,
   Animated,
   Dimensions,
+  ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useCart } from "../contexts/CartContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { LinearGradient } from 'expo-linear-gradient';
+import { getVendorMenu } from '../api';
 
 const { width } = Dimensions.get('window');
 
@@ -27,66 +29,118 @@ const RestaurantDetails = () => {
   const { colors } = useTheme();
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  // Sample menu data
-  const sampleMenuItems = [
-    {
-      id: "1",
-      name: "Butter Chicken",
-      description: "Creamy tomato-based curry with tender chicken pieces, cooked in rich spices.",
-      price: "₹250",
-      image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400",
-      category: "Main Course",
-      isVeg: false,
-      bestseller: true,
-    },
-    {
-      id: "2",
-      name: "Garlic Naan",
-      description: "Soft and fluffy Indian flatbread with fresh garlic and herbs.",
-      price: "₹80",
-      image: "https://images.unsplash.com/photo-1563379091339-03246963d9fb?w=400",
-      category: "Breads",
-      isVeg: true,
-    },
-    {
-      id: "3",
-      name: "Vegetable Biryani",
-      description: "Fragrant basmati rice cooked with fresh vegetables and aromatic spices.",
-      price: "₹180",
-      image: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400",
-      category: "Main Course",
-      isVeg: true,
-      bestseller: true,
-    },
-    {
-      id: "4",
-      name: "Mango Lassi",
-      description: "Refreshing yogurt drink with sweet mango pulp.",
-      price: "₹120",
-      image: "https://images.unsplash.com/photo-1568724001336-2101ca2a0f8e?w=400",
-      category: "Beverages",
-      isVeg: true,
-    },
-    {
-      id: "5",
-      name: "Paneer Tikka",
-      description: "Grilled cottage cheese cubes marinated in spices.",
-      price: "₹220",
-      image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400",
-      category: "Starters",
-      isVeg: true,
-      bestseller: true,
-    },
-  ];
+  // State for menu data
+  const [menuItems, setMenuItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch vendor menu from API
+  useEffect(() => {
+    const fetchVendorMenu = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const vendorId = restaurant.id || restaurant.vendor_id || 14;
+
+        console.log('Fetching menu for vendor:', vendorId);
+        const menuData = await getVendorMenu(vendorId);
+
+        if (menuData && Array.isArray(menuData)) {
+          const transformedMenu = menuData.map(item => ({
+            id: item.id?.toString() || item.menu_id?.toString(),
+            name: item.itemName || item.name || "Menu Item",
+            description: item.description || "Delicious food item",
+            price: `₹${item.price || item.item_price || 100}`,
+            image: item.image || item.image_url || "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400",
+            category: item.category || "Main Course",
+            bestseller: item.bestseller || Math.random() > 0.7,
+            available: item.available !== undefined ? item.available : true
+          }));
+
+          setMenuItems(transformedMenu);
+        } else {
+          console.log('Using fallback menu data');
+          setMenuItems(getFallbackMenu());
+        }
+      } catch (err) {
+        console.error('Error fetching vendor menu:', err);
+        setError('Failed to load menu');
+        setMenuItems(getFallbackMenu());
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVendorMenu();
+  }, [restaurant]);
+
+  // Fallback menu data in case API fails
+  const getFallbackMenu = () => {
+    return [
+      {
+        id: "1",
+        name: "Butter Chicken",
+        description: "Creamy tomato-based curry with tender chicken pieces, cooked in rich spices.",
+        price: "₹250",
+        image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400",
+        category: "Main Course",
+        bestseller: true,
+        available: true
+      },
+      {
+        id: "2",
+        name: "Garlic Naan",
+        description: "Soft and fluffy Indian flatbread with fresh garlic and herbs.",
+        price: "₹80",
+        image: "https://images.unsplash.com/photo-1563379091339-03246963d9fb?w=400",
+        category: "Breads",
+        bestseller: false,
+        available: false
+      },
+      {
+        id: "3",
+        name: "Vegetable Biryani",
+        description: "Fragrant basmati rice cooked with fresh vegetables and aromatic spices.",
+        price: "₹180",
+        image: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400",
+        category: "Main Course",
+        bestseller: true,
+        available: true
+      },
+      {
+        id: "4",
+        name: "Mango Lassi",
+        description: "Refreshing yogurt drink with sweet mango pulp.",
+        price: "₹120",
+        image: "https://images.unsplash.com/photo-1568724001336-2101ca2a0f8e?w=400",
+        category: "Beverages",
+        bestseller: false,
+        available: false
+      },
+      {
+        id: "5",
+        name: "Paneer Tikka",
+        description: "Grilled cottage cheese cubes marinated in spices.",
+        price: "₹220",
+        image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400",
+        category: "Starters",
+        bestseller: true,
+        available: true
+      },
+    ];
+  };
 
   // Group menu by category
-  const groupedMenu = sampleMenuItems.reduce((acc, item) => {
+  const groupedMenu = menuItems.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
     return acc;
   }, {});
 
   const handleAdd = (item) => {
+    if (!item.available) return;
+
     const cartItem = {
       ...item,
       restaurantName: restaurant.name,
@@ -151,24 +205,24 @@ const RestaurantDetails = () => {
   const renderMenuItem = ({ item }) => {
     const existingItem = cart.find((cItem) => cItem.id === item.id);
     const quantity = existingItem ? existingItem.quantity : 0;
+    const isAvailable = item.available;
 
     return (
-      <View style={[styles.menuItem, { 
-        backgroundColor: colors.card,
-        shadowColor: colors.text 
-      }]}>
+      <View style={[
+        styles.menuItem,
+        {
+          backgroundColor: colors.card,
+          shadowColor: colors.text,
+          opacity: isAvailable ? 1 : 0.6
+        }
+      ]}>
+        {/* Magenta accent line on the left */}
+        <View style={[styles.accentLine, { backgroundColor: '#8B3358' }]} />
+
         <View style={styles.menuItemContent}>
           <View style={styles.menuItemInfo}>
             <View style={styles.menuItemHeader}>
-              <View style={styles.vegNonVegIndicator}>
-                <View
-                  style={[
-                    styles.indicator,
-                    item.isVeg ? styles.vegIndicator : styles.nonVegIndicator,
-                  ]}
-                />
-              </View>
-              {item.bestseller && (
+              {item.bestseller && isAvailable && (
                 <View style={[styles.bestsellerTag, { backgroundColor: '#FFF8E1' }]}>
                   <Ionicons name="trophy" size={12} color="#FFD700" />
                   <Text style={[styles.bestsellerText, { color: '#FF8F00' }]}>
@@ -176,34 +230,76 @@ const RestaurantDetails = () => {
                   </Text>
                 </View>
               )}
+              {!isAvailable && (
+                <View style={[styles.unavailableTag, { backgroundColor: '#9E9E9E' }]}>
+                  <Ionicons name="close-circle" size={12} color="#fff" />
+                  <Text style={[styles.unavailableText, { color: '#fff' }]}>
+                    Not Available
+                  </Text>
+                </View>
+              )}
             </View>
 
-            <Text style={[styles.menuItemName, { color: colors.text }]}>
+            <Text style={[
+              styles.menuItemName,
+              {
+                color: isAvailable ? colors.text : '#9E9E9E'
+              }
+            ]}>
               {item.name}
             </Text>
-            <Text style={[styles.menuItemDescription, { color: colors.textSecondary }]}>
+            <Text style={[
+              styles.menuItemDescription,
+              {
+                color: isAvailable ? colors.textSecondary : '#BDBDBD'
+              }
+            ]}>
               {item.description}
             </Text>
-            <Text style={[styles.menuItemPrice, { color: colors.primary }]}>
+            <Text style={[
+              styles.menuItemPrice,
+              {
+                color: isAvailable ? colors.primary : '#9E9E9E'
+              }
+            ]}>
               {item.price}
             </Text>
           </View>
 
           <View style={styles.menuItemAction}>
             {item.image ? (
-              <Image
-                source={{ uri: item.image }}
-                style={styles.menuItemImage}
-                resizeMode="cover"
-              />
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{ uri: item.image }}
+                  style={[
+                    styles.menuItemImage,
+                    !isAvailable && styles.unavailableImage
+                  ]}
+                  resizeMode="cover"
+                />
+                {!isAvailable && (
+                  <View style={styles.imageOverlay}>
+                    <Ionicons name="close-circle" size={24} color="#fff" />
+                  </View>
+                )}
+              </View>
             ) : (
-              <View style={[styles.menuItemImagePlaceholder, { backgroundColor: colors.background }]}>
-                <Ionicons name="fast-food" size={24} color={colors.textSecondary} />
+              <View style={[
+                styles.menuItemImagePlaceholder,
+                {
+                  backgroundColor: isAvailable ? colors.background : '#E0E0E0'
+                }
+              ]}>
+                <Ionicons
+                  name="fast-food"
+                  size={24}
+                  color={isAvailable ? colors.textSecondary : '#9E9E9E'}
+                />
               </View>
             )}
 
             <View style={styles.quantityContainer}>
-              {quantity > 0 ? (
+              {quantity > 0 && isAvailable ? (
                 <View style={[styles.quantityControls, { backgroundColor: colors.primary }]}>
                   <TouchableOpacity
                     style={styles.quantityButton}
@@ -219,16 +315,22 @@ const RestaurantDetails = () => {
                     <Ionicons name="add" size={18} color="#fff" />
                   </TouchableOpacity>
                 </View>
-              ) : (
+              ) : isAvailable ? (
                 <TouchableOpacity
-                  style={[styles.addButton, { 
+                  style={[styles.addButton, {
                     backgroundColor: colors.primary,
-                    shadowColor: colors.primary 
+                    shadowColor: colors.primary
                   }]}
                   onPress={() => handleAdd(item)}
                 >
                   <Text style={styles.addButtonText}>ADD</Text>
                 </TouchableOpacity>
+              ) : (
+                <View style={[styles.unavailableButton, { backgroundColor: '#E0E0E0' }]}>
+                  <Text style={[styles.unavailableButtonText, { color: '#9E9E9E' }]}>
+                    NOT AVAILABLE
+                  </Text>
+                </View>
               )}
             </View>
           </View>
@@ -298,25 +400,25 @@ const RestaurantDetails = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar 
-        backgroundColor="transparent" 
-        translucent 
+      <StatusBar
+        backgroundColor="transparent"
+        translucent
         barStyle="light-content"
       />
 
       {/* Animated Header Background */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.headerBackground,
-          { 
+          {
             opacity: headerBgOpacity,
             backgroundColor: '#8B3358'
           }
-        ]} 
+        ]}
       />
 
       {/* Animated Header Title */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.headerTitleContainer,
           { opacity: headerTitleOpacity }
@@ -333,7 +435,7 @@ const RestaurantDetails = () => {
         >
           {renderImage()}
         </LinearGradient>
-        
+
         {/* Back Button */}
         <TouchableOpacity
           style={styles.backButton}
@@ -351,7 +453,7 @@ const RestaurantDetails = () => {
         <View style={styles.headerOverlay}>
           <Animated.View style={[
             styles.headerContent,
-            { 
+            {
               transform: [
                 { scale: titleScale },
                 { translateY: titleTranslateY }
@@ -399,8 +501,8 @@ const RestaurantDetails = () => {
 
         {/* Menu Sections */}
         <View style={styles.menuContainer}>
-          <View style={[styles.menuHeader, { 
-            borderBottomColor: colors.border 
+          <View style={[styles.menuHeader, {
+            borderBottomColor: colors.border
           }]}>
             <Text style={[styles.menuTitle, { color: colors.text }]}>
               Featured Menu
@@ -412,7 +514,24 @@ const RestaurantDetails = () => {
             )}
           </View>
 
-          {Object.keys(groupedMenu).length > 0 ? (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                Loading menu...
+              </Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle" size={48} color={colors.textSecondary} />
+              <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+                {error}
+              </Text>
+              <Text style={[styles.errorSubtext, { color: colors.textSecondary }]}>
+                Showing sample menu
+              </Text>
+            </View>
+          ) : Object.keys(groupedMenu).length > 0 ? (
             Object.keys(groupedMenu).map((category, index) =>
               renderCategory(category, index)
             )
@@ -420,7 +539,7 @@ const RestaurantDetails = () => {
             <View style={styles.noMenuContainer}>
               <Ionicons name="restaurant" size={64} color={colors.textSecondary} />
               <Text style={[styles.noMenuText, { color: colors.textSecondary }]}>
-                Menu items loading...
+                No menu items available
               </Text>
             </View>
           )}
@@ -664,10 +783,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  accentLine: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
   },
   menuItemContent: {
     flexDirection: "row",
     padding: 20,
+    paddingLeft: 24, // Extra padding to account for accent line
   },
   menuItemInfo: {
     flex: 1,
@@ -678,23 +809,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  vegNonVegIndicator: {
-    marginRight: 10,
-  },
-  indicator: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  vegIndicator: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
-  },
-  nonVegIndicator: {
-    backgroundColor: "#E23E3E",
-    borderColor: "#E23E3E",
-  },
   bestsellerTag: {
     flexDirection: "row",
     alignItems: "center",
@@ -704,6 +818,19 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   bestsellerText: {
+    fontSize: 11,
+    fontWeight: "700",
+    marginLeft: 4,
+  },
+  unavailableTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  unavailableText: {
     fontSize: 11,
     fontWeight: "700",
     marginLeft: 4,
@@ -727,10 +854,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  imageContainer: {
+    position: 'relative',
+  },
   menuItemImage: {
     width: 100,
     height: 100,
     borderRadius: 16,
+  },
+  unavailableImage: {
+    opacity: 0.4,
+  },
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   menuItemImagePlaceholder: {
     width: 100,
@@ -775,6 +919,40 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 14,
+  },
+  unavailableButton: {
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  unavailableButtonText: {
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    padding: 60,
+  },
+  loadingText: {
+    textAlign: "center",
+    fontSize: 16,
+    marginTop: 16,
+  },
+  errorContainer: {
+    alignItems: "center",
+    padding: 40,
+  },
+  errorText: {
+    textAlign: "center",
+    fontSize: 16,
+    marginTop: 16,
+    fontWeight: 'bold',
+  },
+  errorSubtext: {
+    textAlign: "center",
+    fontSize: 14,
+    marginTop: 8,
+    opacity: 0.7,
   },
   noMenuContainer: {
     alignItems: "center",
