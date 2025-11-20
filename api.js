@@ -176,5 +176,15 @@ export const updateVendor = async (vendorId, vendorData) => {
     throw error;
   }
 };
+export const getOrdersByVendor = async (vendorId) => {
+  try {
+    const response = await vendorApi.get(`/orders/vendor/${vendorId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor orders:", error.response?.data || error);
+    throw error;
+  }
+};
+
 
 export default api;
