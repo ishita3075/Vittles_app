@@ -186,5 +186,16 @@ export const getOrdersByVendor = async (vendorId) => {
   }
 };
 
+export const placeOrder = async (orderData) => {
+  try {
+    const response = await vendorApi.post('/orders', orderData);
+    return response.data;
+  } catch (error) {
+    console.error("Error placing order:", error.response?.data || error);
+    throw error;
+  }
+};
+
+
 
 export default api;

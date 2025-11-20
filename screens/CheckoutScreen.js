@@ -15,7 +15,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../contexts/CartContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../contexts/ThemeContext'; // Import theme hook
+import { useTheme } from '../contexts/ThemeContext';
+import { placeOrder } from '../api';
+import { useAuth } from '../contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,64 +25,78 @@ const CheckoutScreen = ({ route, navigation }) => {
   const { clearCart } = useCart();
   const { cartItems, subtotal, deliveryFee, tax, grandTotal } = route.params;
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme(); // Get theme colors
-  
+  const { colors } = useTheme();
+  const { user } = useAuth();
+  const userId = user?.id || user?.userId || user?._id;
+
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  // Calculate top padding for header
-  const getTopPadding = () => {
-    return insets.top + 8;
-  };
+  const getTopPadding = () => insets.top + 8;
+  const getBottomPadding = () => insets.bottom + 20;
 
-  // Calculate bottom padding
-  const getBottomPadding = () => {
-    return insets.bottom + 20;
-  };
-
+  // ------------------------
+  // PLACE ORDER FUNCTION
+  // ------------------------
   const handlePlaceOrder = async () => {
     if (!customerName.trim()) {
-      Alert.alert('Name Required', 'Please enter your name to continue.');
+      Alert.alert("Name Required", "Please enter your name.");
       return;
     }
-
     if (!phoneNumber.trim()) {
-      Alert.alert('Phone Number Required', 'Please enter your phone number to continue.');
+      Alert.alert("Phone Required", "Please enter your phone number.");
       return;
     }
 
     setIsPlacingOrder(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      for (const item of cartItems) {
+        const orderPayload = {
+          customerId: userId,
+          customerName: customerName,
+          menuId: item.id,
+          menuName: item.name,
+          vendorId: item.restaurantId,
+          vendorName: item.restaurantName,
+          quantity: item.quantity
+        };
+
+        console.log("Sending Order:", orderPayload);
+        await placeOrder(orderPayload);
+      }
+
       setIsPlacingOrder(false);
       clearCart();
+
       Alert.alert(
-        'Order Successful! 🎉',
-        `Your order of ₹${grandTotal.toFixed(2)} has been placed successfully.\n\nReady for pickup in: 15-20 minutes`,
+        "Order Placed 🎉",
+        "Your order has been successfully placed!",
         [
-          {
-            text: 'Track Order',
-            onPress: () => navigation.navigate('OrderTracking')
-          },
-          {
-            text: 'Back to Home',
-            onPress: () => navigation.navigate('Home')
-          }
+          { text: "Track Order", onPress: () => navigation.navigate("OrderTracking") },
+          { text: "Home", onPress: () => navigation.navigate("Home") }
         ]
       );
-    }, 2000);
+
+    } catch (error) {
+      console.log("Order error:", error);
+      setIsPlacingOrder(false);
+      Alert.alert("Order Failed", "Unable to place your order. Please try again.");
+    }
   };
 
+  // ------------------------
+  // PAYMENT OPTION COMPONENT
+  // ------------------------
   const PaymentMethodOption = ({ method, icon, title, description }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
-        styles.paymentOption, 
+        styles.paymentOption,
         paymentMethod === method && styles.paymentOptionSelected,
-        { 
+        {
           backgroundColor: colors.card,
           borderColor: paymentMethod === method ? colors.primary : colors.border,
         }
@@ -91,29 +107,34 @@ const CheckoutScreen = ({ route, navigation }) => {
         <View style={[
           styles.paymentIconContainer,
           paymentMethod === method && styles.paymentIconContainerSelected,
-          { 
-            backgroundColor: paymentMethod === method ? 
-              (colors.isDark ? 'rgba(0, 168, 80, 0.2)' : '#ffeae5') : 
-              colors.background 
+          {
+            backgroundColor: paymentMethod === method
+              ? (colors.isDark ? 'rgba(0, 168, 80, 0.2)' : '#ffeae5')
+              : colors.background
           }
         ]}>
-          <Ionicons 
-            name={icon} 
-            size={20} 
-            color={paymentMethod === method ? colors.primary : colors.textSecondary} 
+          <Ionicons
+            name={icon}
+            size={20}
+            color={paymentMethod === method ? colors.primary : colors.textSecondary}
           />
         </View>
         <View style={styles.paymentTextContainer}>
           <Text style={[styles.paymentTitle, { color: colors.text }]}>{title}</Text>
-          <Text style={[styles.paymentDescription, { color: colors.textSecondary }]}>{description}</Text>
+          <Text style={[styles.paymentDescription, { color: colors.textSecondary }]}>
+            {description}
+          </Text>
         </View>
       </View>
-      <View style={[
-        styles.radioOuter,
-        paymentMethod === method && styles.radioOuterSelected,
-        { borderColor: paymentMethod === method ? colors.primary : colors.border }
-      ]}>
-        {paymentMethod === method && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
+      <View
+        style={[
+          styles.radioOuter,
+          paymentMethod === method && styles.radioOuterSelected,
+          { borderColor: paymentMethod === method ? colors.primary : colors.border }
+        ]}
+      >
+        {paymentMethod === method &&
+          <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
       </View>
     </TouchableOpacity>
   );
