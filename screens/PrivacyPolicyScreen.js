@@ -1,183 +1,179 @@
-// screens/PrivacyPolicyScreen.js
-import React from "react";
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet, 
-  StatusBar 
+import React, { useState, useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  TouchableOpacity,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  Animated,
+  Linking
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../contexts/ThemeContext"; // Import theme hook
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTheme } from "../contexts/ThemeContext";
+import { useNavigation } from "@react-navigation/native";
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
+// --- Helper: Policy Section (Accordion) ---
+const PolicySection = ({ title, content, icon, index, colors }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  const toggleExpand = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded(!expanded);
+  };
+
+  return (
+    <TouchableOpacity
+      style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={toggleExpand}
+      activeOpacity={0.9}
+    >
+      <View style={styles.sectionHeader}>
+        <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
+          <Ionicons name={icon} size={20} color={colors.primary} />
+        </View>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={20}
+          color={colors.textSecondary}
+        />
+      </View>
+      {expanded && (
+        <View style={styles.sectionBody}>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            {content}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+};
 
 export default function PrivacyPolicyScreen() {
-  const { colors } = useTheme(); // Get theme colors
+  const { colors } = useTheme();
+  const navigation = useNavigation();
+
+  // Animation
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true })
+    ]).start();
+  }, []);
 
   const policySections = [
     {
-      title: "1. Information We Collect",
-      content: "We collect information you provide directly to us, such as when you create an account, make a purchase, or contact us for support. This includes personal details, payment information, and your preferences.",
+      title: "1. Information Collection",
+      content: "We collect information you provide directly to us, such as when you create an account, make a purchase, or contact support. This includes:\n• Name and contact data\n• Payment credentials\n• Order history and preferences",
       icon: "document-text-outline"
     },
     {
-      title: "2. How We Use Your Information",
-      content: "We use the information we collect to provide, maintain, and improve our services, to process your transactions, and to communicate with you. This helps us personalize your experience and ensure service quality.",
-      icon: "shield-checkmark-outline"
+      title: "2. Usage of Data",
+      content: "We use your data to:\n• Process and deliver orders\n• Personalize your dining experience\n• Improve our app functionality\n• Send transaction updates and offers",
+      icon: "analytics-outline"
     },
     {
       title: "3. Information Sharing",
-      content: "We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this policy. We may share data with trusted partners who assist our operations.",
+      content: "We do not sell your personal data. We may share data with:\n• Delivery partners to fulfill orders\n• Payment processors for secure transactions\n• Legal authorities when required by law",
       icon: "share-social-outline"
     },
     {
       title: "4. Data Security",
-      content: "We implement appropriate technical and organizational security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. Your data is encrypted and stored securely.",
+      content: "We implement industry-standard security measures including SSL encryption and secure server storage to protect your personal information against unauthorized access.",
       icon: "lock-closed-outline"
     },
     {
-      title: "5. Your Rights",
-      content: "You have the right to access, correct, or delete your personal information. You can also object to or restrict certain processing of your data. Contact us to exercise these rights at any time.",
+      title: "5. User Rights",
+      content: "You have the right to:\n• Access your personal data\n• Request deletion of your account\n• Opt-out of marketing communications\nContact support to exercise these rights.",
       icon: "person-outline"
     },
     {
       title: "6. Cookies & Tracking",
-      content: "We use cookies and similar tracking technologies to enhance your experience, analyze usage patterns, and deliver personalized content. You can control cookie preferences through your browser settings.",
-      icon: "analytics-outline"
+      content: "We use cookies to analyze usage patterns and improve user experience. You can control cookie preferences through your device settings.",
+      icon: "finger-print-outline"
     },
-    {
-      title: "7. Data Retention",
-      content: "We retain your personal information only for as long as necessary to fulfill the purposes outlined in this policy, unless a longer retention period is required or permitted by law.",
-      icon: "time-outline"
-    },
-    {
-      title: "8. International Transfers",
-      content: "Your information may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place to protect your data during international transfers.",
-      icon: "globe-outline"
-    },
-    {
-      title: "9. Children's Privacy",
-      content: "Our services are not directed to individuals under 16. We do not knowingly collect personal information from children. If we become aware of such collection, we will take steps to delete it.",
-      icon: "heart-outline"
-    },
-    {
-      title: "10. Contact Us",
-      content: "If you have any questions about this Privacy Policy or our data practices, please contact us at privacy@vittle.com. We're committed to addressing your concerns promptly.",
-      icon: "mail-outline"
-    }
   ];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
-      
-      {/* Header with LinearGradient */}
-      <LinearGradient
-        colors={["#8B3358", "#670D2F", "#3A081C"]}
-        start={{ x: 0, y: 1 }}   // bottom-left
-        end={{ x: 1, y: 0 }}     // top-right
-        style={styles.header}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.headerIconContainer}>
-            <Ionicons name="shield-checkmark" size={24} color="#FFF" />
-          </View>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Privacy Policy</Text>
-            <Text style={styles.headerSubtitle}>Your data security is our priority</Text>
-          </View>
-        </View>
-      </LinearGradient>
 
-      <ScrollView 
+      {/* 1. Curved Header */}
+      <View style={styles.headerBackground}>
+        <LinearGradient
+          colors={["#8B3358", "#670D2F", "#3A081C"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Privacy Policy</Text>
+            <View style={{ width: 40 }} />
+          </View>
+        </LinearGradient>
+      </View>
+
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={styles.scrollContent}
       >
-        {/* Summary Card */}
-        <View style={[styles.summaryCard, { backgroundColor: colors.card }]}>
-          <View style={styles.summaryHeader}>
-            <Ionicons name="information-circle" size={24} color={colors.primary} />
-            <Text style={[styles.summaryTitle, { color: colors.text }]}>Policy Overview</Text>
-          </View>
-          <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
-            This Privacy Policy explains how Vittle collects, uses, and protects your personal information. 
-            We are committed to maintaining the trust and confidence of our users.
-          </Text>
-          <View style={[styles.lastUpdated, { backgroundColor: colors.background }]}>
-            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-            <Text style={[styles.lastUpdatedText, { color: colors.textSecondary }]}>
-              Last updated: January 2024 • Version 2.1
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+
+          {/* Intro Card */}
+          <View style={[styles.introCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.introTitle, { color: colors.text }]}>Your Privacy Matters</Text>
+            <Text style={[styles.introText, { color: colors.textSecondary }]}>
+              At Vittle, we are committed to protecting your personal data. This policy outlines our practices regarding data collection and usage.
             </Text>
-          </View>
-        </View>
-
-        {/* Policy Sections */}
-        <View style={styles.sectionsContainer}>
-          {policySections.map((section, index) => (
-            <View key={index} style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '20' }]}>
-                  <Ionicons name={section.icon} size={18} color={colors.primary} />
-                </View>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  {section.title}
-                </Text>
-              </View>
-              <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
-                {section.content}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Compliance Badges */}
-        <View style={[styles.complianceCard, { backgroundColor: colors.card }]}>
-          <Text style={[styles.complianceTitle, { color: colors.text }]}>
-            Compliance & Standards
-          </Text>
-          <View style={styles.complianceBadges}>
-            <View style={[styles.badge, { backgroundColor: colors.background }]}>
-              <Ionicons name="checkmark-done" size={16} color="#34C759" />
-              <Text style={[styles.badgeText, { color: colors.text }]}>GDPR Compliant</Text>
-            </View>
-            <View style={[styles.badge, { backgroundColor: colors.background }]}>
-              <Ionicons name="checkmark-done" size={16} color="#34C759" />
-              <Text style={[styles.badgeText, { color: colors.text }]}>CCPA Ready</Text>
-            </View>
-            <View style={[styles.badge, { backgroundColor: colors.background }]}>
-              <Ionicons name="checkmark-done" size={16} color="#34C759" />
-              <Text style={[styles.badgeText, { color: colors.text }]}>Data Encrypted</Text>
+            <View style={styles.updateBadge}>
+              <Ionicons name="time-outline" size={12} color="#FFF" />
+              <Text style={styles.updateText}>Updated: Oct 2023</Text>
             </View>
           </View>
-        </View>
 
-        {/* Contact Section */}
-        <View style={[styles.contactCard, { backgroundColor: colors.card }]}>
-          <View style={styles.contactHeader}>
-            <Ionicons name="mail" size={24} color={colors.primary} />
-            <Text style={[styles.contactTitle, { color: colors.text }]}>
-              Questions or Concerns?
+          {/* Policy Sections */}
+          <View style={styles.sectionsContainer}>
+            {policySections.map((section, index) => (
+              <PolicySection
+                key={index}
+                index={index}
+                {...section}
+                colors={colors}
+              />
+            ))}
+          </View>
+
+          {/* Contact Footer */}
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+              Have questions about our data practices?
             </Text>
+            <TouchableOpacity onPress={() => Linking.openURL('mailto:privacy@vittle.com')}>
+              <Text style={[styles.footerLink, { color: colors.primary }]}>Contact Privacy Team</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
-            Our privacy team is here to help you understand our practices and address any concerns you may have about your personal data.
-          </Text>
-          <View style={styles.contactDetails}>
-            <View style={styles.contactItem}>
-              <Ionicons name="mail-outline" size={16} color={colors.textSecondary} />
-              <Text style={[styles.contactDetail, { color: colors.primary }]}>
-                privacy@vittle.com
-              </Text>
-            </View>
-            <View style={styles.contactItem}>
-              <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-              <Text style={[styles.contactDetail, { color: colors.textSecondary }]}>
-                Response within 48 hours
-              </Text>
-            </View>
-          </View>
-        </View>
+
+          <View style={{ height: 40 }} />
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -187,191 +183,139 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+
+  // Header
+  headerBackground: {
+    height: 120,
+    width: '100%',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden',
+    zIndex: 10,
+  },
+  headerGradient: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? 40 : 50,
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
   },
   headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  headerIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  headerText: {
-    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700",
     color: '#FFF',
-    marginBottom: 4,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-  },
+
+  // Content
   scrollView: {
     flex: 1,
+    marginTop: -20, // Overlap header
   },
-  content: {
-    padding: 20,
-    paddingBottom: 30,
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
-  summaryCard: {
+
+  // Intro Card
+  introCard: {
     padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
+    borderRadius: 20,
+    marginBottom: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 4,
+    alignItems: 'center',
   },
-  summaryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
+  introTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 8,
+    textAlign: 'center',
   },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  summaryText: {
+  introText: {
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 16,
+    opacity: 0.8,
   },
-  lastUpdated: {
-    flexDirection: "row",
-    alignItems: "center",
+  updateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#8B3358',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    borderRadius: 12,
     gap: 6,
   },
-  lastUpdatedText: {
+  updateText: {
+    color: '#FFF',
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '600',
   },
+
+  // Sections
   sectionsContainer: {
     gap: 12,
-    marginBottom: 20,
   },
   sectionCard: {
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
   },
-  sectionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
     flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  sectionBody: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingLeft: 64, // Align with text start
   },
   sectionContent: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 22,
   },
-  complianceCard: {
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  complianceTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  complianceBadges: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+
+  // Footer
+  footer: {
+    alignItems: 'center',
+    marginTop: 40,
     gap: 8,
   },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  contactCard: {
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  contactHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  contactTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  contactText: {
+  footerText: {
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
-    color: "#666",
   },
-  contactDetails: {
-    gap: 8,
-  },
-  contactItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  contactDetail: {
+  footerLink: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });

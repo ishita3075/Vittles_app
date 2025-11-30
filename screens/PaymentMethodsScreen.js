@@ -1,5 +1,4 @@
-// screens/PaymentMethodsScreen.js
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -7,34 +6,128 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Alert, 
-  StatusBar 
+  StatusBar,
+  Animated,
+  Dimensions,
+  Platform,
+  LayoutAnimation,
+  UIManager,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../contexts/ThemeContext"; // Import theme hook
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTheme } from "../contexts/ThemeContext";
+import { useNavigation } from "@react-navigation/native";
+
+const { width } = Dimensions.get('window');
+
+// Enable LayoutAnimation
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
+// --- Simplified UPI Card ---
+const UPICard = ({ method, index, onDelete }) => {
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        delay: index * 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        delay: index * 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View 
+      style={{ 
+        opacity: fadeAnim, 
+        transform: [{ translateY: slideAnim }] 
+      }}
+    >
+      <LinearGradient
+        colors={method.colors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.card}
+      >
+        <View style={styles.cardLeft}>
+          <View style={styles.iconCircle}>
+            <MaterialCommunityIcons name={method.icon} size={24} color={method.colors[0]} />
+          </View>
+          <View>
+            <Text style={styles.cardName}>{method.name}</Text>
+            <Text style={styles.cardId}>{method.upiId}</Text>
+          </View>
+        </View>
+        
+        <TouchableOpacity 
+          onPress={() => onDelete(method.id)} 
+          style={styles.deleteBtn}
+        >
+          <Ionicons name="trash-outline" size={20} color="rgba(255,255,255,0.8)" />
+        </TouchableOpacity>
+      </LinearGradient>
+    </Animated.View>
+  );
+};
 
 export default function PaymentMethodsScreen() {
+  const navigation = useNavigation();
+  const { colors } = useTheme();
+  
   const [paymentMethods, setPaymentMethods] = useState([
-    { id: 1, type: "credit_card", last4: "4242", brand: "Visa", isDefault: true },
-    { id: 2, type: "paypal", email: "user@example.com", isDefault: false },
+    { 
+      id: 1, 
+      name: "Google Pay", 
+      upiId: "user@oksbi", 
+      icon: "google", 
+      colors: ["#4285F4", "#34A853"] 
+    },
+    { 
+      id: 2, 
+      name: "PhonePe", 
+      upiId: "9876543210@ybl", 
+      icon: "cellphone-check", 
+      colors: ["#5f259f", "#9d50bb"] 
+    },
+    { 
+      id: 3, 
+      name: "Paytm", 
+      upiId: "9876543210@paytm", 
+      icon: "wallet", 
+      colors: ["#002E6E", "#00B9F1"] 
+    },
   ]);
 
-  const { colors } = useTheme(); // Get theme colors
-
   const addPaymentMethod = () => {
-    Alert.alert("Add Payment Method", "This feature will be implemented soon!");
+    Alert.alert("Link UPI", "Enter your UPI ID to link a new payment method.");
   };
 
   const removePaymentMethod = (id) => {
     Alert.alert(
-      "Remove Payment Method",
+      "Unlink Account",
       "Are you sure you want to remove this payment method?",
       [
         { text: "Cancel", style: "cancel" },
         { 
           text: "Remove", 
           style: "destructive", 
-          onPress: () => setPaymentMethods(paymentMethods.filter(method => method.id !== id))
+          onPress: () => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setPaymentMethods(prev => prev.filter(m => m.id !== id));
+          }
         }
       ]
     );
@@ -44,71 +137,71 @@ export default function PaymentMethodsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
       
-      {/* Header with LinearGradient */}
-      <LinearGradient
-        colors={["#8B3358", "#670D2F", "#3A081C"]}
-        start={{ x: 0, y: 1 }}   // bottom-left
-        end={{ x: 1, y: 0 }}     // top-right
-        style={styles.header}
-      >
-        <Text style={styles.headerTitle}>Payment Methods</Text>
-        <Text style={styles.headerSubtitle}>Manage your payment options</Text>
-      </LinearGradient>
+      {/* 1. Curved Header */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={["#8B3358", "#670D2F", "#3A081C"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Payments</Text>
+            <View style={{ width: 40 }} /> 
+          </View>
+        </LinearGradient>
+      </View>
 
       <ScrollView 
-        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
       >
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Payment Methods</Text>
         
-        {paymentMethods.map((method) => (
-          <View key={method.id} style={[styles.paymentCard, { backgroundColor: colors.card }]}>
-            <View style={styles.paymentInfo}>
-              <Ionicons 
-                name={method.type === "credit_card" ? "card" : "logo-paypal"} 
-                size={24} 
-                color={method.type === "credit_card" ? colors.primary : "#003087"} 
-              />
-              <View style={styles.paymentDetails}>
-                <Text style={[styles.paymentText, { color: colors.text }]}>
-                  {method.type === "credit_card" 
-                    ? `${method.brand} •••• ${method.last4}` 
-                    : `PayPal • ${method.email}`
-                  }
-                </Text>
-                {method.isDefault && (
-                  <Text style={[styles.defaultText, { color: colors.primary }]}>Default</Text>
-                )}
-              </View>
-            </View>
-            <TouchableOpacity 
-              onPress={() => removePaymentMethod(method.id)}
-              style={styles.deleteButton}
-            >
-              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-            </TouchableOpacity>
+        {/* Scan & Pay Section - Clean Look */}
+        <View style={[styles.scanCard, { backgroundColor: colors.card, shadowColor: colors.border }]}>
+          <View style={[styles.scanIconBox, { backgroundColor: colors.primary + '15' }]}>
+            <MaterialCommunityIcons name="qrcode-scan" size={32} color={colors.primary} />
           </View>
-        ))}
+          <View style={styles.scanTextBox}>
+            <Text style={[styles.scanTitle, { color: colors.text }]}>Scan & Pay</Text>
+            <Text style={[styles.scanSub, { color: colors.textSecondary }]}>Pay instantly at outlet</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        </View>
 
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Linked Accounts</Text>
+
+        {/* Clean List */}
+        <View style={styles.listContainer}>
+          {paymentMethods.map((method, index) => (
+            <UPICard 
+              key={method.id} 
+              method={method} 
+              index={index} 
+              onDelete={removePaymentMethod} 
+            />
+          ))}
+        </View>
+
+        {/* Minimal Add Button */}
         <TouchableOpacity 
-          style={[styles.addButton, { backgroundColor: colors.card }]} 
+          style={[styles.addBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
           onPress={addPaymentMethod}
+          activeOpacity={0.7}
         >
-          <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
-          <Text style={[styles.addButtonText, { color: colors.primary }]}>Add Payment Method</Text>
+          <Ionicons name="add" size={24} color={colors.textSecondary} />
+          <Text style={[styles.addBtnText, { color: colors.textSecondary }]}>Add New UPI ID</Text>
         </TouchableOpacity>
 
-        {/* Info Section */}
-        <View style={[styles.infoCard, { backgroundColor: colors.card }]}>
-          <Ionicons name="shield-checkmark-outline" size={24} color={colors.primary} />
-          <View style={styles.infoContent}>
-            <Text style={[styles.infoTitle, { color: colors.text }]}>Secure & Encrypted</Text>
-            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              Your payment information is securely stored and encrypted. We never share your details with third parties.
-            </Text>
-          </View>
+        {/* Trust Marker */}
+        <View style={styles.footerNote}>
+          <MaterialCommunityIcons name="shield-check-outline" size={16} color={colors.textSecondary} />
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>100% Secure Payments</Text>
         </View>
+
       </ScrollView>
     </View>
   );
@@ -118,116 +211,160 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  
+  // Header
+  headerContainer: {
+    height: 110,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden',
+    elevation: 5,
+    zIndex: 10,
+  },
+  headerGradient: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? 40 : 50,
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700",
     color: '#FFF',
-    marginBottom: 4,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
+
+  // Content
+  scrollContent: {
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
-  scrollView: {
+  
+  // Scan Card
+  scanCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 30,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  scanIconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  scanTextBox: {
     flex: 1,
   },
-  content: {
-    padding: 20,
-    paddingBottom: 30,
+  scanTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
   },
+  scanSub: {
+    fontSize: 13,
+  },
+
+  // Section
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '700',
+    marginBottom: 16,
+    marginLeft: 4,
+  },
+  
+  // UPI Card Styles
+  listContainer: {
     marginBottom: 16,
   },
-  paymentCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  card: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 18,
     marginBottom: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 4,
   },
-  paymentInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
+  cardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  paymentDetails: {
-    marginLeft: 12,
-    flex: 1,
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
   },
-  paymentText: {
+  cardName: {
+    color: '#FFF',
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '700',
+    marginBottom: 2,
   },
-  defaultText: {
+  cardId: {
+    color: 'rgba(255,255,255,0.8)',
     fontSize: 12,
-    fontWeight: "600",
-    marginTop: 4,
+    fontWeight: '500',
   },
-  deleteButton: {
-    padding: 4,
-    borderRadius: 6,
-  },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
+  deleteBtn: {
+    padding: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
   },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+
+  // Add Button
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    marginBottom: 30,
+  },
+  addBtnText: {
+    fontWeight: '600',
     marginLeft: 8,
   },
-  infoCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+
+  // Footer Note
+  footerNote: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.6,
+    gap: 6,
   },
-  infoContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 14,
-    lineHeight: 20,
+  footerText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

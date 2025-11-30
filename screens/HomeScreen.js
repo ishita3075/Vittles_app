@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,276 +6,435 @@ import {
   StyleSheet,
   Dimensions,
   RefreshControl,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  TouchableOpacity,
+  ActivityIndicator,
+  Animated
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import PromoCarousel from '../components/PromoCarousel';
 import TopNavbar from "../components/TopNavbar";
 import CategoriesList from "../components/CategoriesList";
 import NearbyRestaurants from "../components/NearbyRestaurants";
 import { useTheme } from "../contexts/ThemeContext";
-import { getAllVendors } from '../api'; // Import the vendor API function
+import { getAllVendors } from '../api';
 
-// Responsive functions
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
+// --- Responsive Utilities ---
 const { width, height } = Dimensions.get('window');
-
 const GUIDELINE_WIDTH = 375;
-const GUIDELINE_HEIGHT = 812;
-
 const scale = (size) => (width / GUIDELINE_WIDTH) * size;
-const verticalScale = (size) => (height / GUIDELINE_HEIGHT) * size;
 const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
 
-// Simple responsive object
 const responsive = {
   spacing: {
-    xs: verticalScale(4),
-    sm: verticalScale(8),
-    md: verticalScale(12),
-    lg: verticalScale(16),
-    xl: verticalScale(20),
+    xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32
   },
   font: {
     sm: moderateScale(12),
     md: moderateScale(14),
     lg: moderateScale(16),
-    xl: moderateScale(18),
-    xxl: moderateScale(20),
+    xl: moderateScale(20),
+    xxl: moderateScale(24),
   }
 };
 
-// Transform vendor data to restaurant format based on your JSON structure
+// --- Helper Components ---
+
+// 1. Quick Filter Chip Component
+const FilterChip = ({ label, icon, active, onPress }) => (
+  <TouchableOpacity 
+    style={[
+      styles.chip, 
+      active && styles.chipActive
+    ]} 
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    {icon && <Ionicons name={icon} size={14} color={active ? "#FFF" : "#666"} style={{ marginRight: 4 }} />}
+    <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+  </TouchableOpacity>
+);
+
+// 2. Skeleton Loader Component (Premium Feel)
+const RestaurantSkeleton = () => (
+  <View style={styles.skeletonCard}>
+    <View style={styles.skeletonImage} />
+    <View style={styles.skeletonContent}>
+      <View style={[styles.skeletonLine, { width: '60%', height: 16, marginBottom: 8 }]} />
+      <View style={[styles.skeletonLine, { width: '40%', height: 12, marginBottom: 8 }]} />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+         <View style={[styles.skeletonLine, { width: 40, height: 12 }]} />
+         <View style={[styles.skeletonLine, { width: 40, height: 12 }]} />
+      </View>
+    </View>
+  </View>
+);
+
+// --- Data Transformation ---
 const transformVendorToRestaurant = (vendor) => {
-  // Generate default values for missing fields
-  const cuisineTypes = ["North Indian", "South Indian", "Chinese", "Italian", "Mexican", "Thai", "Beverages"];
+  // Enhanced fallback logic
+  const cuisineTypes = ["North Indian", "South Indian", "Chinese", "Italian", "Mexican", "Thai", "Healthy", "Bakery"];
   const defaultCuisine = cuisineTypes[Math.floor(Math.random() * cuisineTypes.length)];
-
-  const discounts = ["20% OFF", "30% OFF", "40% OFF up to ₹80", "50% OFF up to ₹100", "60% OFF up to ₹120"];
-  const defaultDiscount = discounts[Math.floor(Math.random() * discounts.length)];
-
-  const distances = ["0.5 km", "1.2 km", "2.3 km", "3.1 km", "4.5 km", "6.1 km"];
-  const defaultDistance = distances[Math.floor(Math.random() * distances.length)];
-
-  const deliveryTimes = ["15-20 mins", "20-25 mins", "25-30 mins", "30-35 mins", "35-40 mins", "40-45 mins"];
-  const defaultTime = deliveryTimes[Math.floor(Math.random() * deliveryTimes.length)];
-
-  const priceRanges = ["₹100 for one", "₹150 for one", "₹200 for one", "₹250 for one", "₹300 for one"];
-  const defaultPrice = priceRanges[Math.floor(Math.random() * priceRanges.length)];
-
+  
   return {
-    id: vendor.id?.toString() || vendor.vendor_id?.toString() || "unknown",
-    name: vendor.name || vendor.vendor_name || "Unknown Vendor",
+    id: vendor.id?.toString() || vendor.vendor_id?.toString() || Math.random().toString(),
+    name: vendor.name || vendor.vendor_name || "Gourmet Kitchen",
     cuisine: vendor.cuisine || vendor.cuisine_type || defaultCuisine,
-    rating: vendor.rating || (4 + Math.random() * 0.5).toFixed(1), // Random rating between 4.0-4.5
-    distance: vendor.distance || defaultDistance,
-    time: vendor.delivery_time || vendor.time || defaultTime,
-    price: vendor.price || vendor.price_range || defaultPrice,
-    discount: vendor.discount || defaultDiscount,
-    noPackagingCharges: vendor.noPackagingCharges || Math.random() > 0.5, // Random true/false
-    isPureVeg: vendor.isPureVeg || vendor.pure_veg || Math.random() > 0.7, // Mostly non-veg
-    reviewsCount: vendor.reviewsCount || vendor.reviews_count || `${Math.floor(Math.random() * 100) + 10}+`,
-    image: vendor.image || vendor.image_url || "https://via.placeholder.com/300x200/4A90E2/FFFFFF?text=" + encodeURIComponent(vendor.name || "Restaurant"),
-    // Additional vendor-specific fields
+    rating: vendor.rating || (4 + Math.random() * 0.9).toFixed(1),
+    distance: vendor.distance || `${(Math.random() * 5 + 0.5).toFixed(1)} km`,
+    time: vendor.delivery_time || vendor.time || `${Math.floor(Math.random() * 20 + 20)} mins`,
+    price: vendor.price || "₹200 for one",
+    discount: vendor.discount || (Math.random() > 0.6 ? "20% OFF" : null),
+    isPureVeg: vendor.isPureVeg || Math.random() > 0.8,
+    image: vendor.image || vendor.image_url || null, // Let NearbyRestaurants handle fallback
     vendorData: vendor
   };
 };
 
 export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
+  
+  // State
   const [searchQuery, setSearchQuery] = useState("");
   const [vendors, setVendors] = useState([]);
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Quick Filters State
+  const [filterVeg, setFilterVeg] = useState(false);
+  const [filterFast, setFilterFast] = useState(false);
+  const [filterTopRated, setFilterTopRated] = useState(false);
 
-  // Fetch vendors from API
+  // Fetch Logic
   const fetchVendors = async () => {
     try {
       setLoading(true);
+      // Simulate network delay for skeleton showcase if needed
+      // await new Promise(r => setTimeout(r, 1500)); 
+      
       const vendorsData = await getAllVendors();
-
-      if (vendorsData && Array.isArray(vendorsData)) {
-        setVendors(vendorsData);
-
-        // Transform vendors to restaurant format
-        const restaurants = vendorsData.map(transformVendorToRestaurant);
-        setFilteredRestaurants(restaurants);
-      } else if (vendorsData && typeof vendorsData === 'object') {
-        // Handle case where API returns single vendor object
-        const singleVendor = [vendorsData];
-        setVendors(singleVendor);
-        const restaurants = singleVendor.map(transformVendorToRestaurant);
-        setFilteredRestaurants(restaurants);
-      } else {
-        console.error('Invalid response format:', vendorsData);
-        setVendors([]);
-        setFilteredRestaurants([]);
-      }
+      const rawData = Array.isArray(vendorsData) ? vendorsData : (vendorsData ? [vendorsData] : []);
+      const restaurants = rawData.map(transformVendorToRestaurant);
+      
+      setVendors(restaurants);
+      setFilteredRestaurants(restaurants);
     } catch (error) {
-      console.error('Error fetching vendors:', error);
-
-      // Fallback: Try to fetch individual vendor if bulk endpoint fails
-      try {
-        console.log('Trying fallback: fetching individual vendor...');
-        const { getVendorById } = require('../api');
-        const fallbackVendor = await getVendorById(14);
-        if (fallbackVendor) {
-          const singleVendor = [fallbackVendor];
-          setVendors(singleVendor);
-          const restaurants = singleVendor.map(transformVendorToRestaurant);
-          setFilteredRestaurants(restaurants);
-        }
-      } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError);
-        // Set empty state
-        setVendors([]);
-        setFilteredRestaurants([]);
-      }
+      console.error('Fetch error:', error);
+      setVendors([]); 
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  // Initial fetch
   useEffect(() => {
     fetchVendors();
   }, []);
 
-  // Filter vendors based on search and category
+  // Filtering Logic
   useEffect(() => {
+    // Configure layout animation for smooth transitions
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
     if (!vendors.length) return;
 
-    let filtered = vendors.map(transformVendorToRestaurant);
+    let result = [...vendors];
 
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(r =>
-        r.cuisine.toLowerCase().includes(selectedCategory.toLowerCase())
-      );
-    }
-
+    // 1. Search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(r =>
-        r.name.toLowerCase().includes(query) ||
+      result = result.filter(r => 
+        r.name.toLowerCase().includes(query) || 
         r.cuisine.toLowerCase().includes(query)
       );
     }
 
-    setFilteredRestaurants(filtered);
-  }, [searchQuery, selectedCategory, vendors]);
+    // 2. Category
+    if (selectedCategory && selectedCategory !== "all") {
+       result = result.filter(r => 
+         r.cuisine.toLowerCase().includes(selectedCategory.toLowerCase())
+       );
+    }
 
-  const handleRestaurantPress = (restaurant) => {
-    navigation.navigate("RestaurantDetails", {
-      restaurant,
-      vendor: restaurant.vendorData // Pass full vendor data if needed
+    // 3. Quick Filters
+    if (filterVeg) result = result.filter(r => r.isPureVeg);
+    if (filterFast) result = result.filter(r => parseInt(r.time) < 30);
+    if (filterTopRated) result = result.filter(r => parseFloat(r.rating) >= 4.5);
+
+    setFilteredRestaurants(result);
+  }, [searchQuery, selectedCategory, filterVeg, filterFast, filterTopRated, vendors]);
+
+  // Handlers
+  const handleClearSearch = () => setSearchQuery("");
+  const onRefresh = () => { setRefreshing(true); fetchVendors(); };
+  
+  const handleRestaurantPress = useCallback((restaurant) => {
+    navigation.navigate("RestaurantDetails", { 
+      restaurant, 
+      vendor: restaurant.vendorData 
     });
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery("");
-  };
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchVendors();
-  };
+  }, [navigation]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Top Navbar with integrated Search */}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* TopNavbar stays fixed at the top. 
+        It handles its own SafeAreaView logic internally.
+      */}
       <TopNavbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onClearSearch={handleClearSearch}
       />
 
-      {/* Main Scrollable Content */}
       <ScrollView
-        style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{
-          paddingBottom: responsive.spacing.xl,
-          backgroundColor: colors.background
-        }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             colors={[colors.primary]}
             tintColor={colors.primary}
+            progressViewOffset={20}
           />
         }
       >
-        {/* Promo Carousel */}
-        <PromoCarousel />
+        {/* 1. Promo Carousel */}
+        <View style={styles.carouselSection}>
+           <PromoCarousel />
+        </View>
 
-        {/* Restaurants */}
-        <View style={[styles.restaurantsSection, { marginTop: responsive.spacing.lg }]}>
+        {/* 2. Categories List (Horizontal) */}
+        {/* We assume CategoriesList handles its own UI and callbacks */}
+        
+
+        {/* 3. Quick Filters (Chips) */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.chipsContainer}
+          style={styles.chipsScroll}
+        >
+          
+          {/* Reset Filter Button if any filter is active */}
+          {(filterVeg || filterFast || filterTopRated) && (
+             <TouchableOpacity 
+               onPress={() => { setFilterVeg(false); setFilterFast(false); setFilterTopRated(false); }}
+               style={styles.clearFiltersBtn}
+             >
+               <Text style={styles.clearFiltersText}>Clear</Text>
+             </TouchableOpacity>
+          )}
+        </ScrollView>
+
+        {/* 4. Main Restaurant List */}
+        <View style={styles.listSection}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, {
-              fontSize: responsive.font.xxl,
-              color: colors.text
-            }]}>
-              Food Court
-            </Text>
-            <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
-              {filteredRestaurants.length} {filteredRestaurants.length === 1 ? 'restaurant' : 'restaurants'}
-            </Text>
+            <View>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                {searchQuery ? 'Search Results' : 'All Restaurants'}
+              </Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                {loading ? 'Finding best spots...' : `${filteredRestaurants.length} places near you`}
+              </Text>
+            </View>
+            
+            {!loading && (
+              <View style={styles.sortButton}>
+                <Ionicons name="filter" size={16} color={colors.primary} />
+                <Text style={[styles.sortText, { color: colors.primary }]}>Sort</Text>
+              </View>
+            )}
           </View>
 
-          <NearbyRestaurants
-            restaurants={filteredRestaurants}
-            loading={loading}
-            onRestaurantPress={handleRestaurantPress}
-          />
+          {loading ? (
+            // Render 3 Skeletons
+            <View style={{ gap: 16 }}>
+              <RestaurantSkeleton />
+              <RestaurantSkeleton />
+              <RestaurantSkeleton />
+            </View>
+          ) : (
+            <NearbyRestaurants
+              restaurants={filteredRestaurants}
+              loading={false} // We handle loading state above
+              onRestaurantPress={handleRestaurantPress}
+            />
+          )}
 
+          {/* Empty State */}
           {!loading && filteredRestaurants.length === 0 && (
             <View style={styles.emptyState}>
-              <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-                No restaurants found
-              </Text>
-              <Text style={[styles.emptyStateSubtext, { color: colors.textSecondary }]}>
-                {searchQuery ? 'Try a different search' : 'Check back later for new vendors'}
+              <View style={[styles.emptyIconBg, { backgroundColor: colors.border + '40' }]}>
+                <Ionicons name="search" size={32} color={colors.textSecondary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>No restaurants found</Text>
+              <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
+                We couldn't find anything matching "{searchQuery}". Try different keywords.
               </Text>
             </View>
           )}
         </View>
+
+        {/* Bottom Padding for TabBar */}
+        <View style={{ height: 80 }} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  restaurantsSection: {
-    paddingHorizontal: responsive.spacing.lg
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: responsive.spacing.lg,
+  },
+  // Sections
+  carouselSection: {
+    marginBottom: responsive.spacing.lg,
+  },
+  categoriesSection: {
+    marginBottom: responsive.spacing.md,
+  },
+  
+  // Chips
+  chipsScroll: {
+    marginBottom: responsive.spacing.xl,
+  },
+  chipsContainer: {
+    paddingHorizontal: responsive.spacing.lg,
+    gap: 8,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  chipActive: {
+    backgroundColor: '#8B3358', // Primary Color
+    borderColor: '#8B3358',
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4B5563',
+  },
+  chipTextActive: {
+    color: '#FFF',
+  },
+  clearFiltersBtn: {
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  clearFiltersText: {
+    color: '#8B3358',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // List Section
+  listSection: {
+    paddingHorizontal: responsive.spacing.lg,
   },
   sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: responsive.spacing.lg
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: responsive.spacing.lg,
   },
   sectionTitle: {
-    fontWeight: "bold"
+    fontSize: responsive.font.xl,
+    fontWeight: '800', // Extra bold for premium feel
+    letterSpacing: -0.5,
+    marginBottom: 4,
   },
-  resultsCount: {
+  sectionSubtitle: {
     fontSize: responsive.font.sm,
+    fontWeight: '500',
   },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 4,
+  },
+  sortText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // Skeleton
+  skeletonCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  skeletonImage: {
+    width: '100%',
+    height: 180,
+    backgroundColor: '#F3F4F6',
+  },
+  skeletonContent: {
+    padding: 16,
+  },
+  skeletonLine: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 4,
+  },
+
+  // Empty State
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: responsive.spacing.xl * 2,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
-  emptyStateText: {
-    fontSize: responsive.font.lg,
-    fontWeight: 'bold',
-    marginBottom: responsive.spacing.sm,
+  emptyIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  emptyStateSubtext: {
-    fontSize: responsive.font.md,
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  emptyDesc: {
     textAlign: 'center',
+    lineHeight: 20,
+    fontSize: 14,
   },
 });
-
-// Export the responsive functions for use in other components
-export { scale, verticalScale, moderateScale, responsive };

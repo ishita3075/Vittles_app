@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,28 +9,29 @@ import {
   Image,
   Dimensions,
   StatusBar,
-  SafeAreaView,
+  Animated,
+  Platform,
+  LayoutAnimation,
+  UIManager
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../contexts/CartContext';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../contexts/ThemeContext'; // Import theme hook
+import { useTheme } from '../contexts/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-// Device height classification
-const getDeviceHeightType = () => {
-  if (height < 600) return 'small';
-  if (height < 700) return 'medium';
-  if (height < 800) return 'large';
-  return 'xlarge';
-};
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
 
-const CartScreen = () => {
+export default function CartScreen() {
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
-  const { colors } = useTheme(); // Get theme colors
+  const { colors } = useTheme();
   const { 
     cart, 
     removeItem, 
@@ -38,102 +39,41 @@ const CartScreen = () => {
     decrementItem, 
     clearCart, 
     totalItems, 
-    subtotal,
-    deliveryFee,
-    tax,
-    total,
     formattedSubtotal,
     formattedTotal,
     formattedDeliveryFee,
     formattedTax,
+    subtotal,
+    deliveryFee,
+    tax,
+    total,
     currentRestaurant 
   } = useCart();
 
   const [isClearing, setIsClearing] = useState(false);
-  const deviceHeightType = getDeviceHeightType();
+  
+  // Animation for list entrance
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Responsive spacing
-  const getSpacing = () => {
-    switch (deviceHeightType) {
-      case 'small': return 6;
-      case 'medium': return 8;
-      case 'large': return 10;
-      case 'xlarge': return 12;
-      default: return 8;
-    }
-  };
-
-  // Responsive font sizes
-  const getTitleSize = () => {
-    switch (deviceHeightType) {
-      case 'small': return 16;
-      case 'medium': return 17;
-      case 'large': return 18;
-      case 'xlarge': return 19;
-      default: return 17;
-    }
-  };
-
-  const getSubtitleSize = () => {
-    switch (deviceHeightType) {
-      case 'small': return 12;
-      case 'medium': return 13;
-      case 'large': return 14;
-      case 'xlarge': return 14;
-      default: return 13;
-    }
-  };
-
-  const getBodySize = () => {
-    switch (deviceHeightType) {
-      case 'small': return 11;
-      case 'medium': return 12;
-      case 'large': return 13;
-      case 'xlarge': return 14;
-      default: return 12;
-    }
-  };
-
-  // Calculate top padding for header
-  const getTopPadding = () => {
-    return insets.top + 8; // Safe area top + additional padding
-  };
-
-  // Calculate bottom padding to avoid navbar overlap
-  const getBottomPadding = () => {
-    const baseTabBarHeight = 80;
-    const floatingButtonHeight = 64;
-    const safeAreaBottom = insets.bottom;
-    
-    return baseTabBarHeight + floatingButtonHeight + safeAreaBottom + 30;
-  };
-
-  // Helper function to extract price as number
-  const getPriceAsNumber = (price) => {
-    if (typeof price === 'number') return price;
-    if (typeof price === 'string') {
-      return parseFloat(price.replace(/[₹$,]/g, ''));
-    }
-    return 0;
-  };
-
-  // Helper function to format price display
-  const formatPriceDisplay = (price) => {
-    if (typeof price === 'number') return `₹${price.toFixed(2)}`;
-    if (typeof price === 'string') return price;
-    return '₹0.00';
-  };
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleClearCart = () => {
     Alert.alert(
       "Clear Cart",
-      "Are you sure you want to remove all items from your cart?",
+      "Are you sure you want to remove all items?",
       [
         { text: "Cancel", style: "cancel" },
         { 
           text: "Clear", 
           style: "destructive",
           onPress: () => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setIsClearing(true);
             clearCart();
             setTimeout(() => setIsClearing(false), 500);
@@ -143,665 +83,477 @@ const CartScreen = () => {
     );
   };
 
-  const renderCartItem = ({ item, index }) => {
-    const itemPrice = getPriceAsNumber(item.price);
-    const itemTotal = itemPrice * item.quantity;
+  const handleCheckout = () => {
+    if (totalItems === 0) return;
+    navigation.navigate('Checkout', {
+      cartItems: cart,
+      restaurantId: currentRestaurant,
+      subtotal,
+      deliveryFee,
+      tax,
+      grandTotal: total
+    });
+  };
+
+  const renderCartItem = ({ item }) => {
+    const itemTotal = (parseFloat(item.price.replace(/[^0-9.]/g, '')) || 0) * item.quantity;
 
     return (
-      <View style={[styles.cartItem, { 
-        padding: 14,
-        borderRadius: 12,
-        marginBottom: 10,
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-      }]}>
-        <View style={styles.cartItemContent}>
-          {item.image ? (
-            <Image 
-              source={{ uri: item.image }} 
-              style={[styles.cartItemImage, { 
-                width: 70,
-                height: 70,
-                borderRadius: 8,
-              }]} 
-            />
-          ) : (
-            <View style={[styles.cartItemImagePlaceholder, {
-              width: 70,
-              height: 70,
-              borderRadius: 8,
-              backgroundColor: colors.background,
-            }]}>
-              <Ionicons name="fast-food" size={20} color={colors.textSecondary} />
-            </View>
-          )}
-          
-          <View style={[styles.cartItemDetails, { marginLeft: 12 }]}>
+      <View style={[styles.cartItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.itemContent}>
+          {/* Image */}
+          <View style={styles.imageWrapper}>
+            {item.image ? (
+              <Image source={{ uri: item.image }} style={styles.itemImage} />
+            ) : (
+              <View style={[styles.placeholderImage, { backgroundColor: colors.background }]}>
+                <Ionicons name="fast-food" size={24} color={colors.textSecondary} />
+              </View>
+            )}
+          </View>
+
+          {/* Details */}
+          <View style={styles.itemDetails}>
             <View style={styles.itemHeader}>
-              <Text style={[styles.cartItemName, { 
-                fontSize: getSubtitleSize(),
-                color: colors.text 
-              }]} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <TouchableOpacity 
-                onPress={() => removeItem(item.id)} 
-                style={styles.removeButton}
-              >
+              <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+              <TouchableOpacity onPress={() => removeItem(item.id)} hitSlop={10}>
                 <Ionicons name="close" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
             
-            <Text style={[styles.cartItemRestaurant, { 
-              fontSize: getBodySize(),
-              color: colors.textSecondary 
-            }]} numberOfLines={1}>
+            <Text style={[styles.itemVariant, { color: colors.textSecondary }]} numberOfLines={1}>
               {item.restaurantName}
             </Text>
             
-            <Text style={[styles.cartItemDescription, { 
-              fontSize: getBodySize(),
-              color: colors.textSecondary 
-            }]} numberOfLines={2}>
-              {item.description || "Delicious food item"}
-            </Text>
-            
-            <View style={styles.priceContainer}>
-              <Text style={[styles.cartItemPrice, { 
-                fontSize: getSubtitleSize(),
-                color: colors.text 
-              }]}>
-                {formatPriceDisplay(item.price)}
-              </Text>
-              <Text style={[styles.itemTotal, { 
-                fontSize: getSubtitleSize(),
-                color: colors.primary 
-              }]}>
-                ₹{itemTotal.toFixed(2)}
-              </Text>
+            <View style={styles.itemFooter}>
+              <Text style={[styles.itemPrice, { color: colors.text }]}>₹{itemTotal.toFixed(2)}</Text>
+              
+              {/* Quantity Stepper */}
+              <View style={[styles.qtyContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                <TouchableOpacity 
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    decrementItem(item.id);
+                  }}
+                  style={styles.qtyBtn}
+                >
+                  <Ionicons name="remove" size={14} color={colors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.qtyText, { color: colors.text }]}>{item.quantity}</Text>
+                <TouchableOpacity 
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    incrementItem(item.id);
+                  }}
+                  style={styles.qtyBtn}
+                >
+                  <Ionicons name="add" size={14} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-
-        <View style={[styles.quantityContainer, {
-          borderRadius: 20,
-          padding: 2,
-          backgroundColor: colors.background,
-          borderColor: colors.border,
-        }]}>
-          <TouchableOpacity 
-            style={[
-              styles.quantityButton, 
-              { 
-                borderRadius: 15,
-                minWidth: 30,
-                backgroundColor: colors.card,
-              },
-              item.quantity <= 1 && styles.quantityButtonDisabled
-            ]}
-            onPress={() => decrementItem(item.id)}
-            disabled={item.quantity <= 1}
-          >
-            <Ionicons 
-              name="remove" 
-              size={16} 
-              color={item.quantity <= 1 ? colors.textSecondary : colors.primary} 
-            />
-          </TouchableOpacity>
-          
-          <View style={[styles.quantityDisplay, { minWidth: 35 }]}>
-            <Text style={[styles.quantityText, { 
-              fontSize: getBodySize(),
-              color: colors.text 
-            }]}>
-              {item.quantity}
-            </Text>
-          </View>
-          
-          <TouchableOpacity 
-            style={[
-              styles.quantityButton,
-              { 
-                borderRadius: 15,
-                minWidth: 30,
-                backgroundColor: colors.card,
-              }
-            ]}
-            onPress={() => incrementItem(item.id)}
-          >
-            <Ionicons name="add" size={16} color={colors.primary} />
-          </TouchableOpacity>
         </View>
       </View>
     );
   };
 
-  const handleCheckout = () => {
-    console.log('Checkout button pressed');
-    console.log('Total items:', totalItems);
-    console.log('Cart items:', cart.length);
-    console.log('Current restaurant:', currentRestaurant);
-    
-    if (totalItems === 0) {
-      Alert.alert('Cart Empty', 'Add some delicious items to checkout!');
-      return;
-    }
-    
-    console.log('Navigating to Checkout screen...');
-    
-    try {
-      navigation.navigate('Checkout', {
-        cartItems: cart,
-        restaurantId: currentRestaurant,
-        subtotal: subtotal,
-        deliveryFee: deliveryFee,
-        tax: tax,
-        grandTotal: total
-      });
-      console.log('Navigation successful');
-    } catch (error) {
-      console.error('Navigation error:', error);
-      Alert.alert('Error', 'Unable to navigate to checkout. Please try again.');
-    }
-  };
-
-  const handleContinueShopping = () => {
-    if (currentRestaurant) {
-      navigation.goBack();
-    } else {
-      navigation.popToTop();
-    }
-  };
-
+  // --- Empty State ---
   if (totalItems === 0) {
-    const getEmptyIconSize = () => {
-      switch (deviceHeightType) {
-        case 'small': return 70;
-        case 'medium': return 80;
-        case 'large': return 90;
-        case 'xlarge': return 100;
-        default: return 80;
-      }
-    };
-
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={[styles.emptyContainer, { 
-          paddingTop: getTopPadding() + 20, // Added top padding for empty state
-          paddingBottom: getBottomPadding(),
-          backgroundColor: colors.background,
-        }]}>
-          <View style={styles.emptyIllustration}>
-            <Ionicons 
-              name="cart-outline" 
-              size={getEmptyIconSize()} 
-              color={colors.textSecondary} 
-            />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle="dark-content" />
+        <View style={styles.emptyContainer}>
+          <View style={[styles.emptyIconBg, { backgroundColor: colors.card }]}>
+            <Ionicons name="cart-outline" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
           </View>
-          <Text style={[styles.emptyTitle, { 
-            fontSize: getTitleSize(),
-            color: colors.text 
-          }]}>
-            Your cart feels lonely
-          </Text>
-          <Text style={[styles.emptySubtitle, { 
-            fontSize: getBodySize(),
-            color: colors.textSecondary 
-          }]}>
-            Add some delicious food from our restaurants
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Cart is empty</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+            Discover restaurants and add items to start your order.
           </Text>
           <TouchableOpacity 
-            style={[styles.shoppingButton, {
-              paddingVertical: 14,
-              paddingHorizontal: 24,
-              borderRadius: 12,
-              backgroundColor: colors.primary,
-            }]}
-            onPress={handleContinueShopping}
+            style={[styles.browseButton, { backgroundColor: colors.primary }]}
+            onPress={() => navigation.goBack()}
           >
-            <Ionicons name="restaurant" size={18} color="#fff" />
-            <Text style={[styles.shoppingButtonText, { fontSize: getSubtitleSize() }]}>
-              Start Ordering
-            </Text>
+            <Text style={styles.browseText}>Explore Restaurants</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <StatusBar 
-        backgroundColor={colors.background} 
-        barStyle={colors.isDark ? 'light-content' : 'dark-content'} 
-      />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
-      {/* Header */}
-      <View style={[styles.header, {
-        paddingTop: getTopPadding(), // Dynamic top padding based on safe area
-        paddingBottom: 12,
-        backgroundColor: colors.card,
-        borderBottomColor: colors.border,
-      }]}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+      {/* Header Area */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={["#8B3358", "#670D2F", "#3A081C"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerBackground}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        
-        <Text style={[styles.headerTitle, { 
-          fontSize: getTitleSize(),
-          color: colors.text 
-        }]}>
-          My Cart ({totalItems})
-        </Text>
-        
-        <TouchableOpacity 
-          style={styles.clearButton}
-          onPress={handleClearCart}
-          disabled={isClearing}
-        >
-          <Ionicons 
-            name="trash-outline" 
-            size={20} 
-            color={isClearing ? colors.textSecondary : colors.error} 
-          />
-        </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Cart</Text>
+            <TouchableOpacity onPress={handleClearCart} disabled={isClearing}>
+              <Text style={styles.clearText}>Clear</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
       </View>
 
-      {/* Restaurant Info - Fixed for better visibility */}
-      {cart.length > 0 && (
-        <View style={[styles.restaurantHeader, {
-          padding: 12,
-          borderRadius: 10,
-          marginTop: 12,
-          marginHorizontal: 16,
-          backgroundColor: colors.isDark ? 'rgba(0, 168, 80, 0.15)' : '#fff8f6',
-          borderLeftColor: colors.primary,
-        }]}>
-          <View style={styles.restaurantHeaderContent}>
-            <Ionicons name="restaurant" size={16} color={colors.primary} />
-            <Text style={[styles.restaurantLabel, { 
-              fontSize: getBodySize(),
-              color: colors.textSecondary,
-              marginRight: 4,
-            }]}>
-              Ordering from:
-            </Text>
-            <Text style={[styles.restaurantName, { 
-              fontSize: getBodySize(),
-              color: colors.primary,
-              fontWeight: '600',
-            }]} numberOfLines={1}>
-              {cart[0]?.restaurantName || 'Restaurant'}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* Cart Items */}
-      <FlatList
-        data={cart}
-        renderItem={renderCartItem}
-        keyExtractor={(item) => item.id}
+      <Animated.ScrollView 
+        style={[styles.scrollView, { opacity: fadeAnim }]}
+        contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.listContent,
-          { 
-            paddingTop: 8, // Added top padding for the list
-            paddingBottom: getBottomPadding(),
-            backgroundColor: colors.background,
-          }
-        ]}
-        style={styles.list}
-      />
-
-      {/* Order Summary */}
-      <View style={[styles.footer, {
-        padding: 16,
-        backgroundColor: colors.card,
-        borderTopColor: colors.border,
-      }]}>
-        <View style={[styles.summaryContainer, { marginBottom: 16 }]}>
-          <Text style={[styles.summaryTitle, { 
-            fontSize: getTitleSize(),
-            color: colors.text 
-          }]}>
-            Order Summary
-          </Text>
-          
-          <View style={[styles.summaryRow, { marginBottom: 6 }]}>
-            <Text style={[styles.summaryLabel, { 
-              fontSize: getBodySize(),
-              color: colors.textSecondary 
-            }]}>
-              Subtotal ({totalItems} items)
-            </Text>
-            <Text style={[styles.summaryValue, { 
-              fontSize: getBodySize(),
-              color: colors.text 
-            }]}>
-              {formattedSubtotal}
-            </Text>
-          </View>
-          
-          <View style={[styles.summaryRow, { marginBottom: 6 }]}>
-            <Text style={[styles.summaryLabel, { 
-              fontSize: getBodySize(),
-              color: colors.textSecondary 
-            }]}>
-              Delivery Fee
-            </Text>
-            <Text style={[styles.summaryValue, { 
-              fontSize: getBodySize(),
-              color: colors.text 
-            }]}>
-              {formattedDeliveryFee}
-            </Text>
-          </View>
-          
-          <View style={[styles.summaryRow, { marginBottom: 6 }]}>
-            <Text style={[styles.summaryLabel, { 
-              fontSize: getBodySize(),
-              color: colors.textSecondary 
-            }]}>
-              Tax (5%)
-            </Text>
-            <Text style={[styles.summaryValue, { 
-              fontSize: getBodySize(),
-              color: colors.text 
-            }]}>
-              {formattedTax}
-            </Text>
-          </View>
-          
-          <View style={[styles.divider, { 
-            marginVertical: 10,
-            backgroundColor: colors.border 
-          }]} />
-          
-          <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { 
-              fontSize: getSubtitleSize(),
-              color: colors.text 
-            }]}>
-              Total Amount
-            </Text>
-            <Text style={[styles.totalValue, { 
-              fontSize: getTitleSize(),
-              color: colors.primary 
-            }]}>
-              {formattedTotal}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity 
-          style={[styles.checkoutButton, {
-            borderRadius: 12,
-            paddingVertical: 16,
-            backgroundColor: colors.primary,
-          }]}
-          onPress={handleCheckout}
-        >
-          <View style={styles.checkoutContent}>
-            <Text style={[styles.checkoutText, { fontSize: getSubtitleSize() }]}>
-              Proceed to Checkout
-            </Text>
-            <View style={styles.checkoutTotal}>
-              <Text style={[styles.checkoutTotalText, { fontSize: getSubtitleSize() }]}>
-                {formattedTotal}
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color="#fff" />
+      >
+        {/* Restaurant Info Banner */}
+        {cart.length > 0 && (
+          <View style={[styles.restaurantBanner, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+            <View style={[styles.storeIcon, { backgroundColor: colors.primary + '15' }]}>
+              <Ionicons name="storefront" size={16} color={colors.primary} />
+            </View>
+            <View>
+              <Text style={[styles.restaurantLabel, { color: colors.textSecondary }]}>Ordering from</Text>
+              <Text style={[styles.restaurantName, { color: colors.text }]}>{cart[0]?.restaurantName}</Text>
             </View>
           </View>
-        </TouchableOpacity>
+        )}
+
+        <View style={styles.listContainer}>
+          <FlatList
+            data={cart}
+            renderItem={renderCartItem}
+            keyExtractor={item => item.id}
+            scrollEnabled={false}
+          />
+        </View>
+
+        {/* Bill Details */}
+        <View style={[styles.billSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.billHeader, { color: colors.text }]}>Payment Summary</Text>
+          
+          <View style={styles.billRow}>
+            <Text style={[styles.billLabel, { color: colors.textSecondary }]}>Item Total</Text>
+            <Text style={[styles.billValue, { color: colors.text }]}>{formattedSubtotal}</Text>
+          </View>
+          
+          <View style={styles.billRow}>
+            <Text style={[styles.billLabel, { color: colors.textSecondary }]}>Delivery Fee</Text>
+            <Text style={[styles.billValue, { color: colors.text }]}>{formattedDeliveryFee}</Text>
+          </View>
+          
+          <View style={styles.billRow}>
+            <Text style={[styles.billLabel, { color: colors.textSecondary }]}>Taxes & Charges</Text>
+            <Text style={[styles.billValue, { color: colors.text }]}>{formattedTax}</Text>
+          </View>
+          
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          
+          <View style={styles.totalRow}>
+            <Text style={[styles.totalLabel, { color: colors.text }]}>To Pay</Text>
+            <Text style={[styles.totalValue, { color: colors.text }]}>{formattedTotal}</Text>
+          </View>
+        </View>
+      </Animated.ScrollView>
+
+      {/* Checkout Footer */}
+      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+        <View style={styles.footerContent}>
+          <View>
+            <Text style={[styles.footerTotalLabel, { color: colors.textSecondary }]}>Total</Text>
+            <Text style={[styles.footerTotalValue, { color: colors.text }]}>{formattedTotal}</Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.checkoutBtn, { backgroundColor: colors.primary }]}
+            onPress={handleCheckout}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.checkoutText}>Proceed to Pay</Text>
+            <Ionicons name="arrow-forward" size={18} color="#FFF" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: { flex: 1 },
+  
+  // Header
+  headerContainer: {
+    height: 110, // Shorter, cleaner header
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
+    zIndex: 10,
+  },
+  headerBackground: {
     flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 3,
-    paddingHorizontal: 16,
-  },
-  backButton: {
-    padding: 6,
-    marginLeft: -6,
-  },
-  headerTitle: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  clearButton: {
-    padding: 6,
-    marginRight: -6,
-  },
-  restaurantHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderLeftWidth: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  restaurantHeaderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  restaurantLabel: {
-    // Styles handled inline
-  },
-  restaurantName: {
-    flex: 1,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    // paddingTop handled inline
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyIllustration: {
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 50,
     paddingHorizontal: 20,
   },
-  shoppingButton: {
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 44,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFF',
+    letterSpacing: 0.5,
+  },
+  backButton: {
+    padding: 8,
+    marginLeft: -8,
+  },
+  clearText: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  // Restaurant Banner
+  restaurantBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  shoppingButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  storeIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
+  restaurantLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  restaurantName: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  // Scroll Content
+  scrollView: {
+    flex: 1,
+  },
+  listContainer: {
+    paddingHorizontal: 16,
+  },
+
+  // Cart Item
   cartItem: {
-    marginHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-    borderWidth: 1,
-  },
-  cartItemContent: {
-    flexDirection: 'row',
+    borderRadius: 12,
+    padding: 12,
     marginBottom: 12,
+    borderWidth: 1,
+    // Removed heavy shadows for a cleaner flat look
   },
-  cartItemImage: {
-    // Styles handled inline
+  itemContent: {
+    flexDirection: 'row',
   },
-  cartItemImagePlaceholder: {
+  imageWrapper: {
+    marginRight: 12,
+  },
+  itemImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  placeholderImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cartItemDetails: {
+  itemDetails: {
     flex: 1,
+    justifyContent: 'space-between',
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 4,
   },
-  cartItemName: {
+  itemName: {
+    fontSize: 15,
     fontWeight: '600',
     flex: 1,
     marginRight: 8,
+    lineHeight: 20,
   },
-  removeButton: {
-    padding: 2,
-    marginTop: -2,
-  },
-  cartItemRestaurant: {
-    marginBottom: 4,
-  },
-  cartItemDescription: {
-    lineHeight: 14,
+  itemVariant: {
+    fontSize: 12,
+    marginTop: 2,
     marginBottom: 8,
   },
-  priceContainer: {
+  itemFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  cartItemPrice: {
-    fontWeight: 'bold',
+  itemPrice: {
+    fontSize: 15,
+    fontWeight: '700',
   },
-  itemTotal: {
-    fontWeight: 'bold',
-  },
-  quantityContainer: {
+  
+  // Quantity Controls
+  qtyContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    height: 32,
+  },
+  qtyBtn: {
+    width: 32,
+    height: '100%',
     justifyContent: 'center',
-    alignSelf: 'center',
+    alignItems: 'center',
+  },
+  qtyText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginHorizontal: 4,
+    minWidth: 16,
+    textAlign: 'center',
+  },
+
+  // Bill Section
+  billSection: {
+    marginHorizontal: 16,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
     borderWidth: 1,
   },
-  quantityButton: {
-    padding: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-    elevation: 1,
-    alignItems: 'center',
+  billHeader: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 16,
   },
-  quantityButtonDisabled: {
-    // Background handled inline
-  },
-  quantityDisplay: {
-    alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  quantityText: {
-    fontWeight: 'bold',
-  },
-  footer: {
-    borderTopWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 8,
-  },
-  summaryContainer: {
-    // marginBottom handled inline
-  },
-  summaryTitle: {
-    fontWeight: 'bold',
-    marginBottom: 14,
-  },
-  summaryRow: {
+  billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginBottom: 12,
   },
-  summaryLabel: {
-    // Color handled inline
+  billLabel: {
+    fontSize: 14,
   },
-  summaryValue: {
+  billValue: {
+    fontSize: 14,
     fontWeight: '500',
   },
   divider: {
     height: 1,
+    marginVertical: 12,
+    opacity: 0.6,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginTop: 4,
   },
   totalLabel: {
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '700',
   },
   totalValue: {
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '800',
   },
-  checkoutButton: {
+
+  // Footer
+  footer: {
+    padding: 16,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    borderTopWidth: 1,
+    elevation: 8, // subtle elevation for sticky footer
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 4,
   },
-  checkoutContent: {
+  footerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  footerTotalLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  footerTotalValue: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  checkoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
   },
   checkoutText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
-  checkoutTotal: {
-    flexDirection: 'row',
+
+  // Empty State
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 4,
+    paddingHorizontal: 40,
   },
-  checkoutTotalText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  emptyIconBg: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  browseButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+  },
+  browseText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
-
-export default CartScreen;
