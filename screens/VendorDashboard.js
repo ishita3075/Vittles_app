@@ -1,5 +1,4 @@
-// src/screens/VendorDashboard.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,817 +6,731 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
-  Dimensions
+  Dimensions,
+  Platform,
+  UIManager,
+  LayoutAnimation,
+  ActivityIndicator,
+  Animated
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
-import { useAuth } from "../contexts/AuthContext";  // ⭐ VENDOR ID COMES FROM HERE
-import { getOrdersByVendor } from "../api";         // ⭐ CORRECT VENDOR API
+import { useAuth } from "../contexts/AuthContext";
+import { getOrdersByVendor } from "../api";
 
 const { width } = Dimensions.get("window");
+
+// Enable LayoutAnimation
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
+// --- Helper: Stat Pill ---
+const StatPill = ({ label, value, icon, color, colors }) => (
+  <View style={[styles.statPill, { backgroundColor: colors.card, shadowColor: color }]}>
+    <View style={[styles.statIconBox, { backgroundColor: color + '15' }]}>
+      <Ionicons name={icon} size={20} color={color} />
+    </View>
+    <View>
+      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
+    </View>
+  </View>
+);
+
+// --- Helper: Order Card (Kitchen Ticket Style) ---
+const OrderTicket = ({ order, onUpdateStatus, colors }) => {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return '#FF6B00'; // Orange
+      case 'preparing': return '#3B82F6'; // Blue
+      case 'completed': return '#10B981'; // Green
+      default: return colors.textSecondary;
+    }
+  };
+
+  const statusColor = getStatusColor(order.status);
+
+  return (
+    <View style={[styles.ticketCard, { backgroundColor: colors.card }]}>
+      {/* Left Status Bar */}
+      <View style={[styles.ticketStatusBar, { backgroundColor: statusColor }]} />
+      
+      <View style={styles.ticketContent}>
+        {/* Ticket Header */}
+        <View style={styles.ticketHeader}>
+          <View style={styles.ticketIdContainer}>
+            <Text style={styles.ticketLabel}>TICKET</Text>
+            <Text style={[styles.ticketId, { color: colors.text }]}>#{String(order.id).slice(-4)}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor + '15', borderColor: statusColor + '30' }]}>
+            <Text style={[styles.statusText, { color: statusColor }]}>
+              {order.status.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        <View style={[styles.dashedDivider, { borderColor: colors.border }]} />
+
+        {/* Customer Info */}
+        <View style={styles.customerRow}>
+          <View style={styles.customerLeft}>
+            <Text style={[styles.customerName, { color: colors.text }]} numberOfLines={1}>{order.customer}</Text>
+            <View style={styles.addressRow}>
+              <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
+              <Text style={[styles.customerAddr, { color: colors.textSecondary }]} numberOfLines={1}>
+                {order.address}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.timeBox}>
+            <Text style={[styles.timeText, { color: colors.textSecondary }]}>{order.time}</Text>
+          </View>
+        </View>
+
+        {/* Order Items (Kitchen View) */}
+        <View style={[styles.itemsList, { backgroundColor: colors.background }]}>
+          {order.items.map((item, index) => (
+            <View key={index} style={styles.itemRow}>
+              <View style={[styles.bullet, { backgroundColor: statusColor }]} />
+              <Text style={[styles.itemText, { color: colors.text }]}>{item}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Actions */}
+        <View style={styles.actionRow}>
+          <View>
+             <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Total</Text>
+             <Text style={[styles.priceText, { color: colors.text }]}>₹{order.price}</Text>
+          </View>
+          
+          {order.status === 'pending' && (
+            <TouchableOpacity 
+              style={[styles.actionBtn, { backgroundColor: '#FF6B00' }]}
+              onPress={() => onUpdateStatus(order.id, 'preparing')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.actionBtnText}>Start Cooking</Text>
+              <Ionicons name="flame" size={18} color="#FFF" />
+            </TouchableOpacity>
+          )}
+
+          {order.status === 'preparing' && (
+            <TouchableOpacity 
+              style={[styles.actionBtn, { backgroundColor: '#3B82F6' }]}
+              onPress={() => onUpdateStatus(order.id, 'completed')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.actionBtnText}>Mark Ready</Text>
+              <Ionicons name="checkmark-circle" size={18} color="#FFF" />
+            </TouchableOpacity>
+          )}
+
+          {order.status === 'completed' && (
+            <View style={styles.completedBadge}>
+               <Ionicons name="checkmark-done-circle" size={20} color="#10B981" />
+               <Text style={styles.completedText}>Completed</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+};
 
 export default function VendorDashboard() {
   const [isOpen, setIsOpen] = useState(true);
   const [isHalted, setIsHalted] = useState(false);
   const [dailyIncome, setDailyIncome] = useState(0);
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const { user } = useAuth();       // ⭐ USER FROM LOGIN
-  const vendorId = user?.id;        // ⭐ THIS IS YOUR VENDOR ID
-
+  const { user } = useAuth();
+  const vendorId = user?.id;
   const { colors } = useTheme();
 
-  // FETCH ORDERS FOR THIS VENDOR (grouped by customer)
+  const incomeAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     if (vendorId) fetchVendorOrders();
   }, [vendorId]);
 
-  /**
-   * fetchVendorOrders
-   * - fetches orders via getOrdersByVendor(vendorId)
-   * - groups rows by customerId so a single card shows multiple items for same customer
-   * - mapping rules preserved from your earlier formatted object
-   */
+  useEffect(() => {
+    Animated.timing(incomeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true
+    }).start();
+  }, []);
+
   const fetchVendorOrders = async () => {
-    if (!vendorId) {
-      console.log("Vendor ID missing!");
-      return;
-    }
-
+    if (!vendorId) return;
     try {
-      const vendorOrders = await getOrdersByVendor(vendorId); // raw rows from DB
-
-      // vendorOrders expected shape: each row has fields like
-      // { id, vendor_id, customer_id, customer_name, menu_id, menu_name, quantity, total_price, status, order_date }
-      // We'll group by customer_id and create aggregated items list
-
-      const grouped = {}; // key = customerId
-
+      setLoading(true);
+      const vendorOrders = await getOrdersByVendor(vendorId);
+      
+      const grouped = {}; 
       vendorOrders.forEach(row => {
-        const customerId = row.customer_id ?? row.customerId ?? row.customerId;
-        const menuName = row.menu_name ?? row.menuName ?? row.menuName;
-        const menuId = row.menu_id ?? row.menuId ?? row.menuId;
+        const customerId = row.customer_id ?? row.customerId;
+        const menuName = row.menu_name ?? row.menuName;
         const qty = row.quantity ?? row.qty ?? 1;
-        const price = row.total_price ?? row.totalPrice ?? row.price ?? 0;
+        const price = row.total_price ?? row.totalPrice ?? 0;
         const statusRaw = row.status ?? row.order_status ?? "Pending";
-        const orderId = row.id;
-
-        // normalize status to your UI statuses
-        const normalizedStatus =
-          statusRaw === "Pending"
-            ? "pending"
-            : statusRaw === "Delivered" || statusRaw === "Completed" || statusRaw === "completed"
-            ? "completed"
-            : "preparing";
+        
+        const normalizedStatus = statusRaw === "Pending" ? "pending" 
+          : (statusRaw === "Delivered" || statusRaw === "Completed") ? "completed" 
+          : "preparing";
 
         if (!grouped[customerId]) {
           grouped[customerId] = {
-            // We'll take the first order id as card id (or customerId padded)
-            id: orderId || Number(customerId),
+            id: row.id || Number(customerId),
             customerId,
-            customer: row.customer_name ?? row.customerName ?? "Customer",
-            address: row.address ?? row.customer_address ?? "No address provided",
+            customer: row.customer_name ?? row.customerName ?? "Guest",
+            address: row.address ?? "Pickup",
             status: normalizedStatus,
-            prepTime: 10,
-            time: row.order_date ?? row.orderDate ?? "Now",
-            price: 0, // aggregated total for this customer card
-            items: [] // [{ menuId, name, quantity }]
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            price: 0,
+            items: [] 
           };
         }
-
-        // Check if item already exists in this customer's items (same menuId)
-        const existingItemIndex = grouped[customerId].items.findIndex(i => String(i.menuId) === String(menuId) || i.name === menuName);
+        
+        const existingItemIndex = grouped[customerId].items.findIndex(i => i.name === menuName);
         if (existingItemIndex > -1) {
-          // increment quantity
           grouped[customerId].items[existingItemIndex].quantity += Number(qty);
         } else {
-          grouped[customerId].items.push({
-            menuId,
-            name: menuName,
-            quantity: Number(qty)
-          });
+          grouped[customerId].items.push({ name: menuName, quantity: Number(qty) });
         }
-
-        // accumulate price (row.total_price may be for that row; if you store per-item price instead of total, adjust)
-        // If the backend gives total_price per row, we sum them; otherwise we try to compute
         grouped[customerId].price += Number(price) || 0;
-
-        // If any of rows have a more urgent status, we prefer that (pending > preparing > completed)
-        const orderPriority = (s) => (s === "pending" ? 3 : s === "preparing" ? 2 : 1);
-        if (orderPriority(normalizedStatus) > orderPriority(grouped[customerId].status)) {
+        
+        const priority = { "pending": 3, "preparing": 2, "completed": 1 };
+        if (priority[normalizedStatus] > priority[grouped[customerId].status]) {
           grouped[customerId].status = normalizedStatus;
         }
       });
 
-      // Convert grouped object -> array and format for UI (items as strings like "Burger x2")
       const formatted = Object.values(grouped).map(g => ({
-        id: g.id,
-        customerId: g.customerId,
-        customer: g.customer,
-        address: g.address,
-        status: g.status,
-        price: g.price,
-        time: g.time,
-        prepTime: g.prepTime,
-        items: g.items.map(it => `${it.name} x${it.quantity}`)
+        ...g,
+        items: g.items.map(it => `${it.quantity}x ${it.name}`)
       }));
 
+      const income = formatted
+        .filter(o => o.status === 'completed')
+        .reduce((acc, curr) => acc + curr.price, 0);
+      
+      setDailyIncome(income);
       setOrders(formatted);
-
     } catch (e) {
       console.log("Error loading orders:", e);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // STATUSES
-  const pendingOrders = orders.filter(
-    order => order.status === "pending" || order.status === "preparing"
-  );
-  const completedOrders = orders.filter(order => order.status === "completed");
-
-  // SHOP CONTROL
   const toggleShop = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     setIsOpen(!isOpen);
     setIsHalted(false);
   };
 
-  const haltOrders = () => {
-    setIsHalted(!isHalted);
-  };
-
   const updateOrderStatus = (id, newStatus) => {
-    setOrders(prev =>
-      prev.map(order =>
-        order.id === id ? { ...order, status: newStatus } : order
-      )
-    );
-
-    if (newStatus === "completed") {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+    
+    if (newStatus === 'completed') {
       const order = orders.find(o => o.id === id);
-      setDailyIncome(prev => prev + (order?.price || 0));
+      if (order) setDailyIncome(prev => prev + order.price);
     }
   };
 
-  const getStatusColor = status => {
-    switch (status) {
-      case "pending":
-        return "#FF6B35";
-      case "preparing":
-        return "#FF9500";
-      case "completed":
-        return "#34C759";
-      default:
-        return "#8E8E93";
-    }
-  };
-
-  const getStatusText = status => {
-    switch (status) {
-      case "pending":
-        return "NEW ORDER";
-      case "preparing":
-        return "PREPARING";
-      case "completed":
-        return "COMPLETED";
-      default:
-        return status.toUpperCase();
-    }
-  };
-
-  // STAT CARD COMPONENT
-  const StatCard = ({ icon, value, label, color }) => (
-    <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-      <View style={styles.statIconContainer}>
-        <View style={[styles.statIcon, { backgroundColor: color }]}>
-          <Ionicons name={icon} size={20} color="#FFF" />
-        </View>
-      </View>
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-        {label}
-      </Text>
-    </View>
-  );
-
-  // ORDER CARD
-  const OrderCard = ({ order }) => (
-    <View
-      style={[
-        styles.orderCard,
-        {
-          backgroundColor: colors.card,
-          borderLeftColor: colors.primary
-        }
-      ]}
-    >
-      <View style={styles.orderHeader}>
-        <View style={styles.orderInfo}>
-          <View
-            style={[
-              styles.orderBadge,
-              { backgroundColor: colors.background }
-            ]}
-          >
-            <Text
-              style={[
-                styles.orderBadgeText,
-                { color: colors.textSecondary }
-              ]}
-            >
-              ORDER #{String(order.customerId).toString().padStart(3, "0")}
-            </Text>
-          </View>
-          <Text
-            style={[styles.orderTime, { color: colors.textSecondary }]}
-          >
-            {order.time}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: getStatusColor(order.status) }
-          ]}
-        >
-          <Text style={styles.statusBadgeText}>
-            {getStatusText(order.status)}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.customerSection}>
-        <View style={styles.customerInfo}>
-          <Ionicons name="person" size={16} color={colors.textSecondary} />
-          <Text style={[styles.customerName, { color: colors.text }]}>
-            {order.customer}
-          </Text>
-        </View>
-
-        <View style={styles.customerInfo}>
-          <Ionicons name="location" size={16} color={colors.textSecondary} />
-          <Text
-            style={[
-              styles.customerAddress,
-              { color: colors.textSecondary }
-            ]}
-          >
-            {order.address}
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={[
-          styles.itemsSection,
-          { backgroundColor: colors.background }
-        ]}
-      >
-        <Text style={[styles.itemsTitle, { color: colors.text }]}>
-          Order Items:
-        </Text>
-
-        {order.items.map((item, i) => (
-          <Text
-            key={i}
-            style={[styles.itemText, { color: colors.textSecondary }]}
-          >
-            • {item}
-          </Text>
-        ))}
-      </View>
-
-      <View style={styles.orderFooter}>
-        <View style={styles.priceSection}>
-          <Text
-            style={[
-              styles.prepTime,
-              { color: colors.textSecondary }
-            ]}
-          >
-            Prep time: {order.prepTime} mins
-          </Text>
-          <Text
-            style={[styles.orderPrice, { color: colors.primary }]}
-          >
-            ₹{order.price}
-          </Text>
-        </View>
-
-        <View style={styles.actionSection}>
-          {order.status === "pending" && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.startButton]}
-              onPress={() => updateOrderStatus(order.id, "preparing")}
-            >
-              <Ionicons name="restaurant" size={16} color="#FFF" />
-              <Text style={styles.actionButtonText}>Start</Text>
-            </TouchableOpacity>
-          )}
-
-          {order.status === "preparing" && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.completeButton]}
-              onPress={() => updateOrderStatus(order.id, "completed")}
-            >
-              <Ionicons name="checkmark-circle" size={16} color="#FFF" />
-              <Text style={styles.actionButtonText}>Done</Text>
-            </TouchableOpacity>
-          )}
-
-          {order.status === "completed" && (
-            <View
-              style={[
-                styles.completedStatus,
-                { backgroundColor: colors.card }
-              ]}
-            >
-              <Ionicons
-                name="checkmark-done"
-                size={20}
-                color="#34C759"
-              />
-              <Text style={[styles.completedText, { color: "#34C759" }]}>
-                Completed
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-    </View>
-  );
+  const activeOrders = orders.filter(o => o.status !== 'completed');
+  const completedOrders = orders.filter(o => o.status === 'completed');
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
-
-      <LinearGradient
-        colors={["#8B3358", "#670D2F", "#3A081C"]}
-        start={{ x: 0, y: 1 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
-      >
-        <View style={styles.headerMain}>
-          <View>
-            <Text style={styles.headerTitle}>Dashboard</Text>
-            <Text style={styles.headerSubtitle}>
-              Manage your restaurant operations
-            </Text>
+      
+      {/* 1. Header */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={["#8B3358", "#591A32"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerLabel}>TODAY'S REVENUE</Text>
+              <Animated.Text style={[styles.headerValue, { opacity: incomeAnim }]}>
+                ₹{dailyIncome.toLocaleString()}
+              </Animated.Text>
+            </View>
+            <View style={[styles.statusPill, { backgroundColor: isOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)' }]}>
+              <View style={[styles.statusDot, { backgroundColor: isOpen ? '#10B981' : '#EF4444' }]} />
+              <Text style={styles.statusPillText}>{isOpen ? 'ONLINE' : 'OFFLINE'}</Text>
+            </View>
           </View>
+        </LinearGradient>
+      </View>
 
-          <View style={styles.headerStats}>
-            <Text style={styles.incomeText}>₹{dailyIncome}</Text>
-            <Text style={styles.incomeLabel}>Today's Revenue</Text>
-          </View>
-        </View>
-      </LinearGradient>
-
-      <ScrollView
-        style={styles.content}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
       >
-        {/* SHOP CONTROL */}
+        {/* 2. Control Center */}
         <View style={[styles.controlCard, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Shop Control
-          </Text>
-
-          <View style={styles.controlButtons}>
-            <TouchableOpacity
-              style={[
-                styles.controlButton,
-                { backgroundColor: isOpen ? colors.error : "#34C759" }
-              ]}
-              onPress={toggleShop}
-            >
-              <Ionicons
-                name={isOpen ? "pause" : "play"}
-                size={24}
-                color="#FFF"
-              />
-              <Text style={styles.controlButtonText}>
-                {isOpen ? "Close Shop" : "Open Shop"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.controlButton,
-                {
-                  backgroundColor: isHalted ? "#34C759" : "#FF9500",
-                  opacity: isOpen ? 1 : 0.5
-                }
-              ]}
-              onPress={haltOrders}
-              disabled={!isOpen}
-            >
-              <Ionicons
-                name={isHalted ? "play" : "pause"}
-                size={24}
-                color="#FFF"
-              />
-              <Text style={styles.controlButtonText}>
-                {isHalted ? "Resume Orders" : "Pause Orders"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.statusDisplay}>
-            <View
-              style={[
-                styles.statusIndicator,
-                { backgroundColor: colors.background }
-              ]}
-            >
-              <View
-                style={[
-                  styles.statusDot,
-                  { backgroundColor: isOpen ? "#34C759" : colors.error }
-                ]}
-              />
-              <Text style={[styles.statusText, { color: colors.text }]}>
-                Shop is currently{" "}
-                <Text style={{ fontWeight: "800" }}>
-                  {isOpen ? "OPEN" : "CLOSED"}
-                </Text>
+          <View style={styles.controlRow}>
+            <View>
+              <Text style={[styles.controlTitle, { color: colors.text }]}>Accepting Orders</Text>
+              <Text style={[styles.controlSub, { color: colors.textSecondary }]}>
+                {isOpen ? "Your store is visible to customers" : "Store is currently hidden"}
               </Text>
             </View>
-
-            {isHalted && (
-              <View style={styles.pauseIndicator}>
-                <Ionicons
-                  name="alert-circle"
-                  size={16}
-                  color="#FF9500"
-                />
-                <Text
-                  style={[styles.pauseText, { color: "#FF9500" }]}
-                >
-                  New orders are paused
-                </Text>
+            <TouchableOpacity onPress={toggleShop} activeOpacity={0.8}>
+              <View style={[styles.switchTrack, { backgroundColor: isOpen ? '#10B981' : '#E5E7EB' }]}>
+                <View style={[styles.switchThumb, { transform: [{ translateX: isOpen ? 24 : 2 }] }]} />
               </View>
-            )}
-          </View>
-        </View>
-
-        {/* STATS */}
-        <View style={styles.statsSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Today's Overview
-          </Text>
-
-          <View style={styles.statsContainer}>
-            <StatCard
-              icon="time"
-              value={pendingOrders.length}
-              label="Active Orders"
-              color="#FF6B35"
-            />
-            <StatCard
-              icon="checkmark-done"
-              value={completedOrders.length}
-              label="Completed"
-              color="#34C759"
-            />
-            <StatCard
-              icon="cash"
-              value={orders.length}
-              label="Total Orders"
-              color="#007AFF"
-            />
-          </View>
-        </View>
-
-        {/* ORDERS LIST */}
-        <View style={styles.ordersSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Active Orders
-            </Text>
-
-            <View
-              style={[
-                styles.ordersCounter,
-                { backgroundColor: colors.primary }
-              ]}
-            >
-              <Text style={styles.ordersCounterText}>
-                {pendingOrders.length}
-              </Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
-          {/* CONDITIONAL RENDERING */}
-          {!isOpen ? (
-            <View
-              style={[styles.emptyState, { backgroundColor: colors.card }]}
-            >
-              <Ionicons
-                name="storefront"
-                size={64}
-                color={colors.textSecondary}
-              />
-              <Text
-                style={[styles.emptyStateTitle, { color: colors.text }]}
-              >
-                Shop is Closed
-              </Text>
-            </View>
-          ) : isHalted ? (
-            <View
-              style={[styles.emptyState, { backgroundColor: colors.card }]}
-            >
-              <Ionicons
-                name="pause-circle"
-                size={64}
-                color="#FF9500"
-              />
-              <Text
-                style={[styles.emptyStateTitle, { color: colors.text }]}
-              >
-                Orders Paused
-              </Text>
-            </View>
-          ) : pendingOrders.length === 0 ? (
-            <View
-              style={[styles.emptyState, { backgroundColor: colors.card }]}
-            >
-              <Ionicons
-                name="restaurant"
-                size={64}
-                color="#34C759"
-              />
-              <Text
-                style={[styles.emptyStateTitle, { color: colors.text }]}
-              >
-                No Active Orders
-              </Text>
-            </View>
-          ) : (
-            pendingOrders.map(order => (
-              <OrderCard key={order.id} order={order} />
-            ))
+          {isOpen && (
+            <>
+              <View style={[styles.controlDivider, { backgroundColor: colors.border }]} />
+              <View style={styles.controlRow}>
+                <View>
+                  <Text style={[styles.controlTitle, { color: colors.text }]}>Pause Mode</Text>
+                  <Text style={[styles.controlSub, { color: colors.textSecondary }]}>Temporarily stop new orders</Text>
+                </View>
+                <TouchableOpacity onPress={() => setIsHalted(!isHalted)} activeOpacity={0.8}>
+                  <View style={[styles.switchTrack, { backgroundColor: isHalted ? '#F59E0B' : '#E5E7EB' }]}>
+                    <View style={[styles.switchThumb, { transform: [{ translateX: isHalted ? 24 : 2 }] }]} />
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </>
           )}
         </View>
 
-        {/* REVENUE SUMMARY */}
-        <View
-          style={[styles.revenueCard, { backgroundColor: colors.card }]}
-        >
-          <View style={styles.revenueHeader}>
-            <Ionicons
-              name="trending-up"
-              size={24}
-              color="#34C759"
+        {/* 3. Stats */}
+        <View style={styles.statsGrid}>
+          <StatPill 
+            label="Pending" 
+            value={activeOrders.filter(o => o.status === 'pending').length} 
+            icon="notifications" 
+            color="#FF6B00" 
+            colors={colors} 
+          />
+          <StatPill 
+            label="Preparing" 
+            value={activeOrders.filter(o => o.status === 'preparing').length} 
+            icon="restaurant" 
+            color="#3B82F6" 
+            colors={colors} 
+          />
+          <StatPill 
+            label="Completed" 
+            value={completedOrders.length} 
+            icon="checkmark-circle" 
+            color="#10B981" 
+            colors={colors} 
+          />
+        </View>
+
+        {/* 4. Orders */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Live Orders</Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{activeOrders.length}</Text>
+          </View>
+        </View>
+
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+        ) : activeOrders.length > 0 ? (
+          activeOrders.map(order => (
+            <OrderTicket 
+              key={order.id} 
+              order={order} 
+              onUpdateStatus={updateOrderStatus} 
+              colors={colors} 
             />
-            <Text
-              style={[styles.revenueTitle, { color: colors.text }]}
-            >
-              Revenue Summary
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={[styles.emptyIconBg, { backgroundColor: colors.border + '40' }]}>
+              <MaterialCommunityIcons name="store-off" size={32} color={colors.textSecondary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Active Orders</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              {isOpen ? "Waiting for new orders to arrive..." : "Open your shop to start selling."}
             </Text>
           </View>
+        )}
 
-          <Text style={styles.revenueAmount}>₹{dailyIncome}</Text>
-
-          <Text
-            style={[
-              styles.revenueSubtitle,
-              { color: colors.textSecondary }
-            ]}
-          >
-            Total earnings from {completedOrders.length} completed orders
-          </Text>
-        </View>
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
 }
 
-// ALL THE STYLES (same as before)
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8
+  
+  // Header
+  headerContainer: {
+    height: 150, // Increased height to fix overlap
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
+    elevation: 4,
+    zIndex: 10,
   },
-  headerMain: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#FFF"
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-    color: "rgba(255,255,255,0.9)"
-  },
-  headerStats: {
-    alignItems: "flex-end"
-  },
-  incomeText: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFF"
-  },
-  incomeLabel: {
-    fontSize: 12,
-    marginTop: 2,
-    color: "rgba(255,255,255,0.9)"
-  },
-
-  content: { flex: 1 },
-  scrollContent: { padding: 16 },
-
-  controlCard: {
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 16,
-    elevation: 3
-  },
-  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 16 },
-  controlButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16
-  },
-  controlButton: {
+  headerGradient: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8
+    paddingTop: Platform.OS === 'android' ? 50 : 60,
+    paddingHorizontal: 24,
   },
-  controlButtonText: { color: "#FFF", fontSize: 14, fontWeight: "600" },
-
-  statusDisplay: { alignItems: "center", gap: 8 },
-  statusIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLabel: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  headerValue: {
+    color: '#FFF',
+    fontSize: 40,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
-  statusText: { fontSize: 14, fontWeight: "600" },
-
-  statsSection: { marginBottom: 16 },
-  statsContainer: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
-
-  statCard: {
-    padding: 16,
-    borderRadius: 12,
-    flex: 1,
-    alignItems: "center",
-    elevation: 1
+  statusPillText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
-  statIconContainer: { marginBottom: 8 },
-  statIcon: {
-    width: 40,
-    height: 40,
+
+  // Scroll
+  scrollContent: {
+    paddingHorizontal: 20,
+    marginTop: -50, // Pull up
+    paddingBottom: 20,
+  },
+
+  // Control Card
+  controlCard: {
+    marginTop:60,
     borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center"
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    marginBottom: 24,
   },
-  statValue: { fontSize: 20, fontWeight: "800", marginBottom: 4 },
-  statLabel: { fontSize: 12, fontWeight: "600", textAlign: "center" },
+  controlRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  controlTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  controlSub: {
+    fontSize: 13,
+  },
+  switchTrack: {
+    width: 52,
+    height: 30,
+    borderRadius: 15,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  switchThumb: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFF',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  controlDivider: {
+    height: 1,
+    marginVertical: 16,
+    opacity: 0.5,
+  },
 
-  ordersSection: { marginBottom: 16 },
+  // Stats Grid
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 32,
+    gap: 12,
+  },
+  statPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  statIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  // Section Header
   sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
   },
-  ordersCounter: {
-    width: 24,
-    height: 24,
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  countBadge: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center"
   },
-  ordersCounterText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
+  countText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
 
-  orderCard: {
-    padding: 16,
+  // Order Ticket
+  ticketCard: {
+    flexDirection: 'row',
     borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  ticketStatusBar: {
+    width: 6,
+    height: '100%',
+  },
+  ticketContent: {
+    flex: 1,
+    padding: 16,
+  },
+  ticketHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
-    elevation: 3,
-    borderLeftWidth: 4
   },
-  orderHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12
+  ticketIdContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
   },
-  orderInfo: { flex: 1 },
-  orderBadge: {
+  ticketLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    letterSpacing: 1,
+  },
+  ticketId: {
+    fontSize: 18,
+    fontWeight: '800',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', // Ticket font
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  dashedDivider: {
+    height: 1,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#E5E7EB', // Ensure this overrides if needed
+    marginBottom: 16,
+    opacity: 0.5,
+  },
+  customerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  customerLeft: {
+    flex: 1,
+    marginRight: 16,
+  },
+  customerName: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  customerAddr: {
+    fontSize: 13,
+  },
+  timeBox: {
+    backgroundColor: '#F3F4F6',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    alignSelf: "flex-start",
-    marginBottom: 4
   },
-  orderBadgeText: {
+  timeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  itemsList: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  bullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 10,
+  },
+  itemText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceLabel: {
     fontSize: 10,
-    fontWeight: "700"
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
-  orderTime: { fontSize: 12, fontWeight: "600" },
-
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6
+  priceText: {
+    fontSize: 18,
+    fontWeight: '800',
   },
-  statusBadgeText: { fontSize: 10, fontWeight: "800", color: "#FFF" },
-
-  customerSection: { marginBottom: 12, gap: 6 },
-  customerInfo: { flexDirection: "row", alignItems: "center", gap: 6 },
-  customerName: { fontSize: 14, fontWeight: "600" },
-  customerAddress: { fontSize: 12 },
-
-  itemsSection: { marginBottom: 12, padding: 12, borderRadius: 8 },
-  itemsTitle: { fontSize: 12, fontWeight: "700", marginBottom: 6 },
-  itemText: { fontSize: 12, marginBottom: 2 },
-
-  orderFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end"
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  priceSection: { flex: 1 },
-  prepTime: { fontSize: 11, marginBottom: 4 },
-  orderPrice: { fontSize: 18, fontWeight: "800" },
-
-  actionSection: { alignItems: "flex-end" },
-  actionRow: { flexDirection: "row", gap: 8 },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
+  actionBtnText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
     paddingHorizontal: 12,
-    borderRadius: 8,
-    gap: 4
+    paddingVertical: 8,
+    borderRadius: 10,
   },
-  startButton: { backgroundColor: "#FF9500" },
-  completeButton: { backgroundColor: "#34C759" },
-  actionButtonText: { color: "#FFF", fontSize: 12, fontWeight: "600" },
-
-  completedStatus: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-    borderRadius: 8,
-    gap: 4
+  completedText: {
+    color: '#10B981',
+    fontWeight: '700',
+    fontSize: 13,
   },
-  completedText: { fontSize: 12, fontWeight: "600" },
 
+  // Empty State
   emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 40,
+    gap: 16,
     padding: 40,
-    borderRadius: 16,
-    alignItems: "center",
-    elevation: 2
   },
-  emptyStateTitle: { fontSize: 18, fontWeight: "700", marginTop: 16 },
-
-  revenueCard: {
-    padding: 20,
-    borderRadius: 16,
-    elevation: 3
+  emptyIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  revenueHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
   },
-  revenueTitle: { fontSize: 16, fontWeight: "700" },
-  revenueAmount: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#34C759",
-    marginBottom: 4
+  emptyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
-  revenueSubtitle: { fontSize: 14 }
 });

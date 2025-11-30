@@ -282,21 +282,7 @@ export default function OrderHistoryScreen({ navigation }) {
            </View>
 
            {/* 4. Filter Chips */}
-           <ScrollView 
-             horizontal 
-             showsHorizontalScrollIndicator={false} 
-             contentContainerStyle={styles.filterContainer}
-           >
-             {['All', 'Delivered', 'Processing', 'Cancelled'].map(filter => (
-               <FilterChip 
-                 key={filter} 
-                 label={filter} 
-                 active={activeFilter === filter} 
-                 onPress={() => setActiveFilter(filter)} 
-                 colors={colors}
-               />
-             ))}
-           </ScrollView>
+           
 
            {/* 5. Order List or Skeleton */}
            <View style={styles.listContainer}>

@@ -226,9 +226,9 @@ export default function ProfileScreen({ navigation }) {
                       {user?.name ? user.name.charAt(0).toUpperCase() : "G"}
                    </Text>
                 </LinearGradient>
-                <TouchableOpacity style={styles.editIconBadge}>
+                {/* <TouchableOpacity style={styles.editIconBadge}>
                    <Ionicons name="camera" size={12} color="#FFF" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
              </View>
              
              <View style={styles.profileInfo}>
@@ -245,10 +245,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
 
           {/* Stats Dashboard */}
-          <View style={[styles.statsRow, { borderTopColor: colors.border + '40' }]}>
-             <StatItem label="Orders" value="12" icon="bag-handle" color="#8B3358" delay={500} />
-             <StatItem label="Pending" value="0" icon="time" color="#F59E0B" delay={600} />
-          </View>
+        
         </Animated.View>
 
         {/* 3. Menu Sections */}

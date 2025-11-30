@@ -102,11 +102,6 @@ export default function PrivacyPolicyScreen() {
       content: "You have the right to:\n• Access your personal data\n• Request deletion of your account\n• Opt-out of marketing communications\nContact support to exercise these rights.",
       icon: "person-outline"
     },
-    {
-      title: "6. Cookies & Tracking",
-      content: "We use cookies to analyze usage patterns and improve user experience. You can control cookie preferences through your device settings.",
-      icon: "finger-print-outline"
-    },
   ];
 
   return (
@@ -146,7 +141,7 @@ export default function PrivacyPolicyScreen() {
             </Text>
             <View style={styles.updateBadge}>
               <Ionicons name="time-outline" size={12} color="#FFF" />
-              <Text style={styles.updateText}>Updated: Oct 2023</Text>
+              <Text style={styles.updateText}>Updated: Nov 2025</Text>
             </View>
           </View>
 

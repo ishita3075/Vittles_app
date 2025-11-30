@@ -243,19 +243,14 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.sectionHeader}>
             <View>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {searchQuery ? 'Search Results' : 'All Restaurants'}
+                {searchQuery ? 'Search Results' : 'All Cullinary'}
               </Text>
               <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
                 {loading ? 'Finding best spots...' : `${filteredRestaurants.length} places near you`}
               </Text>
             </View>
             
-            {!loading && (
-              <View style={styles.sortButton}>
-                <Ionicons name="filter" size={16} color={colors.primary} />
-                <Text style={[styles.sortText, { color: colors.primary }]}>Sort</Text>
-              </View>
-            )}
+           
           </View>
 
           {loading ? (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,37 +10,120 @@ import {
   Keyboard,
   ScrollView,
   StatusBar,
-  ActivityIndicator
+  ActivityIndicator,
+  Animated,
+  LayoutAnimation,
+  Platform,
+  UIManager
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { getVendorMenu, addMenuItem, updateMenuItemAvailability, deleteMenuItem } from "../api";
 
-export default function VendorMenu() {
-  const [menu, setMenu] = useState([
-    { id: "1", name: "Classic Burger", price: "150", available: true, category: "Burgers", description: "Juicy beef patty with fresh veggies" },
-    { id: "2", name: "Margherita Pizza", price: "300", available: true, category: "Pizzas", description: "Fresh tomato and mozzarella" },
-    { id: "3", name: "French Fries", price: "99", available: true, category: "Sides", description: "Crispy golden fries" },
-    { id: "4", name: "Chocolate Shake", price: "180", available: false, category: "Beverages", description: "Rich chocolate milkshake" },
-  ]);
+// Enable LayoutAnimation
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
 
+// --- Helper: Inventory Stat Pill ---
+const InventoryStat = ({ label, value, icon, color, colors }) => (
+  <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+    <View style={[styles.statIcon, { backgroundColor: color + '15' }]}>
+      <Ionicons name={icon} size={18} color={color} />
+    </View>
+    <View>
+      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
+    </View>
+  </View>
+);
+
+// --- Helper: Menu Item Card ---
+const MenuItemCard = ({ item, colors, onToggle, onDelete }) => {
+  return (
+    <View style={[
+      styles.menuCard, 
+      { 
+        backgroundColor: colors.card,
+        borderLeftColor: item.available ? '#10B981' : '#EF4444' 
+      }
+    ]}>
+      <View style={styles.cardContent}>
+        <View style={styles.cardHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{item.name}</Text>
+            <View style={styles.categoryPill}>
+              <Text style={styles.categoryText}>{item.category}</Text>
+            </View>
+          </View>
+          <Text style={[styles.cardPrice, { color: colors.primary }]}>₹{item.price}</Text>
+        </View>
+        
+        <Text style={[styles.cardDesc, { color: colors.textSecondary }]} numberOfLines={2}>
+          {item.description}
+        </Text>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <View style={styles.cardFooter}>
+          <View style={styles.statusContainer}>
+            <View style={[styles.statusDot, { backgroundColor: item.available ? '#10B981' : '#EF4444' }]} />
+            <Text style={[styles.statusText, { color: item.available ? '#10B981' : '#EF4444' }]}>
+              {item.available ? 'In Stock' : 'Unavailable'}
+            </Text>
+          </View>
+
+          <View style={styles.actions}>
+            <TouchableOpacity 
+              style={[styles.iconButton, { backgroundColor: colors.background }]}
+              onPress={() => onToggle(item.id)}
+            >
+              <Ionicons 
+                name={item.available ? "eye-off-outline" : "eye-outline"} 
+                size={20} 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.iconButton, { backgroundColor: '#FEF2F2' }]}
+              onPress={() => onDelete(item.id)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+export default function VendorMenu() {
+  const [menu, setMenu] = useState([]);
   const [newItem, setNewItem] = useState({ name: "", price: "", category: "", description: "" });
   const [activeCategory, setActiveCategory] = useState("All");
-  const [categories, setCategories] = useState(["All", "Burgers", "Pizzas", "Sides", "Beverages", "Desserts"]);
+  const [categories, setCategories] = useState(["All"]);
   const { colors } = useTheme();
-
-  // ADDED: API integration
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(false); // Collapsible form
   const vendorId = user?.id;
 
-  // ADDED: Fetch menu from API
+  // Animation
+  const formAnim = useRef(new Animated.Value(0)).current;
+
+  const toggleForm = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsFormVisible(!isFormVisible);
+  };
+
+  // --- Fetch Menu ---
   useEffect(() => {
-    if (vendorId) {
-      fetchMenuFromAPI();
-    }
+    if (vendorId) fetchMenuFromAPI();
   }, [vendorId]);
 
   const fetchMenuFromAPI = async () => {
@@ -52,7 +135,7 @@ export default function VendorMenu() {
           id: item.id?.toString() || item._id?.toString() || Math.random().toString(),
           name: item.itemName || item.name || "Unnamed Item",
           price: item.price?.toString() || "0",
-          available: item.available === 1 || item.available === true, // Handle bit(1) from database
+          available: item.available === 1 || item.available === true,
           category: item.category || "Uncategorized",
           description: item.description || "No description available"
         }));
@@ -61,7 +144,6 @@ export default function VendorMenu() {
       }
     } catch (error) {
       console.error('Error fetching menu:', error);
-      // Keep default menu items if API fails
     } finally {
       setIsLoading(false);
     }
@@ -72,794 +154,506 @@ export default function VendorMenu() {
     setCategories(uniqueCategories);
   };
 
-  // UPDATED: addItem with API integration
+  // --- Actions ---
   const addItem = async () => {
     if (!newItem.name.trim() || !newItem.price.trim()) {
-      Alert.alert("Missing Information", "Please fill in all required fields");
+      Alert.alert("Missing Info", "Please enter item name and price");
       return;
     }
 
-    if (isNaN(newItem.price) || parseFloat(newItem.price) <= 0) {
-      Alert.alert("Invalid Price", "Please enter a valid price");
-      return;
+    const itemCategory = newItem.category.trim() || "General";
+    setIsAdding(true);
+
+    try {
+      // Optimistic Update
+      const newLocalItem = {
+        id: Date.now().toString(),
+        name: newItem.name.trim(),
+        price: newItem.price,
+        category: itemCategory,
+        description: newItem.description.trim() || "No description",
+        available: true
+      };
+
+      // If using real API, uncomment this:
+      // const response = await addMenuItem(vendorId, { ...newLocalItem, price: parseFloat(newLocalItem.price) });
+      // newLocalItem.id = response.id || newLocalItem.id;
+
+      setMenu(prev => [...prev, newLocalItem]);
+      if (!categories.includes(itemCategory)) setCategories(prev => [...prev, itemCategory]);
+      
+      setNewItem({ name: "", price: "", category: "", description: "" });
+      setIsFormVisible(false); // Close form on success
+      Alert.alert("Success", "Item added to menu");
+      
+    } catch (error) {
+      Alert.alert("Error", "Could not add item");
+    } finally {
+      setIsAdding(false);
     }
-
-    const itemCategory = newItem.category.trim() || "Uncategorized";
-
-    if (itemCategory !== "Uncategorized" && !categories.includes(itemCategory)) {
-      setCategories(prevCategories => [...prevCategories, itemCategory]);
-    }
-
-    // ADDED: API integration
-    if (vendorId) {
-      try {
-        setIsAdding(true);
-        const menuItemData = {
-          name: newItem.name.trim(),
-          price: parseFloat(newItem.price),
-          category: itemCategory,
-          description: newItem.description.trim() || "No description available",
-          available: true
-        };
-
-        const response = await addMenuItem(vendorId, menuItemData);
-
-        const newMenuItem = {
-          id: response.id?.toString() || response.insertId?.toString() || Date.now().toString(),
-          name: newItem.name.trim(),
-          price: newItem.price,
-          category: itemCategory,
-          description: newItem.description.trim() || "No description available",
-          available: true
-        };
-
-        setMenu([
-          ...menu,
-          newMenuItem,
-        ]);
-
-        Alert.alert("Success", "Menu item added successfully!");
-      } catch (error) {
-        console.error('Error adding menu item:', error);
-        Alert.alert("Error", "Failed to add menu item to server");
-        const fallbackItem = {
-          id: Date.now().toString(),
-          name: newItem.name.trim(),
-          price: newItem.price,
-          category: itemCategory,
-          description: newItem.description.trim() || "No description available",
-          available: true
-        };
-        setMenu([...menu, fallbackItem]);
-      } finally {
-        setIsAdding(false);
-      }
-    } else {
-      setMenu([
-        ...menu,
-        {
-          id: Date.now().toString(),
-          name: newItem.name.trim(),
-          price: newItem.price,
-          category: itemCategory,
-          description: newItem.description.trim() || "No description available",
-          available: true
-        },
-      ]);
-    }
-
-    setNewItem({ name: "", price: "", category: "", description: "" });
-    Keyboard.dismiss();
   };
 
-  // UPDATED: toggleAvailability with proper database sync
   const toggleAvailability = async (id) => {
-    const item = menu.find(item => item.id === id);
+    const item = menu.find(i => i.id === id);
     if (!item) return;
 
-    const newAvailability = !item.available;
+    // Optimistic update
+    const newStatus = !item.available;
+    setMenu(menu.map(i => i.id === id ? { ...i, available: newStatus } : i));
 
-    // ADDED: API integration with database sync
-    if (vendorId) {
-      try {
-        await updateMenuItemAvailability(vendorId, id, newAvailability);
-
-        // Update local state only after successful API call
-        setMenu(
-          menu.map((item) =>
-            item.id === id ? { ...item, available: newAvailability } : item
-          )
-        );
-      } catch (error) {
-        console.error('Error updating availability:', error);
-        Alert.alert("Error", "Failed to update availability on server");
-      }
-    } else {
-      // Fallback to local state only
-      setMenu(
-        menu.map((item) =>
-          item.id === id ? { ...item, available: newAvailability } : item
-        )
-      );
+    try {
+      await updateMenuItemAvailability(vendorId, id, newStatus);
+    } catch (error) {
+      // Revert on error
+      setMenu(menu.map(i => i.id === id ? { ...i, available: !newStatus } : i));
+      Alert.alert("Error", "Failed to update status");
     }
   };
 
-  // UPDATED: deleteItem with API integration
   const deleteItem = (id) => {
-    const itemToDelete = menu.find(item => item.id === id);
-
     Alert.alert(
-      "Delete Menu Item",
-      `Are you sure you want to delete "${itemToDelete?.name}"? This action cannot be undone.`,
+      "Delete Item",
+      "Permanently remove this item?",
       [
-        { text: "Keep Item", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            // ADDED: API integration
-            if (vendorId) {
-              try {
-                await deleteMenuItem(vendorId, id);
-              } catch (error) {
-                console.error('Error deleting menu item:', error);
-                Alert.alert("Error", "Failed to delete menu item from server");
-              }
+            setMenu(prev => prev.filter(i => i.id !== id));
+            try {
+              await deleteMenuItem(vendorId, id);
+            } catch (error) {
+              console.error("Delete failed", error);
             }
-
-            setMenu(menu.filter((item) => item.id !== id));
-            setTimeout(() => updateCategories(), 100);
           }
-        },
+        }
       ]
     );
   };
 
-  // Update categories based on current menu items
-  const updateCategories = () => {
-    const menuCategories = ["All", ...new Set(menu.map(item => item.category).filter(Boolean))];
-    setCategories(menuCategories);
-  };
-
-  const filteredMenu = activeCategory === "All"
-    ? menu
+  const filteredMenu = activeCategory === "All" 
+    ? menu 
     : menu.filter(item => item.category === activeCategory);
-
-  const getCategoryStats = () => {
-    const stats = {};
-    menu.forEach(item => {
-      stats[item.category] = (stats[item.category] || 0) + 1;
-    });
-    return stats;
-  };
-
-  const categoryStats = getCategoryStats();
-
-  // ADDED: Loading state
-  if (isLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 10 }]}>Loading menu...</Text>
-      </View>
-    );
-  }
-
-  const renderMenuItem = ({ item }) => (
-    <View style={[styles.menuCard, {
-      backgroundColor: colors.card,
-      borderLeftColor: colors.primary
-    }]}>
-      <View style={styles.itemHeader}>
-        <View style={styles.itemMainInfo}>
-          <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-          <View style={[styles.categoryBadge, { backgroundColor: colors.background }]}>
-            <Text style={[styles.itemCategory, { color: colors.textSecondary }]}>{item.category}</Text>
-          </View>
-        </View>
-        <View style={[styles.priceContainer, {
-          backgroundColor: colors.isDark ? 'rgba(220, 38, 38, 0.2)' : '#fef2f2'
-        }]}>
-          <Text style={[styles.itemPrice, { color: colors.primary }]}>₹{item.price}</Text>
-        </View>
-      </View>
-
-      <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>{item.description}</Text>
-
-      <View style={styles.itemFooter}>
-        <View style={styles.statusContainer}>
-          <View style={[
-            styles.statusIndicator,
-            item.available ? styles.availableIndicator : styles.unavailableIndicator,
-            { backgroundColor: item.available ? '#16a34a' : colors.error }
-          ]} />
-          <Text style={[
-            styles.statusText,
-            { color: item.available ? '#16a34a' : colors.error }
-          ]}>
-            {item.available ? "Available" : "Out of Stock"}
-          </Text>
-        </View>
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[
-              styles.actionBtn,
-              item.available ? styles.makeUnavailableBtn : styles.makeAvailableBtn,
-              {
-                backgroundColor: item.available
-                  ? (colors.isDark ? 'rgba(220, 38, 38, 0.2)' : '#fef2f2')
-                  : (colors.isDark ? 'rgba(22, 163, 74, 0.2)' : '#f0fdf4'),
-                borderColor: item.available ? colors.error : '#16a34a'
-              }
-            ]}
-            onPress={() => toggleAvailability(item.id)}
-          >
-            <Text style={[
-              styles.actionBtnText,
-              { color: item.available ? colors.error : '#16a34a' }
-            ]}>
-              {item.available ? "Mark Unavailable" : "Mark Available"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.deleteActionBtn, {
-              backgroundColor: colors.isDark ? 'rgba(220, 38, 38, 0.2)' : '#fef2f2',
-              borderColor: colors.error
-            }]}
-            onPress={() => deleteItem(item.id)}
-          >
-            <Text style={[styles.deleteActionText, { color: colors.error }]}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#8B3358"
-      />
+      <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
 
-      {/* Header with LinearGradient */}
-      <LinearGradient
-        colors={["#8B3358", "#670D2F", "#3A081C"]}
-        start={{ x: 0, y: 1 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
-      >
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>🍔 Menu Management</Text>
-          <Text style={styles.subtitle}>
-            Manage your restaurant menu items
-          </Text>
-        </View>
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{menu.length}</Text>
-            <Text style={styles.statLabel}>
-              Total Items
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{menu.filter(item => item.available).length}</Text>
-            <Text style={styles.statLabel}>
-              Available
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{categories.length - 1}</Text>
-            <Text style={styles.statLabel}>
-              Categories
-            </Text>
-          </View>
-        </View>
-      </LinearGradient>
-
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Add New Item Section */}
-        <View style={styles.addItemSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Add New Menu Item</Text>
-          <View style={[styles.formCard, { backgroundColor: colors.card }]}>
-            <View style={styles.formRow}>
-              <TextInput
-                placeholder="Item Name *"
-                placeholderTextColor={colors.textSecondary}
-                value={newItem.name}
-                onChangeText={(text) => setNewItem({ ...newItem, name: text })}
-                style={[styles.formInput, {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  color: colors.text
-                }]}
-              />
-              <TextInput
-                placeholder="Price (₹) *"
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="numeric"
-                value={newItem.price}
-                onChangeText={(text) => setNewItem({ ...newItem, price: text })}
-                style={[styles.formInput, {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  color: colors.text
-                }]}
-              />
+      {/* 1. Header */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={["#8B3358", "#591A32"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerTitle}>Menu Manager</Text>
+              <Text style={styles.headerSubtitle}>Manage your catalog</Text>
             </View>
-
-            <View style={styles.categoryInputContainer}>
-              <TextInput
-                placeholder="Category (type to create new)"
-                placeholderTextColor={colors.textSecondary}
-                value={newItem.category}
-                onChangeText={(text) => setNewItem({ ...newItem, category: text })}
-                style={[styles.fullWidthInput, {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  color: colors.text
-                }]}
-              />
-              {newItem.category.trim() && !categories.includes(newItem.category.trim()) && (
-                <Text style={[styles.newCategoryHint, { color: colors.primary }]}>
-                  ↗ New category will be created
-                </Text>
-              )}
-            </View>
-
-            <TextInput
-              placeholder="Description"
-              placeholderTextColor={colors.textSecondary}
-              value={newItem.description}
-              onChangeText={(text) => setNewItem({ ...newItem, description: text })}
-              style={[styles.descriptionInput, {
-                backgroundColor: colors.background,
-                borderColor: colors.border,
-                color: colors.text
-              }]}
-              multiline
-              numberOfLines={2}
-            />
-
-            <TouchableOpacity
-              style={[
-                styles.addButton,
-                { backgroundColor: colors.primary },
-                (!newItem.name.trim() || !newItem.price.trim() || isAdding) && styles.addButtonDisabled
-              ]}
-              onPress={addItem}
-              disabled={!newItem.name.trim() || !newItem.price.trim() || isAdding}
+            <TouchableOpacity 
+              style={styles.addButtonHeader} 
+              onPress={toggleForm}
+              activeOpacity={0.8}
             >
-              {isAdding ? (
-                <ActivityIndicator color="#ffffff" size="small" />
-              ) : (
-                <Text style={styles.addButtonText}>
-                  {newItem.category.trim() && !categories.includes(newItem.category.trim())
-                    ? "+ Add Item & Create Category"
-                    : "+ Add to Menu"
-                  }
-                </Text>
-              )}
+              <Ionicons name={isFormVisible ? "close" : "add"} size={24} color="#8B3358" />
             </TouchableOpacity>
           </View>
+        </LinearGradient>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* 2. Quick Stats */}
+        <View style={styles.statsRow}>
+          <InventoryStat 
+            label="Total Items" 
+            value={menu.length} 
+            icon="restaurant" 
+            color="#3B82F6" 
+            colors={colors} 
+          />
+          <InventoryStat 
+            label="Active" 
+            value={menu.filter(i => i.available).length} 
+            icon="checkmark-circle" 
+            color="#10B981" 
+            colors={colors} 
+          />
+          <InventoryStat 
+            label="Categories" 
+            value={categories.length - 1} 
+            icon="list" 
+            color="#F59E0B" 
+            colors={colors} 
+          />
         </View>
 
-        {/* Category Filter */}
-        <View style={styles.categorySection}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Categories</Text>
-            <Text style={[styles.categoriesCount, { color: colors.textSecondary }]}>
-              ({categories.length - 1} categories)
-            </Text>
+        {/* 3. Add Item Form (Collapsible) */}
+        {isFormVisible && (
+          <View style={[styles.formCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.formTitle, { color: colors.text }]}>Add New Item</Text>
+            
+            <View style={styles.formRow}>
+              <View style={[styles.inputWrapper, { flex: 2, marginRight: 10 }]}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Name</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                  placeholder="E.g. Butter Chicken"
+                  placeholderTextColor={colors.textSecondary + '80'}
+                  value={newItem.name}
+                  onChangeText={(t) => setNewItem({...newItem, name: t})}
+                />
+              </View>
+              <View style={[styles.inputWrapper, { flex: 1 }]}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Price</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                  placeholder="₹0"
+                  placeholderTextColor={colors.textSecondary + '80'}
+                  keyboardType="numeric"
+                  value={newItem.price}
+                  onChangeText={(t) => setNewItem({...newItem, price: t})}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Category</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                placeholder="E.g. Main Course"
+                placeholderTextColor={colors.textSecondary + '80'}
+                value={newItem.category}
+                onChangeText={(t) => setNewItem({...newItem, category: t})}
+              />
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Description</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, height: 80, textAlignVertical: 'top' }]}
+                placeholder="Describe the dish..."
+                placeholderTextColor={colors.textSecondary + '80'}
+                multiline
+                value={newItem.description}
+                onChangeText={(t) => setNewItem({...newItem, description: t})}
+              />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.submitBtn, { backgroundColor: colors.primary, opacity: isAdding ? 0.7 : 1 }]}
+              onPress={addItem}
+              disabled={isAdding}
+            >
+              {isAdding ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Save Item</Text>}
+            </TouchableOpacity>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category}
+        )}
+
+        {/* 4. Categories */}
+        <View style={styles.categorySection}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+            {categories.map(cat => (
+              <TouchableOpacity 
+                key={cat}
                 style={[
-                  styles.categoryChip,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border
-                  },
-                  activeCategory === category && [
-                    styles.activeCategoryChip,
-                    { backgroundColor: colors.primary, borderColor: colors.primary }
-                  ]
+                  styles.catChip, 
+                  { 
+                    backgroundColor: activeCategory === cat ? colors.primary : colors.card,
+                    borderColor: activeCategory === cat ? colors.primary : colors.border
+                  }
                 ]}
-                onPress={() => setActiveCategory(category)}
+                onPress={() => setActiveCategory(cat)}
               >
                 <Text style={[
-                  styles.categoryText,
-                  { color: colors.textSecondary },
-                  activeCategory === category && styles.activeCategoryText
-                ]}>
-                  {category}
-                </Text>
-                {category !== "All" && (
-                  <Text style={[
-                    styles.categoryCount,
-                    {
-                      backgroundColor: colors.isDark ? 'rgba(255,255,255,0.1)' : '#f1f5f9',
-                      color: colors.textSecondary
-                    },
-                    activeCategory === category && [
-                      styles.activeCategoryCount,
-                      { color: colors.white, backgroundColor: 'rgba(255,255,255,0.2)' }
-                    ]
-                  ]}>
-                    {categoryStats[category] || 0}
-                  </Text>
-                )}
+                  styles.catText, 
+                  { color: activeCategory === cat ? '#FFF' : colors.textSecondary }
+                ]}>{cat}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* Menu List */}
-        <View style={styles.menuSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {activeCategory === "All" ? "All Menu Items" : activeCategory}
-              <Text style={[styles.itemCount, { color: colors.primary }]}> ({filteredMenu.length})</Text>
-            </Text>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-              {activeCategory === "All"
-                ? "All categories"
-                : `${filteredMenu.length} item${filteredMenu.length !== 1 ? 's' : ''} in this category`
-              }
-            </Text>
+        {/* 5. Menu List */}
+        {isLoading ? (
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+        ) : filteredMenu.length === 0 ? (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="food-off" size={48} color={colors.border} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No items found</Text>
           </View>
-
-          {filteredMenu.length === 0 ? (
-            <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
-              <Text style={styles.emptyStateEmoji}>🍽️</Text>
-              <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
-                {activeCategory === "All" ? "No items in menu" : `No items in ${activeCategory}`}
-              </Text>
-              <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-                {activeCategory === "All"
-                  ? "Add your first menu item to get started!"
-                  : `Add items to the ${activeCategory} category`}
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredMenu}
-              keyExtractor={(item) => item.id}
-              renderItem={renderMenuItem}
-              scrollEnabled={false}
-              showsVerticalScrollIndicator={false}
-              style={styles.menuList}
-            />
-          )}
-        </View>
+        ) : (
+          <View style={styles.menuList}>
+            {filteredMenu.map(item => (
+              <MenuItemCard 
+                key={item.id}
+                item={item}
+                colors={colors}
+                onToggle={toggleAvailability}
+                onDelete={deleteItem}
+              />
+            ))}
+          </View>
+        )}
+        
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
 }
 
-// COMPLETE STYLES OBJECT
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  
+  // Header
+  headerContainer: {
+    height: 140,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
+    zIndex: 10,
+    elevation: 5,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+  headerGradient: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? 50 : 60,
+    paddingHorizontal: 24,
   },
   headerContent: {
-    marginBottom: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  title: {
+  headerTitle: {
     fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 4,
+    fontWeight: '800',
     color: '#FFF',
   },
-  subtitle: {
+  headerSubtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  statItem: {
-    alignItems: "center",
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: '#FFF',
-  },
-  statLabel: {
-    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
-    color: 'rgba(255,255,255,0.9)',
   },
-  addItemSection: {
-    padding: 20,
+  addButtonHeader: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
+
+  // Scroll Content
+  scrollContent: {
+    paddingHorizontal: 20,
+    marginTop: -40, // Pull up overlap
+    paddingBottom: 20,
   },
-  formCard: {
-    padding: 20,
+
+  // Stats
+  statsRow: {
+    marginTop:50,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    padding: 12,
     borderRadius: 16,
+    flexDirection: 'row', // Icon left, text right for compactness
+    alignItems: 'center',
+    gap: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+
+  // Form
+  formCard: {
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
   },
-  formRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 12,
-  },
-  formInput: {
-    flex: 1,
-    borderWidth: 1,
-    padding: 14,
-    borderRadius: 12,
-    fontSize: 16,
-  },
-  categoryInputContainer: {
-    marginBottom: 12,
-  },
-  fullWidthInput: {
-    borderWidth: 1,
-    padding: 14,
-    borderRadius: 12,
-    fontSize: 16,
-  },
-  newCategoryHint: {
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-    fontWeight: "500",
-  },
-  descriptionInput: {
-    borderWidth: 1,
-    padding: 14,
-    borderRadius: 12,
-    fontSize: 16,
+  formTitle: {
+    fontSize: 18,
+    fontWeight: '700',
     marginBottom: 16,
-    minHeight: 60,
-    textAlignVertical: "top",
   },
-  addButton: {
+  formRow: {
+    flexDirection: 'row',
+  },
+  inputWrapper: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+  },
+  submitBtn: {
     padding: 16,
     borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    alignItems: 'center',
+    marginTop: 8,
   },
-  addButtonDisabled: {
-    backgroundColor: "#cbd5e1",
-    shadowOpacity: 0,
-  },
-  addButtonText: {
-    color: "#ffffff",
+  submitBtnText: {
+    color: '#FFF',
+    fontWeight: '700',
     fontSize: 16,
-    fontWeight: "600",
   },
+
+  // Categories
   categorySection: {
-    paddingHorizontal: 20,
-    marginBottom: 8,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  categoriesCount: {
-    fontSize: 12,
-    fontWeight: "500",
+    marginBottom: 16,
   },
   categoryScroll: {
-    flexGrow: 0,
+    paddingRight: 20,
+    gap: 8,
   },
-  categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
+  catChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    marginRight: 8,
     borderWidth: 1,
+    marginRight: 8,
   },
-  activeCategoryChip: {
-    // Styles handled inline
+  catText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  activeCategoryText: {
-    color: "#ffffff",
-  },
-  categoryCount: {
-    fontSize: 11,
-    fontWeight: "600",
-    marginLeft: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  activeCategoryCount: {
-    // Styles handled inline
-  },
-  menuSection: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  itemCount: {
-    fontWeight: "600",
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    marginTop: 2,
-  },
+
+  // Menu List
   menuList: {
-    flexGrow: 0,
+    gap: 16,
   },
   menuCard: {
-    padding: 16,
     borderRadius: 16,
-    marginBottom: 12,
+    borderLeftWidth: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 3,
-    borderLeftWidth: 4,
+    elevation: 2,
   },
-  itemHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  cardContent: {
+    padding: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 8,
   },
-  itemMainInfo: {
-    flex: 1,
-  },
-  itemName: {
+  cardTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 6,
+    fontWeight: '700',
+    marginBottom: 4,
   },
-  categoryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  categoryPill: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 6,
     alignSelf: 'flex-start',
   },
-  itemCategory: {
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
+  categoryText: {
+    fontSize: 10,
+    color: '#6B7280',
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
-  priceContainer: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  itemPrice: {
+  cardPrice: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: '700',
   },
-  itemDescription: {
-    fontSize: 14,
-    lineHeight: 20,
+  cardDesc: {
+    fontSize: 13,
+    lineHeight: 18,
     marginBottom: 12,
   },
-  itemFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  divider: {
+    height: 1,
+    marginBottom: 12,
+    opacity: 0.5,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  statusIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  availableIndicator: {
-    // Background handled inline
-  },
-  unavailableIndicator: {
-    // Background handled inline
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '600',
   },
-  availableText: {
-    // Color handled inline
-  },
-  unavailableText: {
-    // Color handled inline
-  },
-  actionButtons: {
-    flexDirection: "row",
+  actions: {
+    flexDirection: 'row',
     gap: 8,
   },
-  actionBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  iconButton: {
+    width: 32,
+    height: 32,
     borderRadius: 8,
-    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  makeAvailableBtn: {
-    // Styles handled inline
-  },
-  makeUnavailableBtn: {
-    // Styles handled inline
-  },
-  actionBtnText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  makeAvailableText: {
-    // Color handled inline
-  },
-  makeUnavailableText: {
-    // Color handled inline
-  },
-  deleteActionBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  deleteActionText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
+
+  // Empty State
   emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 40,
-    borderRadius: 16,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    marginTop: 20,
   },
-  emptyStateEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  emptyStateText: {
+  emptyText: {
+    marginTop: 10,
     fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
   },
 });

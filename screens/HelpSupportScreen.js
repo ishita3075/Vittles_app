@@ -201,13 +201,7 @@ export default function HelpSupportScreen({ navigation }) {
                 action={handleEmail}
                 colors={colors} 
               />
-              <ContactCard 
-                icon="location" 
-                title="Visit HQ" 
-                subtitle="Kichha, Uttarakhand" 
-                action={handleMap}
-                colors={colors} 
-              />
+              
             </View>
 
             {/* 3. FAQ Section */}
@@ -220,12 +214,12 @@ export default function HelpSupportScreen({ navigation }) {
               />
               <FAQItem 
                 question="Can I cancel my order?"
-                answer="You can cancel your order within 5 minutes of placing it. After that, please contact support."
+                answer="You cannot cancel your order once placed so be careful."
                 colors={colors}
               />
               <FAQItem 
                 question="What payment methods do you accept?"
-                answer="We accept UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, and Cash on Delivery."
+                answer="We accept UPI (GPay, PhonePe, Paytm)"
                 colors={colors}
               />
             </View>

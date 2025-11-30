@@ -322,29 +322,10 @@ export default function RestaurantDetails() {
               </View>
             </View>
             
-            <Text style={[styles.resCuisine, { color: colors.textSecondary }]}>
-              {restaurant.cuisine} • {restaurant.distance || "2.5 km"} • {restaurant.reviewsCount || "1K+"} ratings
-            </Text>
+           
 
             {/* Stats Pills */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsScroll}>
-              <View style={[styles.statPill, { backgroundColor: colors.border + '40' }]}>
-                <Ionicons name="time" size={14} color={colors.text} />
-                <Text style={[styles.statLabel, { color: colors.text }]}>{restaurant.time || "30 mins"}</Text>
-              </View>
-              <View style={[styles.statPill, { backgroundColor: colors.border + '40' }]}>
-                <Ionicons name="location" size={14} color={colors.text} />
-                <Text style={[styles.statLabel, { color: colors.text }]}>{restaurant.distance || "2.5 km"}</Text>
-              </View>
-              <View style={[styles.statPill, { backgroundColor: colors.border + '40' }]}>
-                <Ionicons name="wallet" size={14} color={colors.text} />
-                <Text style={[styles.statLabel, { color: colors.text }]}>₹200 for one</Text>
-              </View>
-              <View style={[styles.statPill, { backgroundColor: '#E0F2F1' }]}>
-                <Ionicons name="leaf" size={14} color="#00897B" />
-                <Text style={[styles.statLabel, { color: '#00897B' }]}>Pure Veg Options</Text>
-              </View>
-            </ScrollView>
+  
           </View>
 
           {/* Menu */}

@@ -196,7 +196,7 @@ export default function TopNavbar({
                   onClearSearch={onClearSearch}
                   // Ensure your internal SearchBar component has a transparent background
                   // so the blur effect shows through
-                  containerStyle={{ backgroundColor: 'transparent' }} 
+                  
                   inputStyle={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FFF' }}
                   placeholderTextColor="rgba(255,255,255,0.7)"
                   iconColor="#FFF"
@@ -337,13 +337,14 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   subtitle: {
-    color: 'rgba(255,255,255,0.9)',
+    color: 'rgba(255, 253, 253, 0.9)',
     fontSize: 15,
     fontWeight: '500',
     marginBottom: 16,
     paddingLeft: 4, // Slight indent to align with avatar text
   },
   searchSection: {
+    color:'rgba(0,0,0,0)',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,

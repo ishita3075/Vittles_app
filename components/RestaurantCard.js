@@ -8,126 +8,119 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../contexts/ThemeContext'; // Import theme hook
+import { useTheme } from '../contexts/ThemeContext';
 
 const RestaurantCard = ({ restaurant }) => {
   const navigation = useNavigation();
-  const { colors } = useTheme(); // Get theme colors
+  const { colors } = useTheme();
   const [imageError, setImageError] = React.useState(false);
 
   const handlePress = () => {
     navigation.navigate('RestaurantDetails', { restaurant });
   };
 
-  // Handle image error
-  const handleImageError = () => {
-    console.log('Image failed to load:', restaurant.image);
-    setImageError(true);
-  };
-
-  // Reset error state when restaurant changes
-  React.useEffect(() => {
-    setImageError(false);
-  }, [restaurant.image]);
-
-  // Render rating badge
-  const renderRatingBadge = () => (
-    <View style={[styles.ratingBadge, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]}>
-      <Ionicons name="star" size={12} color="#FFF" />
-      <Text style={styles.ratingText}>{restaurant.rating}</Text>
-    </View>
-  );
-
-  // Render image with overlay
   const renderImage = () => {
-    // If image is an emoji or not a valid URL, use emoji container
-    if (restaurant.image && typeof restaurant.image === 'string' && !restaurant.image.startsWith('http')) {
+    const isEmoji = restaurant.image && typeof restaurant.image === 'string' && !restaurant.image.startsWith('http');
+    
+    if (isEmoji) {
       return (
-        <View style={styles.imageContainer}>
-          <View style={[styles.emojiContainer, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
-            <Text style={styles.emojiText}>{restaurant.image}</Text>
-          </View>
-          {renderRatingBadge()}
+        <View style={[styles.imagePlaceholder, { backgroundColor: colors.background }]}>
+          <Text style={{ fontSize: 60 }}>{restaurant.image}</Text>
         </View>
       );
     }
 
-    // Use fallback image if there's an error or no image
-    const imageUri = imageError || !restaurant.image 
+    const imageUri = imageError || !restaurant.image
       ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400'
       : restaurant.image;
 
     return (
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.restaurantImage}
-          resizeMode="cover"
-          onError={handleImageError}
-          onLoadStart={() => console.log('Starting to load image:', imageUri)}
-          onLoadEnd={() => console.log('Finished loading image:', imageUri)}
-        />
-        {renderRatingBadge()}
-        
-      </View>
+      <Image
+        source={{ uri: imageUri }}
+        style={styles.image}
+        resizeMode="cover"
+        onError={() => setImageError(true)}
+      />
     );
   };
 
-  // Render delivery info chip
-  const renderDeliveryChip = () => (
-    <View style={[styles.deliveryChip, { backgroundColor: colors.background }]}>
-      <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
-      <Text style={[styles.deliveryChipText, { color: colors.textSecondary }]}>{restaurant.time}</Text>
-    </View>
-  );
-
-  // Render discount badge
   const renderDiscountBadge = () => {
     if (!restaurant.discount) return null;
-    
     return (
-      <View style={[styles.discountBadge, { 
-        backgroundColor: colors.isDark ? 'rgba(255, 107, 53, 0.2)' : 'rgba(255, 107, 53, 0.1)' 
-      }]}>
-        <Ionicons name="pricetag-outline" size={10} color={colors.primary} />
-        <Text style={[styles.discountText, { color: colors.primary }]}>{restaurant.discount}</Text>
+      <View style={styles.discountBadge}>
+        <Ionicons name="pricetag" size={12} color="#FFF" />
+        <Text style={styles.discountText}>{restaurant.discount}</Text>
       </View>
     );
   };
 
-  // Debug restaurant data
-  React.useEffect(() => {
-    console.log('Restaurant data:', {
-      name: restaurant.name,
-      image: restaurant.image,
-      imageType: typeof restaurant.image,
-      hasImage: !!restaurant.image,
-      isHttpUrl: restaurant.image && typeof restaurant.image === 'string' ? restaurant.image.startsWith('http') : false
-    });
-  }, [restaurant]);
-
   return (
-    <TouchableOpacity style={[styles.card, { backgroundColor: colors.card }]} onPress={handlePress}>
-      {renderImage()}
-      
+    <TouchableOpacity
+      activeOpacity={0.9}
+      style={[styles.card, { backgroundColor: colors.card }]}
+      onPress={handlePress}
+    >
+      {/* Top Section: Image & Overlays */}
+      <View style={styles.imageContainer}>
+        {renderImage()}
+        
+        {/* Discount Badge */}
+        {/* {restaurant.discount && (
+          <View style={styles.absoluteBadgeLeft}>
+             {renderDiscountBadge()}
+          </View>
+        )} */}
+
+        {/* Favorite Icon */}
+        <TouchableOpacity style={styles.favoriteButton}>
+          <Ionicons name="heart-outline" size={20} color="#FFF" />
+        </TouchableOpacity>
+
+        {/* Prep Time Chip */}
+        <View style={styles.timeChip}>
+          <Ionicons name="hourglass-outline" size={12} color="#333" style={{marginRight: 4}} />
+          <Text style={styles.timeText}>{restaurant.time || '15 min'} prep</Text>
+        </View>
+      </View>
+
+      {/* Bottom Section: Info */}
       <View style={styles.infoContainer}>
         <View style={styles.headerRow}>
-          <Text style={[styles.restaurantName, { color: colors.text }]} numberOfLines={1}>
+          <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
             {restaurant.name}
           </Text>
-        </View>
-        
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Ionicons name="star" size={14} color="#FFD700" />
-            <Text style={[styles.rating, { color: colors.text }]}>{restaurant.rating}</Text>
-            <Text style={[styles.reviewsCount, { color: colors.textSecondary }]}>
-              ({restaurant.reviewsCount})
-            </Text>
+          <View style={styles.ratingContainer}>
+            <View style={styles.ratingPill}>
+              <Text style={styles.ratingScore}>{restaurant.rating}</Text>
+              <Ionicons name="star" size={10} color="#FFF" />
+            </View>
           </View>
         </View>
-        
-        <View style={styles.footer}>
+
+        {/* Cuisine */}
+        <Text style={[styles.cuisine, { color: colors.textSecondary }]} numberOfLines={1}>
+          {restaurant.cuisine || 'Fast Food • Beverages'} 
+        </Text>
+
+        {/* Footer: Pickup Specific Stats */}
+        <View style={styles.statsRow}>
+          {/* Distance */}
+          <View style={styles.statItem}>
+             <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+             <Text style={[styles.statText, { color: colors.textSecondary }]}>
+                {restaurant.distance || '1.2 km'}
+             </Text>
+          </View>
+
+          <View style={styles.verticalDivider} />
+
+          {/* Pickup Label */}
+          <View style={styles.statItem}>
+             <Ionicons name="bag-handle-outline" size={14} color={colors.primary} />
+             <Text style={[styles.statText, { color: colors.primary, fontWeight: '600' }]}>
+                Self Pickup
+             </Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -136,166 +129,141 @@ const RestaurantCard = ({ restaurant }) => {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
-    marginBottom: 16,
-    elevation: 2,
+    borderRadius: 16,
+    marginBottom: 20,
+    width: '100%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
     overflow: 'hidden',
-    width: '100%', // Ensure full width
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   imageContainer: {
-    position: 'relative',
+    height: 180,
     width: '100%',
-    height: 160,
-    backgroundColor: '#f0f0f0', // Fallback background color
+    position: 'relative',
+    backgroundColor: '#F5F5F5',
   },
-  restaurantImage: {
+  image: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#f0f0f0', // Show background while loading
   },
-  emojiContainer: {
+  imagePlaceholder: {
     width: '100%',
-    height: 160,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    borderBottomWidth: 1,
   },
-  emojiText: {
-    fontSize: 80,
-  },
-  ratingBadge: {
+  absoluteBadgeLeft: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 2,
+    top: 16,
+    left: 0,
   },
-  ratingText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  vegBadge: {
+  favoriteButton: {
     position: 'absolute',
     top: 12,
     right: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 20,
+    padding: 6,
   },
-  vegText: {
+  timeChip: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: '#FFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    elevation: 2,
+  },
+  timeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#333',
+  },
+  discountBadge: {
+    backgroundColor: '#FF4B4B',
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  discountText: {
+    color: '#FFF',
+    fontWeight: '700',
     fontSize: 10,
-    fontWeight: '600',
-    color: '#4CAF50',
+    textTransform: 'uppercase',
   },
   infoContainer: {
-    padding: 12,
+    padding: 14,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 4,
   },
-  restaurantName: {
+  name: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     flex: 1,
-    marginRight: 8,
+    marginRight: 10,
+    letterSpacing: -0.5,
   },
-  freeDeliveryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  freeDeliveryText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
-  cuisine: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  statsContainer: {
+  ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  ratingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2D9CDB',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    gap: 3,
+  },
+  ratingScore: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  cuisine: {
+    fontSize: 13,
+    marginBottom: 12,
+    opacity: 0.7,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+    paddingTop: 10,
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
-  statSeparator: {
-    width: 4,
-    height: 4,
-    backgroundColor: '#CCC',
-    borderRadius: 2,
-    marginHorizontal: 8,
+  verticalDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 12,
   },
-  rating: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  reviewsCount: {
-    fontSize: 12,
-  },
-  distance: {
-    fontSize: 14,
-  },
-  price: {
-    fontSize: 14,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  deliveryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    gap: 4,
-  },
-  deliveryChipText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  discountBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    gap: 4,
-  },
-  discountText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  offerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 6,
-    gap: 4,
-    borderLeftWidth: 3,
-  },
-  offerText: {
+  statText: {
     fontSize: 12,
     fontWeight: '500',
   },
