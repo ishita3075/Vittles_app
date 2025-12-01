@@ -195,7 +195,18 @@ export const placeOrder = async (orderData) => {
     throw error;
   }
 };
-
-
+// ⭐⭐⭐ FIXED FUNCTION ⭐⭐⭐
+// PATCH all orders of a customerId (vendor updating order status)
+export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
+  try {
+    const response = await vendorApi.patch(`/orders/customer/${customerId}`, {
+      status
+    });
+    return response.data;
+  } catch (error) {
+    console.log("updateOrderStatusByCustomerAPI ERROR:", error.response?.data || error);
+    throw error;
+  }
+};
 
 export default api;

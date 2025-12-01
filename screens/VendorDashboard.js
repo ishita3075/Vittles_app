@@ -17,9 +17,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
-import { getOrdersByVendor } from "../api";
 
 const { width } = Dimensions.get("window");
+
+import {
+  getOrdersByVendor,
+  updateOrderStatusByCustomerAPI
+} from "../api";
 
 // Enable LayoutAnimation
 if (Platform.OS === 'android') {
@@ -169,66 +173,74 @@ export default function VendorDashboard() {
 
   const fetchVendorOrders = async () => {
     if (!vendorId) return;
+
     try {
       setLoading(true);
       const vendorOrders = await getOrdersByVendor(vendorId);
-      
-      const grouped = {}; 
-      vendorOrders.forEach(row => {
-        const customerId = row.customer_id ?? row.customerId;
-        const menuName = row.menu_name ?? row.menuName;
-        const qty = row.quantity ?? row.qty ?? 1;
-        const price = row.total_price ?? row.totalPrice ?? 0;
-        const statusRaw = row.status ?? row.order_status ?? "Pending";
-        
-        const normalizedStatus = statusRaw === "Pending" ? "pending" 
-          : (statusRaw === "Delivered" || statusRaw === "Completed") ? "completed" 
-          : "preparing";
 
-        if (!grouped[customerId]) {
-          grouped[customerId] = {
-            id: row.id || Number(customerId),
-            customerId,
-            customer: row.customer_name ?? row.customerName ?? "Guest",
-            address: row.address ?? "Pickup",
-            status: normalizedStatus,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            price: 0,
-            items: [] 
-          };
-        }
-        
-        const existingItemIndex = grouped[customerId].items.findIndex(i => i.name === menuName);
-        if (existingItemIndex > -1) {
-          grouped[customerId].items[existingItemIndex].quantity += Number(qty);
-        } else {
-          grouped[customerId].items.push({ name: menuName, quantity: Number(qty) });
-        }
-        grouped[customerId].price += Number(price) || 0;
-        
-        const priority = { "pending": 3, "preparing": 2, "completed": 1 };
-        if (priority[normalizedStatus] > priority[grouped[customerId].status]) {
-          grouped[customerId].status = normalizedStatus;
-        }
-      });
+      const grouped = {};
+
+      vendorOrders
+        .filter(row => {
+          const raw = (row.status ?? row.order_status ?? "").toString().trim().toLowerCase();
+          return raw === "pending" || raw === "preparing";  // 🚀 Only active orders
+        })
+        .forEach(row => {
+
+          const customerId = row.customer_id ?? row.customerId;
+          const menuName   = row.menu_name ?? row.menuName;
+          const qty        = row.quantity ?? row.qty ?? 1;
+          const price      = row.total_price ?? row.totalPrice ?? 0;
+          const statusRaw  = row.status ?? row.order_status ?? "Pending";
+
+          const raw = statusRaw.toLowerCase();
+
+          const normalizedStatus =
+            raw === "pending" ? "pending" :
+            raw === "preparing" ? "preparing" :
+            "completed";
+
+          if (!grouped[customerId]) {
+            grouped[customerId] = {
+              id: row.id,
+              customerId,
+              customer: row.customer_name,
+              address: row.address ?? "Pickup",
+              status: normalizedStatus,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              price: 0,
+              items: []
+            };
+          }
+
+          const existingItem = grouped[customerId].items.find(i => i.name === menuName);
+          if (existingItem) {
+            existingItem.quantity += Number(qty);
+          } else {
+            grouped[customerId].items.push({ name: menuName, quantity: Number(qty) });
+          }
+
+          grouped[customerId].price += Number(price);
+
+          const priority = { pending: 3, preparing: 2, completed: 1 };
+          if (priority[normalizedStatus] > priority[grouped[customerId].status]) {
+            grouped[customerId].status = normalizedStatus;
+          }
+        });
 
       const formatted = Object.values(grouped).map(g => ({
         ...g,
         items: g.items.map(it => `${it.quantity}x ${it.name}`)
       }));
 
-      const income = formatted
-        .filter(o => o.status === 'completed')
-        .reduce((acc, curr) => acc + curr.price, 0);
-      
-      setDailyIncome(income);
       setOrders(formatted);
-    } catch (e) {
-      console.log("Error loading orders:", e);
+    } catch (err) {
+      console.log("Error loading orders:", err);
     } finally {
       setLoading(false);
     }
   };
+
 
   const toggleShop = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -236,23 +248,49 @@ export default function VendorDashboard() {
     setIsHalted(false);
   };
 
-  const updateOrderStatus = (id, newStatus) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-    
-    if (newStatus === 'completed') {
+  const updateOrderStatus = async (id, newStatus) => {
+    try {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
       const order = orders.find(o => o.id === id);
-      if (order) setDailyIncome(prev => prev + order.price);
+      if (!order) return;
+
+      const customerId = order.customerId;
+
+      // 1️⃣ Update UI immediately (smooth animation)
+      setOrders(prev =>
+        prev.map(o =>
+          o.customerId === customerId && o.status !== "completed"
+            ? { ...o, status: newStatus }
+            : o
+        )
+      );
+
+      // 2️⃣ Call API to update all orders of that customer
+      await updateOrderStatusByCustomerAPI(customerId, newStatus);
+
+      // 3️⃣ Add revenue once order is completed
+      if (newStatus === 'completed') {
+        setDailyIncome(prev => prev + order.price);
+      }
+
+    } catch (err) {
+      console.log("Order update failed:", err);
     }
   };
 
-  const activeOrders = orders.filter(o => o.status !== 'completed');
-  const completedOrders = orders.filter(o => o.status === 'completed');
+
+  const activeOrders = orders.filter(
+    o => o.status === "pending" || o.status === "preparing"
+  );
+  const completedOrders = orders.filter(
+    o => o.status === "completed"
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
-      
+
       {/* 1. Header */}
       <View style={styles.headerContainer}>
         <LinearGradient
@@ -276,8 +314,8 @@ export default function VendorDashboard() {
         </LinearGradient>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* 2. Control Center */}
@@ -316,26 +354,26 @@ export default function VendorDashboard() {
 
         {/* 3. Stats */}
         <View style={styles.statsGrid}>
-          <StatPill 
-            label="Pending" 
-            value={activeOrders.filter(o => o.status === 'pending').length} 
-            icon="notifications" 
-            color="#FF6B00" 
-            colors={colors} 
+          <StatPill
+            label="Pending"
+            value={activeOrders.filter(o => o.status === 'pending').length}
+            icon="notifications"
+            color="#FF6B00"
+            colors={colors}
           />
-          <StatPill 
-            label="Preparing" 
-            value={activeOrders.filter(o => o.status === 'preparing').length} 
-            icon="restaurant" 
-            color="#3B82F6" 
-            colors={colors} 
+          <StatPill
+            label="Preparing"
+            value={activeOrders.filter(o => o.status === 'preparing').length}
+            icon="restaurant"
+            color="#3B82F6"
+            colors={colors}
           />
-          <StatPill 
-            label="Completed" 
-            value={completedOrders.length} 
-            icon="checkmark-circle" 
-            color="#10B981" 
-            colors={colors} 
+          <StatPill
+            label="Completed"
+            value={completedOrders.length}
+            icon="checkmark-circle"
+            color="#10B981"
+            colors={colors}
           />
         </View>
 
@@ -351,11 +389,11 @@ export default function VendorDashboard() {
           <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
         ) : activeOrders.length > 0 ? (
           activeOrders.map(order => (
-            <OrderTicket 
-              key={order.id} 
-              order={order} 
-              onUpdateStatus={updateOrderStatus} 
-              colors={colors} 
+            <OrderTicket
+              key={order.id}
+              order={order}
+              onUpdateStatus={updateOrderStatus}
+              colors={colors}
             />
           ))
         ) : (
@@ -378,7 +416,7 @@ export default function VendorDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  
+
   // Header
   headerContainer: {
     height: 150, // Increased height to fix overlap
