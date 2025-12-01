@@ -51,11 +51,11 @@ const responsive = {
 
 // 1. Quick Filter Chip Component
 const FilterChip = ({ label, icon, active, onPress }) => (
-  <TouchableOpacity 
+  <TouchableOpacity
     style={[
-      styles.chip, 
+      styles.chip,
       active && styles.chipActive
-    ]} 
+    ]}
     onPress={onPress}
     activeOpacity={0.7}
   >
@@ -72,8 +72,8 @@ const RestaurantSkeleton = () => (
       <View style={[styles.skeletonLine, { width: '60%', height: 16, marginBottom: 8 }]} />
       <View style={[styles.skeletonLine, { width: '40%', height: 12, marginBottom: 8 }]} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
-         <View style={[styles.skeletonLine, { width: 40, height: 12 }]} />
-         <View style={[styles.skeletonLine, { width: 40, height: 12 }]} />
+        <View style={[styles.skeletonLine, { width: 40, height: 12 }]} />
+        <View style={[styles.skeletonLine, { width: 40, height: 12 }]} />
       </View>
     </View>
   </View>
@@ -84,7 +84,7 @@ const transformVendorToRestaurant = (vendor) => {
   // Enhanced fallback logic
   const cuisineTypes = ["North Indian", "South Indian", "Chinese", "Italian", "Mexican", "Thai", "Healthy", "Bakery"];
   const defaultCuisine = cuisineTypes[Math.floor(Math.random() * cuisineTypes.length)];
-  
+
   return {
     id: vendor.id?.toString() || vendor.vendor_id?.toString() || Math.random().toString(),
     name: vendor.name || vendor.vendor_name || "Gourmet Kitchen",
@@ -102,7 +102,7 @@ const transformVendorToRestaurant = (vendor) => {
 
 export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
-  
+
   // State
   const [searchQuery, setSearchQuery] = useState("");
   const [vendors, setVendors] = useState([]);
@@ -110,7 +110,7 @@ export default function HomeScreen({ navigation }) {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Quick Filters State
   const [filterVeg, setFilterVeg] = useState(false);
   const [filterFast, setFilterFast] = useState(false);
@@ -122,16 +122,16 @@ export default function HomeScreen({ navigation }) {
       setLoading(true);
       // Simulate network delay for skeleton showcase if needed
       // await new Promise(r => setTimeout(r, 1500)); 
-      
+
       const vendorsData = await getAllVendors();
       const rawData = Array.isArray(vendorsData) ? vendorsData : (vendorsData ? [vendorsData] : []);
       const restaurants = rawData.map(transformVendorToRestaurant);
-      
+
       setVendors(restaurants);
       setFilteredRestaurants(restaurants);
     } catch (error) {
       console.error('Fetch error:', error);
-      setVendors([]); 
+      setVendors([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -154,17 +154,17 @@ export default function HomeScreen({ navigation }) {
     // 1. Search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(r => 
-        r.name.toLowerCase().includes(query) || 
+      result = result.filter(r =>
+        r.name.toLowerCase().includes(query) ||
         r.cuisine.toLowerCase().includes(query)
       );
     }
 
     // 2. Category
     if (selectedCategory && selectedCategory !== "all") {
-       result = result.filter(r => 
-         r.cuisine.toLowerCase().includes(selectedCategory.toLowerCase())
-       );
+      result = result.filter(r =>
+        r.cuisine.toLowerCase().includes(selectedCategory.toLowerCase())
+      );
     }
 
     // 3. Quick Filters
@@ -178,11 +178,11 @@ export default function HomeScreen({ navigation }) {
   // Handlers
   const handleClearSearch = () => setSearchQuery("");
   const onRefresh = () => { setRefreshing(true); fetchVendors(); };
-  
+
   const handleRestaurantPress = useCallback((restaurant) => {
-    navigation.navigate("RestaurantDetails", { 
-      restaurant, 
-      vendor: restaurant.vendorData 
+    navigation.navigate("RestaurantDetails", {
+      restaurant,
+      vendor: restaurant.vendorData
     });
   }, [navigation]);
 
@@ -212,29 +212,29 @@ export default function HomeScreen({ navigation }) {
       >
         {/* 1. Promo Carousel */}
         <View style={styles.carouselSection}>
-           <PromoCarousel />
+          <PromoCarousel />
         </View>
 
         {/* 2. Categories List (Horizontal) */}
         {/* We assume CategoriesList handles its own UI and callbacks */}
-        
+
 
         {/* 3. Quick Filters (Chips) */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipsContainer}
           style={styles.chipsScroll}
         >
-          
+
           {/* Reset Filter Button if any filter is active */}
           {(filterVeg || filterFast || filterTopRated) && (
-             <TouchableOpacity 
-               onPress={() => { setFilterVeg(false); setFilterFast(false); setFilterTopRated(false); }}
-               style={styles.clearFiltersBtn}
-             >
-               <Text style={styles.clearFiltersText}>Clear</Text>
-             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => { setFilterVeg(false); setFilterFast(false); setFilterTopRated(false); }}
+              style={styles.clearFiltersBtn}
+            >
+              <Text style={styles.clearFiltersText}>Clear</Text>
+            </TouchableOpacity>
           )}
         </ScrollView>
 
@@ -243,14 +243,14 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.sectionHeader}>
             <View>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {searchQuery ? 'Search Results' : 'All Cullinary'}
+                {searchQuery ? 'Search Results' : 'All Eateries'}
               </Text>
               <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
                 {loading ? 'Finding best spots...' : `${filteredRestaurants.length} places near you`}
               </Text>
             </View>
-            
-           
+
+
           </View>
 
           {loading ? (
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   categoriesSection: {
     marginBottom: responsive.spacing.md,
   },
-  
+
   // Chips
   chipsScroll: {
     marginBottom: responsive.spacing.xl,

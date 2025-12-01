@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  StyleSheet, 
-  TouchableOpacity, 
-  StatusBar, 
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  StatusBar,
   SafeAreaView,
   RefreshControl
 } from "react-native";
@@ -13,27 +13,27 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 
 const MOCK_ALERTS = [
-  { 
-    id: "1", 
-    title: "50% off at Spice Garden!", 
+  {
+    id: "1",
+    title: "50% off at Spice Garden!",
     time: "2h ago",
     read: false,
   },
-  { 
-    id: "2", 
-    title: "New Italian restaurants added near you", 
+  {
+    id: "2",
+    title: "New Italian restaurants added near you",
     time: "5h ago",
     read: false,
   },
-  { 
-    id: "3", 
-    title: "Your favorite Sushi place has a new dish 🍣", 
+  {
+    id: "3",
+    title: "Your favorite Sushi place has a new dish 🍣",
     time: "1d ago",
     read: true,
   },
-  { 
-    id: "4", 
-    title: "Reminder: Order before 8 PM for free delivery", 
+  {
+    id: "4",
+    title: "Reminder: Order before 8 PM for free delivery",
     time: "2d ago",
     read: true,
   },
@@ -47,7 +47,7 @@ export default function AlertsScreen({ navigation }) {
   const unreadCount = alerts.filter(alert => !alert.read).length;
 
   const markAsRead = (id) => {
-    setAlerts(prev => prev.map(alert => 
+    setAlerts(prev => prev.map(alert =>
       alert.id === id ? { ...alert, read: true } : alert
     ));
   };
@@ -60,10 +60,6 @@ export default function AlertsScreen({ navigation }) {
     setAlerts([]);
   };
 
-  const restoreAlerts = () => {
-    setAlerts(MOCK_ALERTS);
-  };
-
   const onRefresh = () => {
     setRefreshing(true);
     setTimeout(() => {
@@ -73,7 +69,7 @@ export default function AlertsScreen({ navigation }) {
   };
 
   const renderAlertItem = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
         styles.alertCard,
         { backgroundColor: colors.card }
@@ -82,17 +78,17 @@ export default function AlertsScreen({ navigation }) {
       activeOpacity={0.7}
     >
       {!item.read && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
-      
+
       <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
         <Ionicons name="notifications" size={20} color={colors.primary} />
       </View>
-      
+
       <View style={styles.alertContent}>
         <Text style={[styles.alertTitle, { color: colors.text }]}>{item.title}</Text>
         <Text style={[styles.alertTime, { color: colors.textSecondary }]}>{item.time}</Text>
       </View>
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         onPress={() => setAlerts(prev => prev.filter(alert => alert.id !== item.id))}
         style={styles.closeButton}
       >
@@ -117,11 +113,11 @@ export default function AlertsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <StatusBar 
-        barStyle="light-content" 
-        backgroundColor="#8B3358" 
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="#8B3358"
       />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
@@ -168,21 +164,13 @@ export default function AlertsScreen({ navigation }) {
       </View>
 
       {/* Action Buttons */}
-      {alerts.length > 0 ? (
-        <TouchableOpacity 
-          style={[styles.actionButton, { backgroundColor: colors.error }]}
+      {alerts.length > 0 && (
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: '#C0392B' }]}
           onPress={clearAllAlerts}
         >
           <Ionicons name="trash-outline" size={20} color="#ffffff" />
           <Text style={styles.actionButtonText}>Clear All</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity 
-          style={[styles.actionButton, { backgroundColor: colors.primary }]}
-          onPress={restoreAlerts}
-        >
-          <Ionicons name="refresh-outline" size={20} color="#ffffff" />
-          <Text style={styles.actionButtonText}>Restore</Text>
         </TouchableOpacity>
       )}
     </SafeAreaView>
@@ -321,4 +309,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 6,
   },
-});                     
+});

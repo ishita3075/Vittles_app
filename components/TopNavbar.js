@@ -19,6 +19,9 @@ import SearchBar from "./SearchBar";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 
+// Create animated component for icons
+const AnimatedIcon = Animated.createAnimatedComponent(Ionicons);
+
 export default function TopNavbar({
   searchQuery,
   onSearchChange,
@@ -89,9 +92,10 @@ export default function TopNavbar({
 
   const getTimeGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
-    return "Good Evening";
+    if (hour >= 4 && hour < 12) return "Good Morning";
+    if (hour >= 12 && hour < 17) return "Good Afternoon";
+    if (hour >= 17 && hour < 21) return "Good Evening";
+    return "Late Night Cravings";
   };
 
   const getUserInitials = () => {
@@ -105,36 +109,50 @@ export default function TopNavbar({
   return (
     <View style={styles.outerContainer}>
       <LinearGradient
-        colors={["#8B3358", "#591A32", "#2E0A18"]}
+        colors={["#A63E69", "#6B1F3C", "#1F0510"]}
         start={{ x: 0, y: 0 }}
-        end={{ x: 0.8, y: 1 }}
+        end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
         <SafeAreaView edges={["top"]} style={styles.safeContent}>
-          
-          {/* --- Animated Background Decoration (Breathing Circles) --- */}
+
+          {/* --- Animated Background Decoration (Scattered Food Pattern) --- */}
           <View style={styles.bgContainer}>
-            <Animated.View 
-              style={[
-                styles.bgCircle, 
-                styles.bgCircleLarge, 
-                { transform: [{ scale: breathAnim }] }
-              ]} 
-            />
-            <Animated.View 
-              style={[
-                styles.bgCircle, 
-                styles.bgCircleSmall, 
-                { transform: [{ scale: breathAnim }] }
-              ]} 
-            />
+            {[
+              { name: "restaurant-outline", size: 48, top: '10%', left: '5%', rotate: '15deg' },
+              { name: "cafe-outline", size: 42, top: '25%', right: '10%', rotate: '-10deg' },
+              { name: "pizza-outline", size: 54, top: '50%', left: '15%', rotate: '25deg' },
+              { name: "nutrition-outline", size: 45, top: '40%', right: '25%', rotate: '-5deg' },
+              { name: "ice-cream-outline", size: 40, top: '15%', left: '45%', rotate: '10deg' },
+              { name: "fish-outline", size: 50, top: '70%', right: '5%', rotate: '-15deg' },
+              { name: "fast-food-outline", size: 45, top: '80%', left: '35%', rotate: '20deg' },
+              { name: "wine-outline", size: 42, top: '60%', right: '40%', rotate: '5deg' },
+            ].map((icon, index) => (
+              <AnimatedIcon
+                key={index}
+                name={icon.name}
+                size={icon.size}
+                color="rgba(255,255,255,0.06)"
+                style={{
+                  position: 'absolute',
+                  top: icon.top,
+                  left: icon.left,
+                  right: icon.right,
+                  bottom: icon.bottom,
+                  transform: [
+                    { scale: breathAnim },
+                    { rotate: icon.rotate }
+                  ]
+                }}
+              />
+            ))}
           </View>
 
           {/* --- Main Content --- */}
-          <Animated.View 
+          <Animated.View
             style={[
               styles.contentContainer,
-              { 
+              {
                 paddingHorizontal: responsivePadding,
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }]
@@ -143,9 +161,9 @@ export default function TopNavbar({
           >
             {/* Header Row */}
             <View style={styles.headerRow}>
-              
+
               {/* Profile Section */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.profileSection}
                 onPress={() => navigation.navigate("Account")}
                 activeOpacity={0.8}
@@ -196,8 +214,14 @@ export default function TopNavbar({
                   onClearSearch={onClearSearch}
                   // Ensure your internal SearchBar component has a transparent background
                   // so the blur effect shows through
-                  
-                  inputStyle={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FFF' }}
+
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.15)',
+                    borderWidth: 0,
+                    shadowOpacity: 0,
+                    elevation: 0,
+                  }}
+                  inputStyle={{ color: '#FFF' }}
                   placeholderTextColor="rgba(255,255,255,0.7)"
                   iconColor="#FFF"
                 />
@@ -216,7 +240,7 @@ export default function TopNavbar({
 
 const styles = StyleSheet.create({
   outerContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     zIndex: 100,
   },
   gradient: {
@@ -232,23 +256,7 @@ const styles = StyleSheet.create({
   bgContainer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,
-  },
-  bgCircle: {
-    position: 'absolute',
-    borderRadius: 200,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  bgCircleLarge: {
-    width: 250,
-    height: 250,
-    top: -80,
-    right: -60,
-  },
-  bgCircleSmall: {
-    width: 140,
-    height: 140,
-    top: 60,
-    left: -40,
+    overflow: 'hidden',
   },
   // Content
   contentContainer: {
@@ -344,7 +352,7 @@ const styles = StyleSheet.create({
     paddingLeft: 4, // Slight indent to align with avatar text
   },
   searchSection: {
-    color:'rgba(0,0,0,0)',
+    color: 'rgba(0,0,0,0)',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,

@@ -69,13 +69,13 @@ const MenuGroup = ({ title, items, colors, navigation }) => {
               <Ionicons name={item.icon} size={20} color={item.color} />
             </View>
             <Text style={[styles.menuText, { color: colors.text }]}>{item.title}</Text>
-            
+
             {item.badge && (
               <View style={styles.menuBadge}>
                 <Text style={styles.menuBadgeText}>{item.badge}</Text>
               </View>
             )}
-            
+
             <Ionicons name="chevron-forward" size={16} color={colors.textSecondary + '80'} />
           </TouchableOpacity>
         ))}
@@ -87,14 +87,14 @@ const MenuGroup = ({ title, items, colors, navigation }) => {
 export default function ProfileScreen({ navigation }) {
   const { colors } = useTheme();
   const { logout, user } = useAuth();
-  
+
   // State
   const [isModalVisible, setIsModalVisible] = useState(false);
-  
+
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
   const listAnim = useRef(new Animated.Value(0)).current;
-  
+
   // Modal Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(height)).current;
@@ -166,9 +166,9 @@ export default function ProfileScreen({ navigation }) {
 
   // --- Data ---
   const accountItems = [
-    
+
     { icon: "receipt-outline", title: "Order History", onPress: () => navigation.navigate("Account", { screen: "OrderHistory" }), color: "#F59E0B" },
-    
+
   ];
 
   const appItems = [
@@ -199,16 +199,16 @@ export default function ProfileScreen({ navigation }) {
         </LinearGradient>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* 2. Profile Header Card */}
-        <Animated.View 
+        <Animated.View
           style={[
-            styles.profileCard, 
-            { 
+            styles.profileCard,
+            {
               backgroundColor: colors.card,
               opacity: headerAnim,
               transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }]
@@ -217,70 +217,70 @@ export default function ProfileScreen({ navigation }) {
         >
           {/* Avatar & Edit */}
           <View style={styles.profileHeader}>
-             <View style={styles.avatarWrapper}>
-                <LinearGradient
-                   colors={['#FFD1DC', '#FFF']}
-                   style={styles.avatarGradient}
-                >
-                   <Text style={styles.avatarText}>
-                      {user?.name ? user.name.charAt(0).toUpperCase() : "G"}
-                   </Text>
-                </LinearGradient>
-                {/* <TouchableOpacity style={styles.editIconBadge}>
+            <View style={styles.avatarWrapper}>
+              <LinearGradient
+                colors={['#FFD1DC', '#FFF']}
+                style={styles.avatarGradient}
+              >
+                <Text style={styles.avatarText}>
+                  {user?.name ? user.name.charAt(0).toUpperCase() : "G"}
+                </Text>
+              </LinearGradient>
+              {/* <TouchableOpacity style={styles.editIconBadge}>
                    <Ionicons name="camera" size={12} color="#FFF" />
                 </TouchableOpacity> */}
-             </View>
-             
-             <View style={styles.profileInfo}>
-                <Text style={[styles.userName, { color: colors.text }]}>
-                   {user?.name || "Guest User"}
-                </Text>
-                <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-                   {user?.email || "guest@app.com"}
-                </Text>
-                <TouchableOpacity onPress={() => navigation.navigate("Account", { screen: "PersonalInfo" })}>
-                   <Text style={styles.editProfileLink}>Edit Profile</Text>
-                </TouchableOpacity>
-             </View>
+            </View>
+
+            <View style={styles.profileInfo}>
+              <Text style={[styles.userName, { color: colors.text }]}>
+                {user?.name || "Guest User"}
+              </Text>
+              <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+                {user?.email || "guest@app.com"}
+              </Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Account", { screen: "PersonalInfo" })}>
+                <Text style={styles.editProfileLink}>Edit Profile</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Stats Dashboard */}
-        
+
         </Animated.View>
 
         {/* 3. Menu Sections */}
-        <Animated.View 
-          style={{ 
+        <Animated.View
+          style={{
             opacity: listAnim,
             transform: [{ translateY: listAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }]
           }}
         >
-           <MenuGroup 
-             title="My Account" 
-             items={accountItems} 
-             colors={colors} 
-             navigation={navigation}
-           />
+          <MenuGroup
+            title="My Account"
+            items={accountItems}
+            colors={colors}
+            navigation={navigation}
+          />
 
-           <MenuGroup 
-             title="App Settings" 
-             items={appItems} 
-             colors={colors} 
-             navigation={navigation}
-           />
+          <MenuGroup
+            title="App Settings"
+            items={appItems}
+            colors={colors}
+            navigation={navigation}
+          />
 
-           {/* 4. Sign Out Button */}
-           <TouchableOpacity 
-             style={styles.signOutButton} 
-             onPress={showSignOutAlert}
-             activeOpacity={0.8}
-           >
-              <Text style={styles.signOutButtonText}>Sign Out</Text>
-           </TouchableOpacity>
-           
-           <Text style={[styles.versionText, { color: colors.textSecondary }]}>v2.4.0 • Build 2024</Text>
+          {/* 4. Sign Out Button */}
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={showSignOutAlert}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.signOutButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+
+
         </Animated.View>
-        
+
         {/* Padding for Bottom Tab */}
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -294,58 +294,58 @@ export default function ProfileScreen({ navigation }) {
         onRequestClose={() => hideAlert()}
       >
         <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
-          <Animated.View 
+          <Animated.View
             style={[
               styles.customAlertContainer,
-              { 
+              {
                 backgroundColor: colors.card,
                 transform: [{ translateY: slideAnim }, { scale: scaleAnim }]
               }
             ]}
           >
-             {/* Modal Background Pattern */}
-             <View style={styles.modalBgPattern}>
-                <View style={[styles.modalCircle, { backgroundColor: '#8B3358', top: -30, right: -30 }]} />
-                <View style={[styles.modalCircle, { backgroundColor: '#670D2F', bottom: -20, left: -20 }]} />
-             </View>
+            {/* Modal Background Pattern */}
+            <View style={styles.modalBgPattern}>
+              <View style={[styles.modalCircle, { backgroundColor: '#8B3358', top: -30, right: -30 }]} />
+              <View style={[styles.modalCircle, { backgroundColor: '#670D2F', bottom: -20, left: -20 }]} />
+            </View>
 
-             <TouchableOpacity style={styles.closeModalBtn} onPress={() => hideAlert()}>
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
-             </TouchableOpacity>
+            <TouchableOpacity style={styles.closeModalBtn} onPress={() => hideAlert()}>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
 
-             <View style={styles.modalContent}>
-                <Animated.View style={[styles.modalIconBox, { transform: [{ rotate: rotateInterpolate }] }]}>
-                   <LinearGradient
-                      colors={["#8B3358", "#3A081C"]}
-                      style={styles.modalIconGradient}
-                   >
-                      <Ionicons name="log-out" size={32} color="#FFF" style={{ marginLeft: 4 }} />
-                   </LinearGradient>
-                </Animated.View>
-
-                <Text style={[styles.modalTitle, { color: colors.text }]}>Log Out?</Text>
-                <Text style={[styles.modalMessage, { color: colors.textSecondary }]}>
-                   Are you sure you want to sign out? You'll need to login again to access your orders.
-                </Text>
-
-                <TouchableOpacity 
-                   style={styles.modalConfirmBtn} 
-                   onPress={handleSignOut}
+            <View style={styles.modalContent}>
+              <Animated.View style={[styles.modalIconBox, { transform: [{ rotate: rotateInterpolate }] }]}>
+                <LinearGradient
+                  colors={["#8B3358", "#3A081C"]}
+                  style={styles.modalIconGradient}
                 >
-                   <LinearGradient
-                      colors={["#8B3358", "#670D2F"]}
-                      style={styles.modalBtnGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                   >
-                      <Text style={styles.modalBtnText}>Yes, Sign Out</Text>
-                   </LinearGradient>
-                </TouchableOpacity>
+                  <Ionicons name="log-out" size={32} color="#FFF" style={{ marginLeft: 4 }} />
+                </LinearGradient>
+              </Animated.View>
 
-                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => hideAlert()}>
-                   <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Cancel</Text>
-                </TouchableOpacity>
-             </View>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Log Out?</Text>
+              <Text style={[styles.modalMessage, { color: colors.textSecondary }]}>
+                Are you sure you want to sign out? You'll need to login again to access your orders.
+              </Text>
+
+              <TouchableOpacity
+                style={styles.modalConfirmBtn}
+                onPress={handleSignOut}
+              >
+                <LinearGradient
+                  colors={["#8B3358", "#670D2F"]}
+                  style={styles.modalBtnGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.modalBtnText}>Yes, Sign Out</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => hideAlert()}>
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </Animated.View>
         </Animated.View>
       </Modal>
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 30 },
-  
+
   // Header Styles
   headerBackground: {
     height: 180,
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  
+
   // Stats Row
   statsRow: {
     flexDirection: 'row',

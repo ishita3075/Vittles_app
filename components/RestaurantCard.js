@@ -19,9 +19,16 @@ const RestaurantCard = ({ restaurant }) => {
     navigation.navigate('RestaurantDetails', { restaurant });
   };
 
+  const getRatingColor = (rating) => {
+    const score = parseFloat(rating);
+    if (score >= 4.0) return '#27AE60'; // Green
+    if (score >= 3.0) return '#F2994A'; // Yellow
+    return '#EB5757'; // Red
+  };
+
   const renderImage = () => {
     const isEmoji = restaurant.image && typeof restaurant.image === 'string' && !restaurant.image.startsWith('http');
-    
+
     if (isEmoji) {
       return (
         <View style={[styles.imagePlaceholder, { backgroundColor: colors.background }]}>
@@ -63,7 +70,7 @@ const RestaurantCard = ({ restaurant }) => {
       {/* Top Section: Image & Overlays */}
       <View style={styles.imageContainer}>
         {renderImage()}
-        
+
         {/* Discount Badge */}
         {/* {restaurant.discount && (
           <View style={styles.absoluteBadgeLeft}>
@@ -78,7 +85,7 @@ const RestaurantCard = ({ restaurant }) => {
 
         {/* Prep Time Chip */}
         <View style={styles.timeChip}>
-          <Ionicons name="hourglass-outline" size={12} color="#333" style={{marginRight: 4}} />
+          <Ionicons name="hourglass-outline" size={12} color="#333" style={{ marginRight: 4 }} />
           <Text style={styles.timeText}>{restaurant.time || '15 min'} prep</Text>
         </View>
       </View>
@@ -90,7 +97,7 @@ const RestaurantCard = ({ restaurant }) => {
             {restaurant.name}
           </Text>
           <View style={styles.ratingContainer}>
-            <View style={styles.ratingPill}>
+            <View style={[styles.ratingPill, { backgroundColor: getRatingColor(restaurant.rating) }]}>
               <Text style={styles.ratingScore}>{restaurant.rating}</Text>
               <Ionicons name="star" size={10} color="#FFF" />
             </View>
@@ -99,27 +106,17 @@ const RestaurantCard = ({ restaurant }) => {
 
         {/* Cuisine */}
         <Text style={[styles.cuisine, { color: colors.textSecondary }]} numberOfLines={1}>
-          {restaurant.cuisine || 'Fast Food • Beverages'} 
+          {restaurant.cuisine || 'Fast Food • Beverages'}
         </Text>
 
         {/* Footer: Pickup Specific Stats */}
         <View style={styles.statsRow}>
-          {/* Distance */}
-          <View style={styles.statItem}>
-             <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-             <Text style={[styles.statText, { color: colors.textSecondary }]}>
-                {restaurant.distance || '1.2 km'}
-             </Text>
-          </View>
-
-          <View style={styles.verticalDivider} />
-
           {/* Pickup Label */}
           <View style={styles.statItem}>
-             <Ionicons name="bag-handle-outline" size={14} color={colors.primary} />
-             <Text style={[styles.statText, { color: colors.primary, fontWeight: '600' }]}>
-                Self Pickup
-             </Text>
+            <Ionicons name="bag-handle-outline" size={14} color={colors.primary} />
+            <Text style={[styles.statText, { color: colors.primary, fontWeight: '600' }]}>
+              Self Pickup
+            </Text>
           </View>
         </View>
       </View>
@@ -229,7 +226,6 @@ const styles = StyleSheet.create({
   ratingPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2D9CDB',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,

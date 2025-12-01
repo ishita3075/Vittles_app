@@ -10,16 +10,18 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 
-export default function SearchBar({ 
-  searchQuery, 
-  onSearchChange, 
+export default function SearchBar({
+  searchQuery,
+  onSearchChange,
   onClearSearch,
   compact = false,
   placeholder = "Search Eateries",
   autoFocus = false,
   onSubmitEditing,
   style,
-  ...props 
+  inputStyle,
+  iconColor,
+  ...props
 }) {
   const { width } = useWindowDimensions();
   const { colors, isDark } = useTheme();
@@ -34,7 +36,7 @@ export default function SearchBar({
         borderRadius: 12,
       };
     }
-    
+
     if (width < 375) { // Small phones
       return {
         height: 48,
@@ -44,11 +46,11 @@ export default function SearchBar({
         borderRadius: 14,
       };
     }
-    
-    return { 
-      height: 52, 
-      iconSize: 22, 
-      fontSize: 16, 
+
+    return {
+      height: 52,
+      iconSize: 22,
+      fontSize: 16,
       paddingHorizontal: 20,
       borderRadius: 16,
     };
@@ -63,8 +65,8 @@ export default function SearchBar({
 
   return (
     <View style={[
-      styles.container, 
-      { 
+      styles.container,
+      {
         backgroundColor: colors.searchBackground || (isDark ? '#2a2a2a' : '#f8f9fa'),
         height: responsiveSize.height,
         paddingHorizontal: responsiveSize.paddingHorizontal,
@@ -79,13 +81,13 @@ export default function SearchBar({
       },
       style
     ]}>
-      <Ionicons 
-        name="search" 
-        size={responsiveSize.iconSize} 
-        color={colors.textSecondary} 
+      <Ionicons
+        name="search"
+        size={responsiveSize.iconSize}
+        color={iconColor || colors.textSecondary}
         style={styles.searchIcon}
       />
-      
+
       <TextInput
         style={[
           styles.input,
@@ -94,10 +96,11 @@ export default function SearchBar({
             fontSize: responsiveSize.fontSize,
             height: responsiveSize.height - 16, // Ensure proper height calculation
             lineHeight: responsiveSize.fontSize, // Match line height to font size
-          }
+          },
+          inputStyle
         ]}
         placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary}
+        placeholderTextColor={props.placeholderTextColor || colors.textSecondary}
         value={searchQuery}
         onChangeText={onSearchChange}
         returnKeyType="search"
@@ -108,8 +111,8 @@ export default function SearchBar({
         autoCapitalize="none"
         {...props}
       />
-      
-      
+
+
     </View>
   );
 }

@@ -1,3 +1,4 @@
+
 // src/navigation/HomeStack.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -62,7 +63,7 @@ const CartIcon = () => {
 // Custom Back Button
 const CustomBackButton = () => {
   const navigation = useNavigation();
-  
+
   return (
     <TouchableOpacity
       onPress={() => navigation.goBack()}
@@ -92,19 +93,19 @@ const HomeStack = () => {
       })}
     >
       {/* Home Screen - No Header (Custom Header in Component) */}
-      <Stack.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ 
+      <Stack.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
           headerShown: false,
-        }} 
+        }}
       />
-      
+
 
       {/* Search Screen */}
-      <Stack.Screen 
-        name="Search" 
-        component={SearchScreen} 
+      <Stack.Screen
+        name="Search"
+        component={SearchScreen}
         options={{
           title: 'Search Restaurants',
           headerLeft: () => <CustomBackButton />,
@@ -112,9 +113,9 @@ const HomeStack = () => {
       />
 
       {/* Food Category Screen */}
-      <Stack.Screen 
-        name="FoodCategory" 
-        component={FoodCategoryScreen} 
+      <Stack.Screen
+        name="FoodCategory"
+        component={FoodCategoryScreen}
         options={({ route }) => ({
           title: route.params?.category?.name || 'Category',
           headerLeft: () => <CustomBackButton />,
@@ -122,53 +123,53 @@ const HomeStack = () => {
       />
 
       {/* Restaurant Details */}
-      <Stack.Screen 
-        name="RestaurantDetails" 
-        component={RestaurantDetails} 
+      <Stack.Screen
+        name="RestaurantDetails"
+        component={RestaurantDetails}
         options={({ route }) => ({
           title: route.params?.restaurant?.name || 'Restaurant',
           headerLeft: () => <CustomBackButton />,
           headerRight: () => <CartIcon />,
           headerBackTitle: 'Back',
-          headerShown:false,
+          headerShown: false,
         })}
       />
 
       {/* Cart Screen */}
-      <Stack.Screen 
-        name="Cart" 
-        component={CartScreen} 
+      <Stack.Screen
+        name="Cart"
+        component={CartScreen}
         options={{
           title: 'Your Cart',
-          headerShown:false,
+          headerShown: false,
           headerLeft: () => <CustomBackButton />,
           presentation: 'modal', // Makes it feel like a modal on iOS
-        }} 
+        }}
       />
 
       {/* Checkout Screen */}
-      <Stack.Screen 
-        name="Checkout" 
-        component={CheckoutScreen} 
+      <Stack.Screen
+        name="Checkout"
+        component={CheckoutScreen}
 
         options={{
           title: 'Checkout',
           headerShown: false,
           headerLeft: () => <CustomBackButton />,
           headerRight: () => <CartIcon />,
-        }} 
+        }}
       />
 
       {/* Profile Screen */}
-      <Stack.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
         options={{
           // title: 'My Profile',
-          headerShown:false,
+          headerShown: false,
           headerLeft: () => <CustomBackButton />,
           headerRight: () => <CartIcon />,
-        }} 
+        }}
       />
     </Stack.Navigator>
   );

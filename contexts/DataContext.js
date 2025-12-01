@@ -35,7 +35,7 @@ export const DataProvider = ({ children }) => {
     setData(prevData => ({
       ...prevData,
       notifications: prevData.notifications.map(notification =>
-        notification.id === notificationId 
+        notification.id === notificationId
           ? { ...notification, read: true }
           : notification
       )
