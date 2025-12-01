@@ -35,9 +35,8 @@ api.interceptors.response.use(
   }
 );
 
-// ADDED: Vendor API functions - WITHOUT CHANGING EXISTING CODE
+// ---------------- VENDOR API (your existing code) ----------------
 
-// Create separate instance for vendor API
 const vendorApi = axios.create({
   baseURL: 'https://ineat-vendor.onrender.com',
   headers: {
@@ -45,7 +44,6 @@ const vendorApi = axios.create({
   },
 });
 
-// Add interceptors to vendorApi
 vendorApi.interceptors.request.use(
   async config => {
     const token = await AsyncStorage.getItem('token');
@@ -95,11 +93,11 @@ export const addMenuItem = async (vendorId, menuItem) => {
   }
 };
 
-// Update menu item availability - UPDATED for bit field
+// Update menu item availability
 export const updateMenuItemAvailability = async (vendorId, itemId, available) => {
   try {
     const response = await vendorApi.patch(`/vendors/${vendorId}/menu/${itemId}`, {
-      available: available ? 1 : 0 // Convert boolean to bit (1 or 0) for database
+      available: available ? 1 : 0
     });
     return response.data;
   } catch (error) {
@@ -120,7 +118,6 @@ export const deleteMenuItem = async (vendorId, itemId) => {
 };
 
 // NEW: Vendor fetching functions
-// Get all vendors
 export const getAllVendors = async () => {
   try {
     const response = await vendorApi.get('/vendors');
@@ -131,7 +128,6 @@ export const getAllVendors = async () => {
   }
 };
 
-// Get vendor by ID
 export const getVendorById = async (vendorId) => {
   try {
     const response = await vendorApi.get(`/vendors/${vendorId}`);
@@ -142,7 +138,6 @@ export const getVendorById = async (vendorId) => {
   }
 };
 
-// Search vendors
 export const searchVendors = async (query) => {
   try {
     const response = await vendorApi.get('/vendors/search', {
@@ -155,7 +150,6 @@ export const searchVendors = async (query) => {
   }
 };
 
-// Create new vendor
 export const createVendor = async (vendorData) => {
   try {
     const response = await vendorApi.post('/vendors', vendorData);
@@ -166,7 +160,6 @@ export const createVendor = async (vendorData) => {
   }
 };
 
-// Update vendor
 export const updateVendor = async (vendorId, vendorData) => {
   try {
     const response = await vendorApi.put(`/vendors/${vendorId}`, vendorData);
@@ -176,6 +169,7 @@ export const updateVendor = async (vendorId, vendorData) => {
     throw error;
   }
 };
+
 export const getOrdersByVendor = async (vendorId) => {
   try {
     const response = await vendorApi.get(`/orders/vendor/${vendorId}`);
@@ -195,7 +189,7 @@ export const placeOrder = async (orderData) => {
     throw error;
   }
 };
-// ⭐⭐⭐ FIXED FUNCTION ⭐⭐⭐
+
 // PATCH all orders of a customerId (vendor updating order status)
 export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
   try {
@@ -205,6 +199,34 @@ export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
     return response.data;
   } catch (error) {
     console.log("updateOrderStatusByCustomerAPI ERROR:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// ---------------- PAYMENT API (Spring Boot + Razorpay) ----------------
+
+// ⚠️ CHANGE THIS TO YOUR SPRING BOOT URL (use your PC IPv4 instead of localhost)
+const paymentApi = axios.create({
+  baseURL: 'http://192.168.1.104:8089', // e.g. http://192.168.1.10:8089
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+/**
+ * Create Razorpay order via Spring Boot backend
+ * @param {number} amountInPaise - e.g. 10000 for ₹100
+ */
+export const createRazorpayOrder = async (amountInPaise) => {
+  try {
+    const response = await paymentApi.post('/api/payments/create-order', {
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: `rcpt_${Date.now()}`,
+    });
+    return response.data; // { orderId, currency, amount, razorpayKeyId }
+  } catch (error) {
+    console.error('Error creating Razorpay order:', error.response?.data || error);
     throw error;
   }
 };

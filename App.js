@@ -34,6 +34,7 @@ import VendorMenu from "./screens/VendorMenu";
 import VendorDashboard from "./screens/VendorDashboard";
 import ForgotPasswordScreen from "./screens/ForgotPassword";
 import VendorProfileStack from "./navigation/VendorProfileStack";
+import RazorpayScreen from "./screens/RazorpayScreen"; // ✅ ADDED IMPORT
 
 // Assets
 import vit from './assets/Vittles_2.jpg';
@@ -88,12 +89,12 @@ const FloatingCartButton = () => {
     >
       <View style={[styles.cartButton, { backgroundColor: colors.primary }]}>
         <Ionicons name="cart" size={24} color="#fff" />
-        <Animated.View 
+        <Animated.View
           style={[
-            styles.badge, 
-            { 
+            styles.badge,
+            {
               backgroundColor: colors.error || '#FF3B30',
-              transform: [{ scale: scaleAnim }] 
+              transform: [{ scale: scaleAnim }]
             }
           ]}
         >
@@ -130,13 +131,13 @@ const LoadingScreen = () => {
   return (
     <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
       <StatusBar hidden />
-      <Animated.Image 
-        source={vit} 
+      <Animated.Image
+        source={vit}
         style={[
-          styles.loadingImage, 
+          styles.loadingImage,
           { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }
-        ]} 
-        resizeMode="cover" 
+        ]}
+        resizeMode="cover"
       />
     </View>
   );
@@ -190,10 +191,10 @@ const MainTabs = () => {
             }
 
             return (
-              <Ionicons 
-                name={iconName} 
-                size={iconSize} 
-                color={color} 
+              <Ionicons
+                name={iconName}
+                size={iconSize}
+                color={color}
                 style={focused ? styles.activeTabIcon : null}
               />
             );
@@ -202,9 +203,21 @@ const MainTabs = () => {
       >
         {isVendor ? (
           <>
-            <Tab.Screen name="Vendor" component={VendorDashboard} options={{ tabBarLabel: 'Dashboard' }} />
-            <Tab.Screen name="Menu" component={VendorMenu} options={{ tabBarLabel: 'My Menu' }} />
-                <Tab.Screen name="Account" component={VendorProfileStack} options={{ tabBarLabel: 'Profile' }} />
+            <Tab.Screen
+              name="Vendor"
+              component={VendorDashboard}
+              options={{ tabBarLabel: 'Dashboard' }}
+            />
+            <Tab.Screen
+              name="Menu"
+              component={VendorMenu}
+              options={{ tabBarLabel: 'My Menu' }}
+            />
+            <Tab.Screen
+              name="Account"
+              component={VendorProfileStack}
+              options={{ tabBarLabel: 'Profile' }}
+            />
           </>
         ) : (
           <>
@@ -214,7 +227,7 @@ const MainTabs = () => {
           </>
         )}
       </Tab.Navigator>
-      
+
       {/* {!isVendor && <FloatingCartButton />} */}
     </View>
   );
@@ -229,23 +242,32 @@ const RootNavigator = () => {
   }
 
   return (
-    <Stack.Navigator 
-      screenOptions={{ 
-        headerShown: false, 
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
         contentStyle: { backgroundColor: colors.background },
-        animation: 'slide_from_right' // Smooth native transition
+        animation: 'slide_from_right'
       }}
     >
       {user ? (
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} />
-          <Stack.Screen 
-            name="Cart" 
-            component={CartScreen} 
-            options={{ 
-              animation: 'slide_from_bottom', // Cart slides up
-              presentation: 'modal' // Optional: Makes it feel like a distinct overlay
-            }} 
+          <Stack.Screen
+            name="Cart"
+            component={CartScreen}
+            options={{
+              animation: 'slide_from_bottom',
+              presentation: 'modal'
+            }}
+          />
+          {/* ✅ RAZORPAY REGISTERED AT ROOT LEVEL */}
+          <Stack.Screen
+            name="Razorpay"
+            component={RazorpayScreen}
+            options={{
+              headerShown: false,
+              presentation: 'modal'
+            }}
           />
         </>
       ) : (
@@ -330,8 +352,8 @@ const styles = StyleSheet.create({
   // Tab Bar
   tabBar: {
     borderTopWidth: 0,
-    elevation: 10, // Android shadow
-    shadowColor: '#000', // iOS shadow
+    elevation: 10,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.05,
     shadowRadius: 8,

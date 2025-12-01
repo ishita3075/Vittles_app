@@ -6,7 +6,7 @@ const cartReducer = (state, action) => {
   switch (action.type) {
     case 'ADD_ITEM':
       const existingItem = state.items.find(item => item.id === action.payload.id);
-      
+
       // Check if adding from different restaurant
       if (state.currentRestaurant && state.currentRestaurant !== action.payload.restaurantId) {
         return {
@@ -54,8 +54,8 @@ const cartReducer = (state, action) => {
             : item
         ).filter(item => item.quantity > 0),
         // Clear restaurant if cart becomes empty
-        currentRestaurant: state.items.find(item => item.id === action.payload)?.quantity === 1 
-          ? null 
+        currentRestaurant: state.items.find(item => item.id === action.payload)?.quantity === 1
+          ? null
           : state.currentRestaurant
       };
 
@@ -105,7 +105,7 @@ export const CartProvider = ({ children }) => {
 
   // Calculate totals
   const subtotal = state.items.reduce((total, item) => {
-    const price = typeof item.price === 'number' ? item.price : 
+    const price = typeof item.price === 'number' ? item.price :
                  typeof item.price === 'string' ? parseFloat(item.price.replace('₹', '').replace('$', '')) : 0;
     return total + (price * item.quantity);
   }, 0);
@@ -176,19 +176,21 @@ export const CartProvider = ({ children }) => {
     totalItems,
     currentRestaurant: state.currentRestaurant,
     showRestaurantWarning: state.showRestaurantWarning,
-    
+
     // Totals
     subtotal,
     deliveryFee,
     tax,
     total,
-    
+    grandTotal: total,                 // ✅ added alias for clarity
+
     // Formatted totals
     formattedSubtotal: formatCurrency(subtotal),
     formattedDeliveryFee: formatCurrency(deliveryFee),
     formattedTax: formatCurrency(tax),
     formattedTotal: formatCurrency(total),
-    
+    formattedGrandTotal: formatCurrency(total), // ✅ added formatted alias
+
     // Actions
     addItem,
     incrementItem,
