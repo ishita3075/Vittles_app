@@ -33,6 +33,7 @@ import CartScreen from "./screens/CartScreen";
 import VendorMenu from "./screens/VendorMenu";
 import VendorDashboard from "./screens/VendorDashboard";
 import ForgotPasswordScreen from "./screens/ForgotPassword";
+import VendorProfileStack from "./navigation/VendorProfileStack";
 
 // Assets
 import vit from './assets/Vittles_2.jpg';
@@ -203,7 +204,7 @@ const MainTabs = () => {
           <>
             <Tab.Screen name="Vendor" component={VendorDashboard} options={{ tabBarLabel: 'Dashboard' }} />
             <Tab.Screen name="Menu" component={VendorMenu} options={{ tabBarLabel: 'My Menu' }} />
-            <Tab.Screen name="Account" component={ProfileStack} />
+                <Tab.Screen name="Account" component={VendorProfileStack} options={{ tabBarLabel: 'Profile' }} />
           </>
         ) : (
           <>
