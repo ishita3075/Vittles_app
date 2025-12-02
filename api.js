@@ -2,7 +2,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Use your Render URL here
+/* =========================================================================
+   MAIN CUSTOMER API
+   ========================================================================= */
+
 const BASE_URL = 'https://foodapp-3-kmi1.onrender.com';
 
 const api = axios.create({
@@ -35,7 +38,9 @@ api.interceptors.response.use(
   }
 );
 
-// ---------------- VENDOR API (your existing code) ----------------
+/* =========================================================================
+   VENDOR API
+   ========================================================================= */
 
 const vendorApi = axios.create({
   baseURL: 'https://ineat-vendor.onrender.com',
@@ -84,7 +89,7 @@ export const addMenuItem = async (vendorId, menuItem) => {
       price: menuItem.price,
       category: menuItem.category,
       description: menuItem.description,
-      available: menuItem.available
+      available: menuItem.available,
     });
     return response.data;
   } catch (error) {
@@ -97,7 +102,7 @@ export const addMenuItem = async (vendorId, menuItem) => {
 export const updateMenuItemAvailability = async (vendorId, itemId, available) => {
   try {
     const response = await vendorApi.patch(`/vendors/${vendorId}/menu/${itemId}`, {
-      available: available ? 1 : 0
+      available: available ? 1 : 0,
     });
     return response.data;
   } catch (error) {
@@ -141,7 +146,7 @@ export const getVendorById = async (vendorId) => {
 export const searchVendors = async (query) => {
   try {
     const response = await vendorApi.get('/vendors/search', {
-      params: { q: query }
+      params: { q: query },
     });
     return response.data;
   } catch (error) {
@@ -175,7 +180,7 @@ export const getOrdersByVendor = async (vendorId) => {
     const response = await vendorApi.get(`/orders/vendor/${vendorId}`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching vendor orders:", error.response?.data || error);
+    console.error('Error fetching vendor orders:', error.response?.data || error);
     throw error;
   }
 };
@@ -185,7 +190,7 @@ export const placeOrder = async (orderData) => {
     const response = await vendorApi.post('/orders', orderData);
     return response.data;
   } catch (error) {
-    console.error("Error placing order:", error.response?.data || error);
+    console.error('Error placing order:', error.response?.data || error);
     throw error;
   }
 };
@@ -194,20 +199,21 @@ export const placeOrder = async (orderData) => {
 export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
   try {
     const response = await vendorApi.patch(`/orders/customer/${customerId}`, {
-      status
+      status,
     });
     return response.data;
   } catch (error) {
-    console.log("updateOrderStatusByCustomerAPI ERROR:", error.response?.data || error);
+    console.log('updateOrderStatusByCustomerAPI ERROR:', error.response?.data || error);
     throw error;
   }
 };
 
-// ---------------- PAYMENT API (Spring Boot + Razorpay) ----------------
+/* =========================================================================
+   PAYMENT API (Spring Boot + Razorpay)
+   ========================================================================= */
 
-// ⚠️ CHANGE THIS TO YOUR SPRING BOOT URL (use your PC IPv4 instead of localhost)
 const paymentApi = axios.create({
-  baseURL: 'http://10.10.180.162:8089', // e.g. http://192.168.1.10:8089
+  baseURL: 'http://10.10.180.162:8089', // your Spring Boot IP
   headers: {
     'Content-Type': 'application/json',
   },
@@ -230,5 +236,75 @@ export const createRazorpayOrder = async (amountInPaise) => {
     throw error;
   }
 };
+
+/* =========================================================================
+   NOTIFICATION API (Render)
+   ========================================================================= */
+
+const NOTIFICATION_BASE_URL = 'https://notification-api-brl8.onrender.com';
+
+const notificationApi = axios.create({
+  baseURL: NOTIFICATION_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// If your notification API also needs JWT, keep this interceptor.
+// If not, you can remove this whole block.
+notificationApi.interceptors.request.use(
+  async config => {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+notificationApi.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response) {
+      console.log('Notification API Error:', error.response.data);
+    }
+    return Promise.reject(error);
+  }
+);
+
+// 🔔 Get all notifications for a user
+export const getNotifications = async (userId) => {
+  // TODO: change this to match your Spring Boot notification route
+  // Example: GET /notifications/user/{userId}
+  const res = await notificationApi.get(`/notifications/user/${userId}`);
+  return res.data; // expecting array
+};
+
+// 🔔 Mark one notification as read
+export const markNotificationRead = async (notificationId) => {
+  // Example: PATCH /notifications/{id}/read
+  const res = await notificationApi.patch(`/notifications/${notificationId}/read`);
+  return res.data;
+};
+
+// 🔔 Delete a single notification
+export const deleteNotificationApi = async (notificationId) => {
+  // Example: DELETE /notifications/{id}
+  const res = await notificationApi.delete(`/notifications/${notificationId}`);
+  return res.data;
+};
+
+// 🔔 Clear all notifications for a user
+export const clearAllNotifications = async (userId) => {
+  // Example: DELETE /notifications/user/{userId}/all
+  const res = await notificationApi.delete(`/notifications/user/${userId}/all`);
+  return res.data;
+};
+
+/* =========================================================================
+   DEFAULT EXPORT
+   ========================================================================= */
 
 export default api;

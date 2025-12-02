@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,89 +7,147 @@ import {
   TouchableOpacity,
   StatusBar,
   SafeAreaView,
-  RefreshControl
+  RefreshControl,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 
-const MOCK_ALERTS = [
-  {
-    id: "1",
-    title: "50% off at Spice Garden!",
-    time: "2h ago",
-    read: false,
-  },
-  {
-    id: "2",
-    title: "New Italian restaurants added near you",
-    time: "5h ago",
-    read: false,
-  },
-  {
-    id: "3",
-    title: "Your favorite Sushi place has a new dish 🍣",
-    time: "1d ago",
-    read: true,
-  },
-  {
-    id: "4",
-    title: "Reminder: Order before 8 PM for free delivery",
-    time: "2d ago",
-    read: true,
-  },
-];
+// 👇 import notification APIs from api.js (root)
+import {
+  getNotifications,
+  markNotificationRead,
+  deleteNotificationApi,
+  clearAllNotifications,
+} from "../api";
 
 export default function AlertsScreen({ navigation }) {
-  const [alerts, setAlerts] = useState(MOCK_ALERTS);
+  const [alerts, setAlerts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { colors } = useTheme();
 
-  const unreadCount = alerts.filter(alert => !alert.read).length;
+  // TODO: replace with real userId (maybe from AsyncStorage or context)
+  const userId = "123";
 
-  const markAsRead = (id) => {
-    setAlerts(prev => prev.map(alert =>
-      alert.id === id ? { ...alert, read: true } : alert
-    ));
+  const unreadCount = alerts.filter((alert) => !alert.read).length;
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const data = await getNotifications(userId);
+
+      // 💡 adjust this mapping based on your backend response shape
+      // assuming: [{ id, title, message, createdAt, read }, ...]
+      const mapped = data.map((n) => ({
+        id: n.id?.toString(),
+        title: n.title || n.message || "Notification",
+        time: formatTimeAgo(n.createdAt),
+        read: n.read ?? false,
+      }));
+
+      setAlerts(mapped);
+    } catch (error) {
+      console.log("Error loading notifications:", error?.response || error);
+      Alert.alert("Error", "Failed to load notifications");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  const markAsRead = async (id) => {
+    try {
+      await markNotificationRead(id);
+      setAlerts((prev) =>
+        prev.map((alert) =>
+          alert.id === id ? { ...alert, read: true } : alert
+        )
+      );
+    } catch (error) {
+      console.log("Error marking read:", error?.response || error);
+      Alert.alert("Error", "Failed to mark as read");
+    }
   };
 
-  const markAllAsRead = () => {
-    setAlerts(prev => prev.map(alert => ({ ...alert, read: true })));
+  const markAllAsRead = async () => {
+    try {
+      // If you later have a bulk endpoint, call that instead of Promise.all
+      await Promise.all(
+        alerts.filter((a) => !a.read).map((a) => markNotificationRead(a.id))
+      );
+      setAlerts((prev) => prev.map((alert) => ({ ...alert, read: true })));
+    } catch (error) {
+      console.log("Error marking all read:", error?.response || error);
+      Alert.alert("Error", "Failed to mark all as read");
+    }
   };
 
-  const clearAllAlerts = () => {
-    setAlerts([]);
+  const clearAllAlerts = async () => {
+    try {
+      await clearAllNotifications(userId);
+      setAlerts([]);
+    } catch (error) {
+      console.log("Error clearing alerts:", error?.response || error);
+      Alert.alert("Error", "Failed to clear notifications");
+    }
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setAlerts(MOCK_ALERTS);
-      setRefreshing(false);
-    }, 1000);
+    loadNotifications();
+  };
+
+  const handleDeleteSingle = async (id) => {
+    try {
+      await deleteNotificationApi(id);
+      setAlerts((prev) => prev.filter((alert) => alert.id !== id));
+    } catch (error) {
+      console.log("Error deleting notification:", error?.response || error);
+      Alert.alert("Error", "Failed to delete notification");
+    }
   };
 
   const renderAlertItem = ({ item }) => (
     <TouchableOpacity
       style={[
         styles.alertCard,
-        { backgroundColor: colors.card }
+        { backgroundColor: colors.card },
       ]}
       onPress={() => markAsRead(item.id)}
       activeOpacity={0.7}
     >
-      {!item.read && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
+      {!item.read && (
+        <View
+          style={[styles.unreadDot, { backgroundColor: colors.primary }]}
+        />
+      )}
 
-      <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
+      <View
+        style={[
+          styles.iconContainer,
+          { backgroundColor: colors.primary + "20" },
+        ]}
+      >
         <Ionicons name="notifications" size={20} color={colors.primary} />
       </View>
 
       <View style={styles.alertContent}>
-        <Text style={[styles.alertTitle, { color: colors.text }]}>{item.title}</Text>
-        <Text style={[styles.alertTime, { color: colors.textSecondary }]}>{item.time}</Text>
+        <Text style={[styles.alertTitle, { color: colors.text }]}>
+          {item.title}
+        </Text>
+        <Text
+          style={[styles.alertTime, { color: colors.textSecondary }]}
+        >
+          {item.time}
+        </Text>
       </View>
 
       <TouchableOpacity
-        onPress={() => setAlerts(prev => prev.filter(alert => alert.id !== item.id))}
+        onPress={() => handleDeleteSingle(item.id)}
         style={styles.closeButton}
       >
         <Ionicons name="close" size={18} color={colors.textSecondary} />
@@ -99,35 +157,51 @@ export default function AlertsScreen({ navigation }) {
 
   const EmptyState = () => (
     <View style={styles.emptyState}>
-      <View style={[styles.emptyIconContainer, { backgroundColor: colors.background }]}>
-        <Ionicons name="notifications-off-outline" size={60} color={colors.textSecondary} />
+      <View
+        style={[
+          styles.emptyIconContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <Ionicons
+          name="notifications-off-outline"
+          size={60}
+          color={colors.textSecondary}
+        />
       </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
         No Notifications
       </Text>
-      <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+      <Text
+        style={[styles.emptySubtitle, { color: colors.textSecondary }]}
+      >
         You're all caught up! Check back later for updates.
       </Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#8B3358"
-      />
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
 
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.titleContainer}>
-            <Ionicons name="notifications" size={24} color="#FFF" style={styles.bellIcon} />
+            <Ionicons
+              name="notifications"
+              size={24}
+              color="#FFF"
+              style={styles.bellIcon}
+            />
             <View>
               <Text style={styles.headerTitle}>Notifications</Text>
               {unreadCount > 0 && (
                 <Text style={styles.unreadCount}>
-                  {unreadCount} unread {unreadCount === 1 ? 'message' : 'messages'}
+                  {unreadCount} unread{" "}
+                  {unreadCount === 1 ? "message" : "messages"}
                 </Text>
               )}
             </View>
@@ -141,12 +215,14 @@ export default function AlertsScreen({ navigation }) {
       </View>
 
       {/* Alerts List */}
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         {alerts.length > 0 ? (
           <FlatList
             data={alerts}
             renderItem={renderAlertItem}
-            keyExtractor={item => item.id}
+            keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
             refreshControl={
@@ -158,7 +234,7 @@ export default function AlertsScreen({ navigation }) {
               />
             }
           />
-        ) : (
+        ) : loading ? null : (
           <EmptyState />
         )}
       </View>
@@ -166,7 +242,7 @@ export default function AlertsScreen({ navigation }) {
       {/* Action Buttons */}
       {alerts.length > 0 && (
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#C0392B' }]}
+          style={[styles.actionButton, { backgroundColor: "#C0392B" }]}
           onPress={clearAllAlerts}
         >
           <Ionicons name="trash-outline" size={20} color="#ffffff" />
@@ -177,12 +253,30 @@ export default function AlertsScreen({ navigation }) {
   );
 }
 
+// helper: convert ISO date => "2h ago", "1d ago"
+function formatTimeAgo(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+
+  const seconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (minutes > 0) return `${minutes}m ago`;
+  return "Just now";
+}
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
   header: {
-    backgroundColor: '#8B3358',
+    backgroundColor: "#8B3358",
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
@@ -202,17 +296,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: '#FFF',
+    color: "#FFF",
   },
   unreadCount: {
     fontSize: 14,
     marginTop: 4,
-    color: 'rgba(255,255,255,0.9)',
+    color: "rgba(255,255,255,0.9)",
   },
   markReadText: {
     fontSize: 14,
     fontWeight: "600",
-    color: '#FFF',
+    color: "#FFF",
   },
   container: {
     flex: 1,

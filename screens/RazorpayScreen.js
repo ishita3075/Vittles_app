@@ -72,9 +72,7 @@ const RazorpayScreen = ({ route, navigation }) => {
 
   const handlePaymentSuccess = async (paymentData) => {
     try {
-      // OPTIONAL: send paymentData to backend to verify signature
-      // For now we just place the order(s) as before
-
+      // Place all orders
       for (const item of cartItems) {
         await placeOrder({
           customerId: userId || 'guest',
@@ -86,7 +84,6 @@ const RazorpayScreen = ({ route, navigation }) => {
           quantity: item.quantity,
           specialInstructions: specialInstructions,
           paymentMethod: paymentMethod,
-          // optionally save paymentId/orderId too
           paymentId: paymentData.razorpay_payment_id,
           razorpayOrderId: paymentData.razorpay_order_id,
         });
@@ -97,15 +94,28 @@ const RazorpayScreen = ({ route, navigation }) => {
       Alert.alert(
         'Payment Successful',
         'Your order has been placed.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              // Navigate to Home screen
+              navigation.navigate('Home');
+            }
+          }
+        ]
       );
     } catch (err) {
       console.log('Error placing order after payment:', err);
       Alert.alert(
         'Order Error',
-        'Payment done but failed to place order. Please contact support.'
+        'Payment done but failed to place order. Please contact support.',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => navigation.goBack() 
+          }
+        ]
       );
-      navigation.goBack();
     }
   };
 
@@ -116,7 +126,7 @@ const RazorpayScreen = ({ route, navigation }) => {
       if (msg.event === 'success') {
         handlePaymentSuccess(msg.data);
       } else if (msg.event === 'dismiss') {
-        Alert.alert('Payment Cancelled', 'You cancelled the payment.');
+        // User cancelled the payment modal
         navigation.goBack();
       }
     } catch (e) {

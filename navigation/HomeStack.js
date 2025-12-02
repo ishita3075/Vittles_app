@@ -1,13 +1,12 @@
-
 // src/navigation/HomeStack.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-// import { TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useCart } from '../contexts/CartContext';
 import { TouchableOpacity, View, Text } from 'react-native';
-// Screens
+
+// Import all screens
 import HomeScreen from '../screens/HomeScreen';
 import RestaurantDetails from '../screens/RestaurantDetails';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -15,6 +14,7 @@ import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import SearchScreen from '../screens/SearchScreen';
 import FoodCategoryScreen from '../screens/FoodCategoryScreen';
+import RazorpayScreen from '../screens/RazorpayScreen'; // Add this import
 
 const Stack = createNativeStackNavigator();
 
@@ -101,7 +101,6 @@ const HomeStack = () => {
         }}
       />
 
-
       {/* Search Screen */}
       <Stack.Screen
         name="Search"
@@ -143,7 +142,7 @@ const HomeStack = () => {
           title: 'Your Cart',
           headerShown: false,
           headerLeft: () => <CustomBackButton />,
-          presentation: 'modal', // Makes it feel like a modal on iOS
+          presentation: 'modal',
         }}
       />
 
@@ -151,7 +150,6 @@ const HomeStack = () => {
       <Stack.Screen
         name="Checkout"
         component={CheckoutScreen}
-
         options={{
           title: 'Checkout',
           headerShown: false,
@@ -160,12 +158,22 @@ const HomeStack = () => {
         }}
       />
 
+      {/* Razorpay Payment Screen */}
+      <Stack.Screen
+        name="Razorpay"
+        component={RazorpayScreen}
+        options={{
+          title: 'Payment',
+          headerShown: false,
+          headerLeft: () => <CustomBackButton />,
+        }}
+      />
+
       {/* Profile Screen */}
       <Stack.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
-          // title: 'My Profile',
           headerShown: false,
           headerLeft: () => <CustomBackButton />,
           headerRight: () => <CartIcon />,
