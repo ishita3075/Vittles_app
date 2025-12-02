@@ -176,70 +176,102 @@ export default function VendorDashboard() {
 
     try {
       setLoading(true);
+
       const vendorOrders = await getOrdersByVendor(vendorId);
+
+      // 1️⃣ Normalize any possible backend status
+      const normalizeStatus = (rawStatus) => {
+        if (!rawStatus) return "pending";
+
+        const raw = rawStatus.toString().trim().toLowerCase();
+
+        if (raw.includes("pending")) return "pending";
+        if (raw.includes("prepar")) return "preparing"; // preparing, preparation
+        if (raw.includes("complete") || raw.includes("done") || raw.includes("deliver") || raw.includes("ready"))
+          return "completed";
+
+        return "pending"; // fallback
+      };
 
       const grouped = {};
 
       vendorOrders
-        .filter(row => {
-          const raw = (row.status ?? row.order_status ?? "").toString().trim().toLowerCase();
-          return raw === "pending" || raw === "preparing";  // 🚀 Only active orders
-        })
-        .forEach(row => {
+        .map(order => ({
+          ...order,
+          normalizedStatus: normalizeStatus(
+            order.status ?? order.order_status ?? order.orderStatus
+          )
+        }))
+        // 2️⃣ Only show active orders (pending + preparing)
+        .filter(order =>
+          order.normalizedStatus === "pending" ||
+          order.normalizedStatus === "preparing"
+        )
+        .forEach(order => {
 
-          const customerId = row.customer_id ?? row.customerId;
-          const menuName   = row.menu_name ?? row.menuName;
-          const qty        = row.quantity ?? row.qty ?? 1;
-          const price      = row.total_price ?? row.totalPrice ?? 0;
-          const statusRaw  = row.status ?? row.order_status ?? "Pending";
+          const customerId = order.customer_id ?? order.customerId;
+          const menuName   = order.menu_name ?? order.menuName;
+          const qty        = Number(order.quantity ?? order.qty ?? 1);
+          const price      = Number(order.total_price ?? order.totalPrice ?? 0);
 
-          const raw = statusRaw.toLowerCase();
+          // 3️⃣ Extract clean date (YYYY-MM-DD)
+          const dateOnly = (order.order_date ?? order.orderDate ?? "")
+            .toString()
+            .slice(0, 10);
 
-          const normalizedStatus =
-            raw === "pending" ? "pending" :
-            raw === "preparing" ? "preparing" :
-            "completed";
+          // 4️⃣ Group key = customer + date
+          const groupKey = `${customerId}_${dateOnly}`;
 
-          if (!grouped[customerId]) {
-            grouped[customerId] = {
-              id: row.id,
+          // 5️⃣ Initialize first card
+          if (!grouped[groupKey]) {
+            grouped[groupKey] = {
+              id: order.id,
               customerId,
-              customer: row.customer_name,
-              address: row.address ?? "Pickup",
-              status: normalizedStatus,
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              customer: order.customer_name ?? order.customerName,
+              address: order.address ?? "Pickup",
+              status: order.normalizedStatus,
+              time: new Date(order.order_date ?? order.orderDate)
+                .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
               price: 0,
               items: []
             };
           }
 
-          const existingItem = grouped[customerId].items.find(i => i.name === menuName);
+          // 6️⃣ Merge duplicate items
+          const existingItem = grouped[groupKey].items.find(i => i.name === menuName);
+
           if (existingItem) {
-            existingItem.quantity += Number(qty);
+            existingItem.quantity += qty;
           } else {
-            grouped[customerId].items.push({ name: menuName, quantity: Number(qty) });
+            grouped[groupKey].items.push({ name: menuName, quantity: qty });
           }
 
-          grouped[customerId].price += Number(price);
+          // Add price
+          grouped[groupKey].price += price;
 
-          const priority = { pending: 3, preparing: 2, completed: 1 };
-          if (priority[normalizedStatus] > priority[grouped[customerId].status]) {
-            grouped[customerId].status = normalizedStatus;
+          // 7️⃣ Priority resolve — pending > preparing > completed
+          const Rank = { pending: 3, preparing: 2, completed: 1 };
+          if (Rank[order.normalizedStatus] > Rank[grouped[groupKey].status]) {
+            grouped[groupKey].status = order.normalizedStatus;
           }
         });
 
-      const formatted = Object.values(grouped).map(g => ({
+      // 8️⃣ Final transformation
+      const finalData = Object.values(grouped).map(g => ({
         ...g,
-        items: g.items.map(it => `${it.quantity}x ${it.name}`)
+        items: g.items.map(i => `${i.quantity}x ${i.name}`)
       }));
 
-      setOrders(formatted);
+      setOrders(finalData);
     } catch (err) {
       console.log("Error loading orders:", err);
     } finally {
       setLoading(false);
     }
   };
+
+
+
 
 
   const toggleShop = () => {
