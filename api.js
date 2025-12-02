@@ -207,7 +207,7 @@ export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
 
 // ⚠️ CHANGE THIS TO YOUR SPRING BOOT URL (use your PC IPv4 instead of localhost)
 const paymentApi = axios.create({
-  baseURL: 'http://192.168.1.104:8089', // e.g. http://192.168.1.10:8089
+  baseURL: 'http://10.10.180.162:8089', // e.g. http://192.168.1.10:8089
   headers: {
     'Content-Type': 'application/json',
   },

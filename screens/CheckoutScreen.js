@@ -123,8 +123,7 @@ const CheckoutScreen = ({ route, navigation }) => {
     setIsPlacingOrder(true);
 
     try {
-      // 1️⃣ Create Razorpay order via Spring Boot
-      const amountInPaise = Math.round(grandTotal * 100); // Razorpay expects paise
+      const amountInPaise = Number(grandTotal.toFixed(2)); // Send rupees, not paise
       const paymentOrder = await createRazorpayOrder(amountInPaise);
 
       console.log('Razorpay Order:', paymentOrder);
