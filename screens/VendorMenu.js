@@ -165,33 +165,45 @@ export default function VendorMenu() {
     setIsAdding(true);
 
     try {
-      // Optimistic Update
-      const newLocalItem = {
-        id: Date.now().toString(),
-        name: newItem.name.trim(),
-        price: newItem.price,
+      const payload = {
+        itemName: newItem.name.trim(),
+        price: parseFloat(newItem.price),
         category: itemCategory,
-        description: newItem.description.trim() || "No description",
+        description: newItem.description || "",
         available: true
       };
 
-      // If using real API, uncomment this:
-      // const response = await addMenuItem(vendorId, { ...newLocalItem, price: parseFloat(newLocalItem.price) });
-      // newLocalItem.id = response.id || newLocalItem.id;
+      const response = await addMenuItem(vendorId, payload);
+
+      const newLocalItem = {
+        id: response.id?.toString(),
+        name: response.itemName,
+        price: response.price,
+        category: response.category,
+        description: response.description,
+        available: response.available
+      };
 
       setMenu(prev => [...prev, newLocalItem]);
-      if (!categories.includes(itemCategory)) setCategories(prev => [...prev, itemCategory]);
-      
+
+      if (!categories.includes(response.category)) {
+        setCategories(prev => [...prev, response.category]);
+      }
+
       setNewItem({ name: "", price: "", category: "", description: "" });
-      setIsFormVisible(false); // Close form on success
+      setIsFormVisible(false);
+
       Alert.alert("Success", "Item added to menu");
-      
+
     } catch (error) {
+      console.log("ADD ITEM ERROR:", error);
       Alert.alert("Error", "Could not add item");
     } finally {
       setIsAdding(false);
     }
   };
+
+
 
   const toggleAvailability = async (id) => {
     const item = menu.find(i => i.id === id);

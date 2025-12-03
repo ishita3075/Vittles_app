@@ -85,7 +85,7 @@ export const getVendorMenu = async (vendorId) => {
 export const addMenuItem = async (vendorId, menuItem) => {
   try {
     const response = await vendorApi.post(`/vendors/${vendorId}/menu`, {
-      itemName: menuItem.name,
+      itemName: menuItem.itemName ?? menuItem.name,
       price: menuItem.price,
       category: menuItem.category,
       description: menuItem.description,

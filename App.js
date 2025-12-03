@@ -148,9 +148,10 @@ const LoadingScreen = () => {
 const MainTabs = () => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { user } = useAuth();
 
-  const isVendor = VENDOR_EMAILS.includes(user?.email);
+  const { isVendor } = useAuth();
+
+
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

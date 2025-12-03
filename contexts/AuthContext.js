@@ -21,9 +21,30 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ NEW: Vendor list state
+  const [vendorList, setVendorList] = useState([]);
+
   useEffect(() => {
     checkStoredUser();
+    loadVendors(); // <-- load vendor data once
   }, []);
+
+  // ✅ NEW: Fetch all vendors from vendor backend
+  const loadVendors = async () => {
+    try {
+      const res = await fetch("https://ineat-vendor.onrender.com/vendors");
+      const data = await res.json();
+      setVendorList(data);
+    } catch (err) {
+      console.log("Vendor fetch error:", err);
+    }
+  };
+
+  // Computed vendor check (email OR phone match)
+  const isVendor = user
+    ? vendorList.some(v => v.id === user.id)
+    : false;
+
 
   const checkStoredUser = async () => {
     try {
@@ -92,7 +113,6 @@ export const AuthProvider = ({ children }) => {
         password
       });
 
-      // ✅ Backend returns only a message — no token or user
       return {
         success: true,
         message: response.data.message || 'Registration successful'
@@ -114,9 +134,8 @@ export const AuthProvider = ({ children }) => {
     await clearStorage();
   };
 
-  // ADDED: Vendor Menu API functions - WITHOUT CHANGING EXISTING CODE
+  // ---------------- VENDOR MENU API (as-is, unchanged) -----------------
 
-  // Create separate axios instance for vendor API
   const vendorApi = axios.create({
     baseURL: 'https://ineat-vendor.onrender.com',
     headers: {
@@ -124,7 +143,6 @@ export const AuthProvider = ({ children }) => {
     },
   });
 
-  // Add interceptors to vendorApi
   vendorApi.interceptors.request.use(
     async config => {
       const token = await AsyncStorage.getItem('token');
@@ -146,7 +164,6 @@ export const AuthProvider = ({ children }) => {
     }
   );
 
-  // Get vendor's menu
   const getVendorMenu = async (vendorId) => {
     try {
       const response = await vendorApi.get(`/vendors/${vendorId}/menu`);
@@ -157,7 +174,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Add item to vendor's menu
   const addMenuItem = async (vendorId, menuItem) => {
     try {
       const response = await vendorApi.post(`/vendors/${vendorId}/menu`, {
@@ -174,11 +190,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Update menu item availability - UPDATED for bit field
   const updateMenuItemAvailability = async (vendorId, itemId, available) => {
     try {
       const response = await vendorApi.patch(`/vendors/${vendorId}/menu/${itemId}`, {
-        available: available ? 1 : 0 // Convert boolean to bit (1 or 0) for database
+        available: available ? 1 : 0
       });
       return response.data;
     } catch (error) {
@@ -187,7 +202,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Delete menu item
   const deleteMenuItem = async (vendorId, itemId) => {
     try {
       const response = await vendorApi.delete(`/vendors/${vendorId}/menu/${itemId}`);
@@ -198,6 +212,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ----------------------------------------------------------------------
+
   const value = {
     user,
     token,
@@ -205,7 +221,12 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     isLoading,
-    // ADDED: Vendor menu API functions
+
+    // NEW
+    vendorList,
+    isVendor,
+
+    // Vendor menu functions
     getVendorMenu,
     addMenuItem,
     updateMenuItemAvailability,
