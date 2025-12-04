@@ -9,22 +9,26 @@ const RazorpayScreen = ({ route, navigation }) => {
   const { clearCart } = useCart();
 
   const {
-    paymentOrder,      // { orderId, amount, currency, razorpayKeyId }
-    cartItems,
-    customerName,
-    phoneNumber,
-    specialInstructions,
-    paymentMethod,
-    userId,
+    paymentOrder,
+    orderPayload,
     grandTotal,
+    phoneNumber,
+    specialInstructions
   } = route.params || {};
+
+  if (!orderPayload) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   const html = useMemo(() => {
     if (!paymentOrder) return '';
 
     const { orderId, amount, currency, razorpayKeyId } = paymentOrder;
 
-    // HTML that runs Razorpay Checkout
     return `
       <html>
         <head>
@@ -35,20 +39,17 @@ const RazorpayScreen = ({ route, navigation }) => {
           <script>
             var options = {
               key: "${razorpayKeyId}",
-              amount: "${amount}",  // in paise
+              amount: "${amount}",
               currency: "${currency}",
               name: "Vittles",
               description: "Food Order Payment",
               order_id: "${orderId}",
               prefill: {
-                name: "${customerName}",
+                name: "${orderPayload.customerName}",
                 contact: "${phoneNumber}"
               },
-              theme: {
-                color: "#8B3358"
-              },
+              theme: { color: "#8B3358" },
               handler: function (response){
-                // payment successful
                 window.ReactNativeWebView.postMessage(JSON.stringify({
                   event: "success",
                   data: response
@@ -68,56 +69,40 @@ const RazorpayScreen = ({ route, navigation }) => {
         </body>
       </html>
     `;
-  }, [paymentOrder, customerName, phoneNumber]);
+  }, [paymentOrder]);
 
   const handlePaymentSuccess = async (paymentData) => {
     try {
-      // Place all orders
-      for (const item of cartItems) {
-        await placeOrder({
-          customerId: userId || 'guest',
-          customerName: customerName,
-          menuId: item.id,
-          menuName: item.name,
-          vendorId: item.restaurantId,
-          vendorName: item.restaurantName,
-          quantity: item.quantity,
-          specialInstructions: specialInstructions,
-          paymentMethod: paymentMethod,
-          paymentId: paymentData.razorpay_payment_id,
-          razorpayOrderId: paymentData.razorpay_order_id,
-        });
-      }
+      const finalOrder = {
+        customerId: orderPayload.customerId,
+        customerName: orderPayload.customerName,
+        vendorId: orderPayload.vendorId,
+        vendorName: orderPayload.vendorName,
+        items: orderPayload.items
+      };
+
+      console.log("✔ Sending final order:", finalOrder);
+
+      await placeOrder(finalOrder);
 
       clearCart();
 
       Alert.alert(
-        'Payment Successful',
-        'Your order has been placed.',
-        [
-          { 
-            text: 'OK', 
-            onPress: () => {
-              // Navigate to Home screen
-              navigation.navigate('Home');
-            }
-          }
-        ]
+        "Payment Successful",
+        "Your order has been placed.",
+        [{ text: "OK", onPress: () => navigation.navigate("Home") }]
       );
+
     } catch (err) {
-      console.log('Error placing order after payment:', err);
+      console.log("Error placing order after payment:", err);
       Alert.alert(
-        'Order Error',
-        'Payment done but failed to place order. Please contact support.',
-        [
-          { 
-            text: 'OK', 
-            onPress: () => navigation.goBack() 
-          }
-        ]
+        "Order Error",
+        "Payment done but failed to place order.",
+        [{ text: "OK", onPress: () => navigation.goBack() }]
       );
     }
   };
+
 
   const onMessage = (event) => {
     try {
@@ -126,9 +111,9 @@ const RazorpayScreen = ({ route, navigation }) => {
       if (msg.event === 'success') {
         handlePaymentSuccess(msg.data);
       } else if (msg.event === 'dismiss') {
-        // User cancelled the payment modal
         navigation.goBack();
       }
+
     } catch (e) {
       console.log('WebView message parse error:', e);
     }

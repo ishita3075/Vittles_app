@@ -123,23 +123,41 @@ const CheckoutScreen = ({ route, navigation }) => {
     setIsPlacingOrder(true);
 
     try {
-      const amountInPaise = Number(grandTotal.toFixed(2)); // Send rupees, not paise
+      const amountInPaise = Number(grandTotal.toFixed(2));
+
       const paymentOrder = await createRazorpayOrder(amountInPaise);
+      console.log("Razorpay Order:", paymentOrder);
 
-      console.log('Razorpay Order:', paymentOrder);
+      const firstItem = cartItems[0];
 
-      // 2️⃣ Navigate to RazorpayScreen for payment (NO more placing order here)
+      const orderPayload = {
+        customerId: userId,
+        customerName: customerName,
+        phoneNumber,
+        vendorId: firstItem.restaurantId,
+        vendorName: firstItem.restaurantName,
+        specialInstructions,
+        paymentMethod,
+        grandTotal,
+        items: cartItems.map(item => ({
+          menuId: item.id,
+          menuName: item.name,
+          quantity: item.quantity
+        }))
+      };
+
       setIsPlacingOrder(false);
 
-      navigation.navigate('Razorpay', {
+      navigation.navigate("Razorpay", {
         paymentOrder,
-        cartItems,
+        orderPayload,
+        cartItems,            // extra data if needed
+        grandTotal,
         customerName,
         phoneNumber,
         specialInstructions,
         paymentMethod,
         userId,
-        grandTotal,
       });
 
     } catch (error) {
@@ -148,6 +166,8 @@ const CheckoutScreen = ({ route, navigation }) => {
       Alert.alert("Error", "Could not create payment order. Please try again.");
     }
   };
+
+
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]} >

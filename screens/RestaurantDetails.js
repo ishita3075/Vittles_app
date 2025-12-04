@@ -208,7 +208,7 @@ export default function RestaurantDetails() {
     const fetchVendorMenu = async () => {
       try {
         setLoading(true);
-        const vendorId = restaurant.id || restaurant.vendor_id || 14;
+        const vendorId = restaurant.id || restaurant.vendor_id;
         const menuData = await getVendorMenu(vendorId);
 
         if (menuData && Array.isArray(menuData)) {

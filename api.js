@@ -187,13 +187,37 @@ export const getOrdersByVendor = async (vendorId) => {
 
 export const placeOrder = async (orderData) => {
   try {
-    const response = await vendorApi.post('/orders', orderData);
+    // orderData is already in correct backend format
+    // {
+    //   customerId,
+    //   customerName,
+    //   vendorId,
+    //   vendorName,
+    //   items: [ {menuId, menuName, quantity} ]
+    // }
+
+    const payload = {
+      customerId: orderData.customerId,
+      customerName: orderData.customerName,
+      vendorId: orderData.vendorId,
+      vendorName: orderData.vendorName,
+      items: orderData.items
+    };
+
+    console.log("📦 Final Order Payload →", payload);
+
+    const response = await vendorApi.post('/orders', payload);
     return response.data;
+
   } catch (error) {
-    console.error('Error placing order:', error.response?.data || error);
+    console.error("❌ Error placing order:", error.response?.data || error);
     throw error;
   }
 };
+
+
+
+
 
 // PATCH all orders of a customerId (vendor updating order status)
 export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
@@ -213,7 +237,7 @@ export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
    ========================================================================= */
 
 const paymentApi = axios.create({
-  baseURL: 'http://10.10.180.162:8089', // your Spring Boot IP
+  baseURL: 'http://192.168.0.107:8089', // your Spring Boot IP
   headers: {
     'Content-Type': 'application/json',
   },

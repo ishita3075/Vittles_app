@@ -19,6 +19,9 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import { getOrdersByCustomer } from "../api";
+import { useAuth } from "../contexts/AuthContext";
+
 
 const { width } = Dimensions.get('window');
 
@@ -94,6 +97,10 @@ const OrderCard = ({ order, colors, index, navigation }) => {
         }
     };
 
+
+
+
+
     const getStatusBg = (status) => {
         switch (status) {
             case "Delivered": return "#ECFDF5";
@@ -165,27 +172,68 @@ const OrderCard = ({ order, colors, index, navigation }) => {
         </Animated.View>
     );
 };
+const formatStatus = (status) => {
+  if (!status) return "Processing";
+
+  const raw = status.toString().toLowerCase();
+
+  if (raw.includes("deliver") || raw.includes("complete")) return "Delivered";
+  if (raw.includes("cancel")) return "Cancelled";
+  if (raw.includes("pending") || raw.includes("prepar")) return "Processing";
+
+  return "Processing";
+};
+
 
 export default function OrderHistoryScreen({ navigation }) {
     const { colors } = useTheme();
+    const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('All');
     const [filteredOrders, setFilteredOrders] = useState([]);
 
-    // Mock Data
-    const allOrders = [
-        { id: 1, date: "Today, 12:30 PM", status: "Delivered", items: 3, total: "₹1,250", restaurant: "Burger King", type: "Delivery" },
-        { id: 2, date: "Jan 10, 8:45 PM", status: "Delivered", items: 2, total: "₹850", restaurant: "Pizza Hut", type: "Delivery" },
-        { id: 3, date: "Jan 05, 1:15 PM", status: "Cancelled", items: 4, total: "₹1,800", restaurant: "Domino's", type: "Takeaway" },
-        { id: 4, date: "Dec 28, 9:00 PM", status: "Delivered", items: 1, total: "₹450", restaurant: "McDonald's", type: "Delivery" },
-        { id: 5, date: "Dec 20, 1:00 PM", status: "Processing", items: 2, total: "₹600", restaurant: "Subway", type: "Delivery" },
-    ];
+    const [allOrders, setAllOrders] = useState([]);
+
 
     // Simulate loading
     useEffect(() => {
-        setTimeout(() => setIsLoading(false), 1500);
+      const loadOrders = async () => {
+        try {
+          setIsLoading(true);
+
+          const customerId = user?.id;
+          if (!customerId) return;
+
+          const response = await getOrdersByCustomer(customerId);
+
+          const formatted = response.map(row => ({
+            id: row.id,
+            restaurant: row.vendorName,
+            date: new Date().toLocaleString("en-IN", {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
+            }),
+            status: formatStatus(row.status),
+            items: row.quantity,
+            total: `₹${row.totalPrice}`,
+            type: "Delivery",
+          }));
+
+          setAllOrders(formatted);
+        } catch (err) {
+          console.log("Error loading order history:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadOrders();
     }, []);
+
+;
 
     // Filter Logic
     useEffect(() => {
