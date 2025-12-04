@@ -245,7 +245,8 @@ export default function RestaurantDetails() {
   const restaurantCartItems = cart.filter(item => item.restaurantId === restaurant.id);
   const totalItems = restaurantCartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = restaurantCartItems.reduce((sum, item) => {
-    const price = parseInt(item.price.replace(/[^0-9]/g, "")) || 0;
+    // FIX: Use parseFloat and preserve decimal points
+    const price = parseFloat(item.price.toString().replace(/[^0-9.]/g, '')) || 0;
     return sum + price * item.quantity;
   }, 0);
 
@@ -312,8 +313,6 @@ export default function RestaurantDetails() {
                 <Ionicons name="star" size={10} color="#FFF" style={{ marginLeft: 2 }} />
               </View>
             </View>
-
-
 
             {/* Stats Pills */}
 
