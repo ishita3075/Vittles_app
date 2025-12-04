@@ -1,4 +1,3 @@
-// screens/MyReviewsScreen.js
 import React from "react";
 import { 
   View, 
@@ -6,14 +5,31 @@ import {
   ScrollView, 
   TouchableOpacity, 
   StyleSheet, 
-  StatusBar 
+  StatusBar,
+  Platform,
+  Dimensions
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../contexts/ThemeContext"; // Import theme hook
+import { useTheme } from "../contexts/ThemeContext";
+
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.05)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  warning: "#F59E0B", // Star color
+  error: "#EF4444",
+};
 
 export default function MyReviewsScreen() {
-  const { colors } = useTheme(); // Get theme colors
+  const { colors: themeColors } = useTheme(); // Get navigation/base colors if needed
 
   const reviews = [
     { 
@@ -30,7 +46,7 @@ export default function MyReviewsScreen() {
       restaurant: "Chai Adda", 
       dish: "Traditional Masala Chai",
       rating: 4, 
-      comment: "Aromatic and perfectly spiced chai. The ginger and cardamom notes were exceptional, though it could be a bit stronger. Will definitely return!",
+      comment: "Aromatic and perfectly spiced chai. The ginger and cardamom notes were exceptional, though it could be a bit stronger.",
       date: "2024-01-05",
       helpful: 5
     },
@@ -39,7 +55,7 @@ export default function MyReviewsScreen() {
       restaurant: "Doctor Dosa", 
       dish: "Masala Dosa",
       rating: 5, 
-      comment: "Crispy and flavorful dosa. The batter was perfectly fermented and golden brown, though the potato filling could use more seasoning. Great chutneys!",
+      comment: "Crispy and flavorful dosa. The batter was perfectly fermented and golden brown. Great chutneys!",
       date: "2023-12-20",
       helpful: 8
     },
@@ -50,40 +66,42 @@ export default function MyReviewsScreen() {
       <Ionicons
         key={index}
         name={index < rating ? "star" : "star-outline"}
-        size={16}
-        color="#FF9500"
+        size={14}
+        color={COLORS.warning}
       />
     ));
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
+    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
       {/* Header with LinearGradient */}
-      <LinearGradient
-        colors={["#8B3358", "#670D2F", "#3A081C"]}
-        start={{ x: 0, y: 1 }}   // bottom-left
-        end={{ x: 1, y: 0 }}     // top-right
-        style={styles.header}
-      >
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.headerTitle}>My Reviews</Text>
-            <Text style={styles.headerSubtitle}>
-              {reviews.length} review{reviews.length !== 1 ? 's' : ''} • Your culinary journey
-            </Text>
-          </View>
-          <View style={styles.headerStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length || 0}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[COLORS.aeroBlue, COLORS.darkNavy]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerTitle}>My Reviews</Text>
+              <Text style={styles.headerSubtitle}>
+                {reviews.length} review{reviews.length !== 1 ? 's' : ''} • Your culinary journey
               </Text>
-              <Text style={styles.statLabel}>Avg Rating</Text>
+            </View>
+            <View style={styles.headerStats}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>
+                  {reviews.length > 0 ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1) : 0}
+                </Text>
+                <Text style={styles.statLabel}>Avg Rating</Text>
+              </View>
             </View>
           </View>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
+      </View>
 
       <ScrollView 
         style={styles.scrollView}
@@ -93,51 +111,55 @@ export default function MyReviewsScreen() {
         {reviews.length > 0 ? (
           <>
             {/* Reviews Summary */}
-            <View style={[styles.summaryCard, { backgroundColor: colors.card }]}>
+            <View style={[styles.summaryCard, { backgroundColor: COLORS.card }]}>
               <View style={styles.summaryItem}>
-                <Ionicons name="restaurant" size={24} color={colors.primary} />
+                <View style={[styles.summaryIconBox, { backgroundColor: COLORS.aeroBlueLight }]}>
+                  <Ionicons name="restaurant" size={20} color={COLORS.steelBlue} />
+                </View>
                 <View style={styles.summaryText}>
-                  <Text style={[styles.summaryNumber, { color: colors.text }]}>
+                  <Text style={[styles.summaryNumber, { color: COLORS.darkNavy }]}>
                     {reviews.length}
                   </Text>
-                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
-                    Restaurants Reviewed
+                  <Text style={styles.summaryLabel}>
+                    Restaurants
                   </Text>
                 </View>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
-                <Ionicons name="star" size={24} color="#FF9500" />
+                <View style={[styles.summaryIconBox, { backgroundColor: '#FFFBEB' }]}>
+                  <Ionicons name="star" size={20} color={COLORS.warning} />
+                </View>
                 <View style={styles.summaryText}>
-                  <Text style={[styles.summaryNumber, { color: colors.text }]}>
-                    {(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)}
+                  <Text style={[styles.summaryNumber, { color: COLORS.darkNavy }]}>
+                    {reviews.length > 0 ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1) : '0.0'}
                   </Text>
-                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
-                    Average Rating
+                  <Text style={styles.summaryLabel}>
+                    Average
                   </Text>
                 </View>
               </View>
             </View>
 
             {/* Reviews List */}
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              My Food Reviews ({reviews.length})
+            <Text style={[styles.sectionTitle, { color: COLORS.grayText }]}>
+              RECENT REVIEWS
             </Text>
             
             {reviews.map((review) => (
-              <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.card }]}>
+              <View key={review.id} style={[styles.reviewCard, { backgroundColor: COLORS.card }]}>
                 <View style={styles.reviewHeader}>
                   <View style={styles.restaurantInfo}>
-                    <Text style={[styles.restaurantName, { color: colors.text }]}>
+                    <Text style={[styles.restaurantName, { color: COLORS.darkNavy }]}>
                       {review.restaurant}
                     </Text>
-                    <Text style={[styles.dishName, { color: colors.primary }]}>
+                    <Text style={[styles.dishName, { color: COLORS.steelBlue }]}>
                       {review.dish}
                     </Text>
                   </View>
-                  <View style={[styles.ratingBadge, { backgroundColor: colors.isDark ? 'rgba(255, 149, 0, 0.2)' : '#fff7ed' }]}>
-                    <Ionicons name="star" size={14} color="#FF9500" />
-                    <Text style={[styles.ratingNumber, { color: '#FF9500' }]}>{review.rating}</Text>
+                  <View style={[styles.ratingBadge, { backgroundColor: '#FFFBEB' }]}>
+                    <Text style={[styles.ratingNumber, { color: COLORS.warning }]}>{review.rating}</Text>
+                    <Ionicons name="star" size={10} color={COLORS.warning} style={{marginLeft: 2}} />
                   </View>
                 </View>
                 
@@ -145,38 +167,30 @@ export default function MyReviewsScreen() {
                   <View style={styles.starsContainer}>
                     {renderStars(review.rating)}
                   </View>
-                  <Text style={[styles.reviewDate, { color: colors.textSecondary }]}>
+                  <Text style={[styles.reviewDate, { color: COLORS.grayText }]}>
                     {review.date}
                   </Text>
                 </View>
                 
-                <Text style={[styles.reviewComment, { color: colors.text }]}>
+                <Text style={[styles.reviewComment, { color: COLORS.darkNavy }]}>
                   {review.comment}
                 </Text>
                 
                 <View style={styles.reviewFooter}>
                   <View style={styles.helpfulSection}>
-                    <Ionicons name="thumbs-up-outline" size={16} color={colors.textSecondary} />
-                    <Text style={[styles.helpfulText, { color: colors.textSecondary }]}>
-                      {review.helpful} people found this helpful
+                    <Ionicons name="thumbs-up-outline" size={14} color={COLORS.grayText} />
+                    <Text style={[styles.helpfulText, { color: COLORS.grayText }]}>
+                      Helpful ({review.helpful})
                     </Text>
                   </View>
                   
                   <View style={styles.actionButtons}>
-                    <TouchableOpacity style={[styles.editButton, { 
-                      backgroundColor: colors.isDark ? 'rgba(0, 122, 255, 0.2)' : '#f0f8ff',
-                      borderColor: colors.primary 
-                    }]}>
-                      <Ionicons name="pencil-outline" size={14} color={colors.primary} />
-                      <Text style={[styles.editButtonText, { color: colors.primary }]}>
-                        Edit
-                      </Text>
+                    <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#F3F4F6' }]}>
+                      <Ionicons name="pencil-outline" size={14} color={COLORS.steelBlue} />
                     </TouchableOpacity>
                     
-                    <TouchableOpacity style={[styles.deleteButton, { 
-                      backgroundColor: colors.isDark ? 'rgba(255, 59, 48, 0.2)' : '#fef2f2' 
-                    }]}>
-                      <Ionicons name="trash-outline" size={14} color="#FF3B30" />
+                    <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#FEF2F2' }]}>
+                      <Ionicons name="trash-outline" size={14} color={COLORS.error} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -184,20 +198,16 @@ export default function MyReviewsScreen() {
             ))}
           </>
         ) : (
-          <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
-            <Ionicons name="restaurant-outline" size={80} color={colors.textSecondary} />
-            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
-              NO FOOD REVIEWS YET
+          <View style={styles.emptyState}>
+            <View style={[styles.emptyIconBg, { backgroundColor: COLORS.aeroBlueLight }]}>
+              <Ionicons name="create-outline" size={48} color={COLORS.steelBlue} />
+            </View>
+            <Text style={[styles.emptyStateTitle, { color: COLORS.darkNavy }]}>
+              No Reviews Yet
             </Text>
-            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-              You haven't reviewed any restaurants or dishes yet. Share your culinary experiences and help others discover great food!
+            <Text style={[styles.emptyStateText, { color: COLORS.grayText }]}>
+              You haven't reviewed any restaurants yet. Share your experience to help others!
             </Text>
-            <TouchableOpacity 
-              style={[styles.exploreButton, { backgroundColor: colors.primary }]}
-              onPress={() => navigation.navigate('Home')}
-            >
-              <Text style={styles.exploreButtonText}>Explore Restaurants</Text>
-            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -209,106 +219,131 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerContainer: {
+    height: 140,
+    width: '100%',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
+    zIndex: 10,
+  },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'android' ? 40 : 50,
+    justifyContent: 'center',
   },
   headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "800",
     color: '#FFF',
     marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '500',
   },
   headerStats: {
-    alignItems: "flex-end",
+    alignItems: "center",
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   statItem: {
     alignItems: "center",
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "800",
     color: '#FFF',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: 'rgba(255,255,255,0.9)',
     marginTop: 2,
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
   scrollView: {
     flex: 1,
+    marginTop: -20, // Overlap
   },
   content: {
     padding: 20,
-    paddingBottom: 30,
+    paddingBottom: 40,
   },
   summaryCard: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    padding: 16,
     borderRadius: 16,
-    marginBottom: 20,
+    marginBottom: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
     elevation: 3,
   },
   summaryItem: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    justifyContent: 'center',
+  },
+  summaryIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
   },
   summaryText: {
-    marginLeft: 12,
+    
   },
   summaryNumber: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "800",
-    marginBottom: 2,
   },
   summaryLabel: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.grayText,
   },
   summaryDivider: {
     width: 1,
-    height: 40,
-    backgroundColor: '#e5e5e5',
-    marginHorizontal: 16,
+    height: 30,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 8,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 16,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 12,
+    marginLeft: 4,
+    letterSpacing: 0.5,
   },
   reviewCard: {
     padding: 16,
     borderRadius: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.03,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   reviewHeader: {
     flexDirection: "row",
@@ -318,16 +353,16 @@ const styles = StyleSheet.create({
   },
   restaurantInfo: {
     flex: 1,
+    marginRight: 8,
   },
   restaurantName: {
     fontSize: 16,
     fontWeight: "700",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   dishName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    fontStyle: "italic",
   },
   ratingBadge: {
     flexDirection: "row",
@@ -335,11 +370,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    gap: 4,
   },
   ratingNumber: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "800",
   },
   ratingContainer: {
     flexDirection: "row",
@@ -352,18 +386,21 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   reviewDate: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "500",
   },
   reviewComment: {
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 22,
+    marginBottom: 16,
   },
   reviewFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
   helpfulSection: {
     flexDirection: "row",
@@ -379,58 +416,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  editButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  iconButton: {
+    width: 28,
+    height: 28,
     borderRadius: 8,
-    borderWidth: 1,
-    gap: 4,
-  },
-  editButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  deleteButton: {
-    padding: 6,
-    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 60,
     paddingHorizontal: 40,
-    borderRadius: 20,
     marginTop: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+  },
+  emptyIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   emptyStateTitle: {
     fontSize: 18,
     fontWeight: "700",
-    marginTop: 20,
-    marginBottom: 12,
+    marginTop: 8,
+    marginBottom: 8,
     textAlign: "center",
   },
   emptyStateText: {
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20,
-    fontWeight: "500",
-    marginBottom: 20,
-  },
-  exploreButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  exploreButtonText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "600",
   },
 });

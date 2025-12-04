@@ -109,9 +109,11 @@ export default function TopNavbar({
   return (
     <View style={styles.outerContainer}>
       <LinearGradient
-        colors={["#A63E69", "#6B1F3C", "#1F0510"]}
+        // Aero Blue Theme: Top-to-Bottom Vertical Gradient
+        // #7CB9E8 (Aero Blue) -> #5A94C4 (Steel Blue) -> #0A2342 (Dark Navy)
+        colors={["#7CB9E8", "#5A94C4", "#0A2342"]}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        end={{ x: 0, y: 1 }}
         style={styles.gradient}
       >
         <SafeAreaView edges={["top"]} style={styles.safeContent}>
@@ -170,7 +172,8 @@ export default function TopNavbar({
               >
                 <View style={styles.avatarWrapper}>
                   <LinearGradient
-                    colors={["#FFD6E7", "#FFFFFF"]}
+                    // Cool colors for avatar to match blue theme
+                    colors={["#E1F0FA", "#FFFFFF"]}
                     style={styles.avatarGradient}
                   >
                     <Text style={styles.avatarText}>{getUserInitials()}</Text>
@@ -200,7 +203,7 @@ export default function TopNavbar({
               </TouchableOpacity>
             </View>
 
-            {/* Subtitle (From your original request) */}
+            {/* Subtitle */}
             <Text style={styles.subtitle}>
               What delicious meal are you craving?
             </Text>
@@ -212,9 +215,6 @@ export default function TopNavbar({
                   searchQuery={searchQuery}
                   onSearchChange={onSearchChange}
                   onClearSearch={onClearSearch}
-                  // Ensure your internal SearchBar component has a transparent background
-                  // so the blur effect shows through
-
                   style={{
                     backgroundColor: 'rgba(255,255,255,0.15)',
                     borderWidth: 0,
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
-    overflow: 'hidden', // Essential for the blur and circles to be contained
+    overflow: 'hidden',
   },
   safeContent: {
     paddingBottom: 0,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#8B3358",
+    color: "#0A2342", // Deep Navy to contrast with pale blue gradient
   },
   textColumn: {
     flex: 1,
@@ -329,18 +329,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -2,
     right: -2,
-    backgroundColor: "#FF3B30",
+    backgroundColor: "#FFFFFF",
     minWidth: 18,
     height: 18,
     borderRadius: 9,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#591A32", // Matches gradient bg
+    borderColor: "#5A94C4", // Match mid-blue gradient
     paddingHorizontal: 3,
   },
   badgeText: {
-    color: "#FFFFFF",
+    color: "#5A94C4", // Steel Blue text
     fontSize: 10,
     fontWeight: "900",
   },
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     marginBottom: 16,
-    paddingLeft: 4, // Slight indent to align with avatar text
+    paddingLeft: 4,
   },
   searchSection: {
     color: 'rgba(0,0,0,0)',

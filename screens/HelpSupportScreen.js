@@ -18,6 +18,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import { useNavigation } from "@react-navigation/native";
 
 // Enable LayoutAnimation
 if (Platform.OS === 'android') {
@@ -26,8 +27,21 @@ if (Platform.OS === 'android') {
   }
 }
 
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.05)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+};
+
 // --- Helper: FAQ Item ---
-const FAQItem = ({ question, answer, colors }) => {
+const FAQItem = ({ question, answer }) => {
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpand = () => {
@@ -36,22 +50,30 @@ const FAQItem = ({ question, answer, colors }) => {
   };
 
   return (
-    <View style={[styles.faqItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[
+      styles.faqItem, 
+      { 
+        backgroundColor: COLORS.card, 
+        borderColor: expanded ? COLORS.aeroBlue : COLORS.border 
+      }
+    ]}>
       <TouchableOpacity 
         style={styles.faqHeader} 
         onPress={toggleExpand}
         activeOpacity={0.7}
       >
-        <Text style={[styles.faqQuestion, { color: colors.text }]}>{question}</Text>
+        <Text style={[styles.faqQuestion, { color: expanded ? COLORS.steelBlue : COLORS.darkNavy }]}>
+          {question}
+        </Text>
         <Ionicons 
           name={expanded ? "chevron-up" : "chevron-down"} 
           size={20} 
-          color={colors.textSecondary} 
+          color={expanded ? COLORS.steelBlue : COLORS.grayText} 
         />
       </TouchableOpacity>
       {expanded && (
         <View style={styles.faqBody}>
-          <Text style={[styles.faqAnswer, { color: colors.textSecondary }]}>{answer}</Text>
+          <Text style={[styles.faqAnswer, { color: COLORS.grayText }]}>{answer}</Text>
         </View>
       )}
     </View>
@@ -59,30 +81,43 @@ const FAQItem = ({ question, answer, colors }) => {
 };
 
 // --- Helper: Modern Input ---
-const SupportInput = ({ label, value, onChangeText, placeholder, multiline, icon, keyboardType, colors }) => (
+const SupportInput = ({ label, value, onChangeText, placeholder, multiline, icon, keyboardType }) => (
   <View style={styles.inputWrapper}>
-    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{label}</Text>
+    <Text style={styles.inputLabel}>{label}</Text>
     <View style={[
       styles.inputContainer, 
       { 
-        backgroundColor: colors.isDark ? '#333' : '#F9FAFB',
-        borderColor: colors.border,
+        backgroundColor: COLORS.white,
+        borderColor: COLORS.border,
         height: multiline ? 120 : 56,
-        alignItems: multiline ? 'flex-start' : 'center',
+        alignItems: multiline ? 'flex-start' : 'center', // Align top for multiline, center for single
       }
     ]}>
       <Ionicons 
         name={icon} 
         size={20} 
-        color={colors.primary} 
-        style={{ marginRight: 12, marginTop: multiline ? 14 : 0, opacity: 0.7 }} 
+        color={COLORS.steelBlue} 
+        style={{ 
+          marginRight: 12, 
+          marginTop: multiline ? 14 : 0, // Align icon to top for multiline
+          opacity: 0.8 
+        }} 
       />
       <TextInput
-        style={[styles.input, { color: colors.text, height: '100%', textAlignVertical: multiline ? 'top' : 'center', paddingTop: multiline ? 14 : 0 }]}
+        style={[
+          styles.input, 
+          { 
+            color: COLORS.darkNavy, 
+            height: '100%', 
+            textAlignVertical: multiline ? 'top' : 'center', // Android vertical align
+            paddingTop: multiline ? 14 : 0, // Padding for multiline text start
+            paddingBottom: multiline ? 14 : 0,
+          }
+        ]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary + '80'}
+        placeholderTextColor={COLORS.grayText}
         multiline={multiline}
         numberOfLines={multiline ? 4 : 1}
         keyboardType={keyboardType}
@@ -92,25 +127,25 @@ const SupportInput = ({ label, value, onChangeText, placeholder, multiline, icon
 );
 
 // --- Helper: Contact Card ---
-const ContactCard = ({ icon, title, subtitle, action, colors }) => (
+const ContactCard = ({ icon, title, subtitle, action }) => (
   <TouchableOpacity 
-    style={[styles.contactCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+    style={[styles.contactCard, { backgroundColor: COLORS.card, borderColor: COLORS.border }]}
     onPress={action}
     activeOpacity={0.7}
   >
-    <View style={[styles.iconBox, { backgroundColor: colors.primary + '10' }]}>
-      <Ionicons name={icon} size={24} color={colors.primary} />
+    <View style={[styles.iconBox, { backgroundColor: COLORS.aeroBlueLight }]}>
+      <Ionicons name={icon} size={24} color={COLORS.steelBlue} />
     </View>
     <View style={styles.contactTextContainer}>
-      <Text style={[styles.contactTitle, { color: colors.text }]}>{title}</Text>
-      <Text style={[styles.contactSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+      <Text style={[styles.contactTitle, { color: COLORS.darkNavy }]}>{title}</Text>
+      <Text style={[styles.contactSubtitle, { color: COLORS.grayText }]}>{subtitle}</Text>
     </View>
-    <Ionicons name="chevron-forward" size={20} color={colors.border} />
+    <Ionicons name="chevron-forward" size={20} color={COLORS.border} />
   </TouchableOpacity>
 );
 
-export default function HelpSupportScreen({ navigation }) {
-  const { colors } = useTheme();
+export default function HelpSupportScreen() {
+  const navigation = useNavigation();
   
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -147,28 +182,26 @@ export default function HelpSupportScreen({ navigation }) {
   // Actions
   const handleCall = () => Linking.openURL(`tel:+919876543210`);
   const handleEmail = () => Linking.openURL(`mailto:support@vittle.com`);
-  const handleMap = () => Linking.openURL(`https://maps.google.com/?q=Kichha,Uttarakhand`);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
+    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
       {/* 1. Curved Header */}
       <View style={styles.headerBackground}>
         <LinearGradient
-          colors={["#8B3358", "#670D2F", "#3A081C"]}
+          colors={[COLORS.aeroBlue, COLORS.darkNavy]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
         >
           <View style={styles.headerContent}>
-            {navigation.canGoBack() ? (
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={24} color="#FFF" />
-              </TouchableOpacity>
-            ) : <View style={{width: 40}} />}
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
             
             <Text style={styles.headerTitle}>Help Center</Text>
+            {/* Dummy view for centering title */}
             <View style={{ width: 40 }} /> 
           </View>
         </LinearGradient>
@@ -185,47 +218,41 @@ export default function HelpSupportScreen({ navigation }) {
           <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
             
             {/* 2. Contact Cards */}
-            <Text style={[styles.sectionHeader, { color: colors.text }]}>Contact Us</Text>
+            <Text style={[styles.sectionHeader, { color: COLORS.grayText }]}>CONTACT US</Text>
             <View style={styles.contactSection}>
               <ContactCard 
                 icon="call" 
                 title="Call Support" 
                 subtitle="+91 98765 43210" 
                 action={handleCall}
-                colors={colors} 
               />
               <ContactCard 
                 icon="mail" 
                 title="Email Us" 
                 subtitle="support@vittle.com" 
                 action={handleEmail}
-                colors={colors} 
               />
-              
             </View>
 
             {/* 3. FAQ Section */}
-            <Text style={[styles.sectionHeader, { color: colors.text, marginTop: 32 }]}>Frequently Asked Questions</Text>
+            <Text style={[styles.sectionHeader, { color: COLORS.grayText, marginTop: 32 }]}>FREQUENTLY ASKED QUESTIONS</Text>
             <View style={styles.faqSection}>
               <FAQItem 
                 question="How do I track my order?"
                 answer="Go to the 'Orders' tab in your profile to view real-time status updates for all your active orders."
-                colors={colors}
               />
               <FAQItem 
                 question="Can I cancel my order?"
                 answer="You cannot cancel your order once placed so be careful."
-                colors={colors}
               />
               <FAQItem 
                 question="What payment methods do you accept?"
-                answer="We accept UPI (GPay, PhonePe, Paytm)"
-                colors={colors}
+                answer="We accept UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, and Net Banking."
               />
             </View>
 
             {/* 4. Message Form */}
-            <Text style={[styles.sectionHeader, { color: colors.text, marginTop: 32 }]}>Send a Message</Text>
+            <Text style={[styles.sectionHeader, { color: COLORS.grayText, marginTop: 32 }]}>SEND A MESSAGE</Text>
             <View style={styles.formContainer}>
               <SupportInput 
                 label="Full Name"
@@ -233,7 +260,6 @@ export default function HelpSupportScreen({ navigation }) {
                 onChangeText={(t) => handleInputChange('fullName', t)}
                 placeholder="John Doe"
                 icon="person-outline"
-                colors={colors}
               />
               
               <SupportInput 
@@ -243,7 +269,6 @@ export default function HelpSupportScreen({ navigation }) {
                 placeholder="john@example.com"
                 keyboardType="email-address"
                 icon="mail-outline"
-                colors={colors}
               />
 
               <SupportInput 
@@ -253,22 +278,21 @@ export default function HelpSupportScreen({ navigation }) {
                 placeholder="Describe your issue..."
                 multiline
                 icon="chatbox-ellipses-outline"
-                colors={colors}
               />
 
               <TouchableOpacity 
-                style={[styles.submitButton, { backgroundColor: colors.primary }]}
+                style={styles.submitButton}
                 onPress={handleSubmit}
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={[colors.primary, '#A4396B']}
+                  colors={[COLORS.aeroBlue, COLORS.steelBlue]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.submitGradient}
                 >
                   <Text style={styles.submitButtonText}>Submit Ticket</Text>
-                  <Ionicons name="paper-plane" size={18} color="#FFF" />
+                  <Ionicons name="paper-plane" size={18} color="#FFF" style={{ marginLeft: 8 }} />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -303,7 +327,7 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-between', // Ensures perfect spacing
   },
   backButton: {
     width: 40,
@@ -317,6 +341,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: '#FFF',
+    textAlign: 'center',
   },
 
   // Content
@@ -325,9 +350,9 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   sectionHeader: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 16,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 12,
     marginLeft: 4,
     letterSpacing: 0.5,
   },
@@ -358,6 +383,7 @@ const styles = StyleSheet.create({
   },
   contactTextContainer: {
     flex: 1,
+    justifyContent: 'center', // Ensure text is vertically centered
   },
   contactTitle: {
     fontSize: 16,
@@ -374,7 +400,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   faqItem: {
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -396,7 +422,7 @@ const styles = StyleSheet.create({
   },
   faqAnswer: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 22,
   },
 
   // Form Inputs
@@ -409,7 +435,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     fontWeight: '700',
-    textTransform: 'uppercase',
+    color: COLORS.grayText,
     marginBottom: 8,
     marginLeft: 4,
   },
@@ -430,7 +456,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: "#8B3358",
+    shadowColor: COLORS.aeroBlue,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -441,7 +467,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    gap: 8,
   },
   submitButtonText: {
     color: '#FFF',

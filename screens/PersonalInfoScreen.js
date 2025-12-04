@@ -26,39 +26,53 @@ if (Platform.OS === 'android') {
   }
 }
 
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.05)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  error: "#EF4444",
+};
+
 // --- Modern Input Field ---
-const ProfileInput = ({ label, value, onChangeText, icon, editable, keyboardType, placeholder, colors }) => (
+const ProfileInput = ({ label, value, onChangeText, icon, editable, keyboardType, placeholder }) => (
   <View style={styles.inputWrapper}>
-    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{label}</Text>
+    <Text style={styles.inputLabel}>{label}</Text>
     <View style={[
       styles.inputContainer, 
       { 
-        backgroundColor: editable ? (colors.isDark ? '#333' : '#F3F4F6') : 'transparent',
+        backgroundColor: editable ? COLORS.white : 'transparent',
         borderWidth: editable ? 1 : 0,
-        borderColor: editable ? 'transparent' : colors.border,
-        borderBottomWidth: editable ? 0 : 1, // Only underline when not editing
+        borderColor: editable ? COLORS.aeroBlue : 'transparent',
+        borderBottomWidth: editable ? 0 : 1,
+        borderBottomColor: COLORS.border,
         paddingHorizontal: editable ? 16 : 0,
       }
     ]}>
-      <Ionicons name={icon} size={20} color={colors.primary} style={{ marginRight: 12, opacity: 0.8 }} />
+      <Ionicons name={icon} size={20} color={COLORS.steelBlue} style={{ marginRight: 12, opacity: 0.8 }} />
       <TextInput
-        style={[styles.input, { color: colors.text }]}
+        style={styles.input}
         value={value}
         onChangeText={onChangeText}
         editable={editable}
         placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary + '80'}
+        placeholderTextColor={COLORS.grayText}
         keyboardType={keyboardType}
       />
       {editable && (
-        <Ionicons name="pencil" size={14} color={colors.textSecondary} style={{ marginLeft: 8, opacity: 0.5 }} />
+        <Ionicons name="pencil" size={14} color={COLORS.aeroBlue} style={{ marginLeft: 8 }} />
       )}
     </View>
   </View>
 );
 
 export default function PersonalInfoScreen({ navigation }) {
-  const { colors } = useTheme();
   const { user, updateUserProfile } = useAuth();
   
   // Animation
@@ -133,13 +147,13 @@ export default function PersonalInfoScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
       {/* 1. Clean Header */}
       <View style={styles.headerContainer}>
         <LinearGradient
-          colors={["#8B3358", "#670D2F"]}
+          colors={[COLORS.aeroBlue, COLORS.darkNavy]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
@@ -174,7 +188,7 @@ export default function PersonalInfoScreen({ navigation }) {
             <View style={styles.profileHeader}>
               <View style={styles.avatarContainer}>
                 <LinearGradient
-                  colors={['#FFD1DC', '#F3E5F5']}
+                  colors={['#E1F0FA', '#FFFFFF']}
                   style={styles.avatarGradient}
                 >
                   <Text style={styles.avatarText}>
@@ -185,10 +199,10 @@ export default function PersonalInfoScreen({ navigation }) {
                   <Ionicons name="camera" size={14} color="#FFF" />
                 </View>
               </View>
-              <Text style={[styles.userName, { color: colors.text }]}>
+              <Text style={styles.userName}>
                 {userInfo.fullName || "User Name"}
               </Text>
-              <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+              <Text style={styles.userEmail}>
                 {userInfo.email || "user@example.com"}
               </Text>
             </View>
@@ -201,7 +215,6 @@ export default function PersonalInfoScreen({ navigation }) {
                 onChangeText={(t) => updateField('fullName', t)}
                 icon="person-outline"
                 editable={isEditing}
-                colors={colors}
                 placeholder="Your Name"
               />
               <ProfileInput 
@@ -210,7 +223,6 @@ export default function PersonalInfoScreen({ navigation }) {
                 onChangeText={(t) => updateField('email', t)}
                 icon="mail-outline"
                 editable={false} // Locked
-                colors={colors}
                 placeholder="name@example.com"
               />
               <ProfileInput 
@@ -220,7 +232,6 @@ export default function PersonalInfoScreen({ navigation }) {
                 icon="call-outline"
                 editable={isEditing}
                 keyboardType="phone-pad"
-                colors={colors}
                 placeholder="+91 0000000000"
               />
             </View>
@@ -229,23 +240,30 @@ export default function PersonalInfoScreen({ navigation }) {
             <View style={styles.actionSection}>
               {isEditing ? (
                 <TouchableOpacity 
-                  style={[styles.saveButton, { backgroundColor: colors.primary, opacity: isLoading ? 0.7 : 1 }]} 
+                  style={[styles.saveButton, { opacity: isLoading ? 0.7 : 1 }]} 
                   onPress={handleSave}
                   disabled={isLoading}
                 >
-                  {isLoading ? (
-                    <Text style={styles.saveButtonText}>Saving...</Text>
-                  ) : (
-                    <Text style={styles.saveButtonText}>Save Changes</Text>
-                  )}
+                  <LinearGradient
+                    colors={[COLORS.aeroBlue, COLORS.steelBlue]}
+                    style={styles.saveGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    {isLoading ? (
+                      <Text style={styles.saveButtonText}>Saving...</Text>
+                    ) : (
+                      <Text style={styles.saveButtonText}>Save Changes</Text>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity 
-                  style={[styles.changePassButton, { borderColor: colors.primary }]}
+                  style={styles.changePassButton}
                   onPress={() => navigation.navigate('ForgotPassword')}
                 >
-                  <Ionicons name="lock-closed-outline" size={18} color={colors.primary} />
-                  <Text style={[styles.changePassText, { color: colors.primary }]}>Change Password</Text>
+                  <Ionicons name="lock-closed-outline" size={18} color={COLORS.steelBlue} />
+                  <Text style={styles.changePassText}>Change Password</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -261,6 +279,7 @@ export default function PersonalInfoScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   
   // Header
@@ -327,22 +346,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 4,
     borderColor: '#FFF',
-    shadowColor: "#000",
+    shadowColor: COLORS.steelBlue,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
   },
   avatarText: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#8B3358',
+    color: COLORS.darkNavy,
   },
   cameraIcon: {
     position: 'absolute',
     bottom: 4,
     right: 4,
-    backgroundColor: '#8B3358',
+    backgroundColor: COLORS.steelBlue,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -354,11 +373,13 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 22,
     fontWeight: '700',
+    color: COLORS.darkNavy,
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
     fontWeight: '500',
+    color: COLORS.grayText,
   },
 
   // Form Fields
@@ -372,6 +393,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     fontWeight: '600',
+    color: COLORS.grayText,
     marginBottom: 8,
     marginLeft: 4,
   },
@@ -380,12 +402,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 14,
     height: 56,
-    paddingHorizontal: 16,
   },
   input: {
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
+    color: COLORS.darkNavy,
     height: '100%',
   },
 
@@ -397,13 +419,18 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 56,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: "#8B3358",
+    shadowColor: COLORS.steelBlue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+    overflow: 'hidden',
+  },
+  saveGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   saveButtonText: {
     color: '#FFF',
@@ -418,11 +445,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 16,
     borderWidth: 1,
+    borderColor: COLORS.steelBlue,
     width: '100%',
     gap: 8,
   },
   changePassText: {
     fontSize: 15,
     fontWeight: '600',
+    color: COLORS.steelBlue,
   },
 });

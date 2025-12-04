@@ -28,6 +28,18 @@ if (Platform.OS === 'android') {
   }
 }
 
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS = {
+  aeroBlue: "#7CB9E8",          // Primary Light Blue
+  steelBlue: "#5A94C4",         // Mid Blue (Accents)
+  darkNavy: "#0A2342",          // Deep Blue (Text/Dark Mode)
+  aeroBlueLight: "rgba(124, 185, 232, 0.1)", 
+  border: "rgba(0,0,0,0.05)",
+  card: "#FFFFFF",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+};
+
 // --- Responsive Utilities ---
 const { width, height } = Dimensions.get('window');
 const GUIDELINE_WIDTH = 375;
@@ -204,8 +216,8 @@ export default function HomeScreen({ navigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
+            colors={[COLORS.aeroBlue]} // Updated Refresh Color
+            tintColor={COLORS.aeroBlue}
             progressViewOffset={20}
           />
         }
@@ -226,6 +238,25 @@ export default function HomeScreen({ navigation }) {
           contentContainerStyle={styles.chipsContainer}
           style={styles.chipsScroll}
         >
+          {/* Example Chip usage - you would typically map these */}
+          <FilterChip 
+            label="Pure Veg" 
+            icon="leaf" 
+            active={filterVeg} 
+            onPress={() => setFilterVeg(!filterVeg)} 
+          />
+          <FilterChip 
+            label="Fast Delivery" 
+            icon="time" 
+            active={filterFast} 
+            onPress={() => setFilterFast(!filterFast)} 
+          />
+          <FilterChip 
+            label="Top Rated" 
+            icon="star" 
+            active={filterTopRated} 
+            onPress={() => setFilterTopRated(!filterTopRated)} 
+          />
 
           {/* Reset Filter Button if any filter is active */}
           {(filterVeg || filterFast || filterTopRated) && (
@@ -242,15 +273,13 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.listSection}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              <Text style={[styles.sectionTitle, { color: COLORS.darkNavy }]}>
                 {searchQuery ? 'Search Results' : 'All Eateries'}
               </Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+              <Text style={[styles.sectionSubtitle, { color: COLORS.grayText }]}>
                 {loading ? 'Finding best spots...' : `${filteredRestaurants.length} places near you`}
               </Text>
             </View>
-
-
           </View>
 
           {loading ? (
@@ -271,11 +300,11 @@ export default function HomeScreen({ navigation }) {
           {/* Empty State */}
           {!loading && filteredRestaurants.length === 0 && (
             <View style={styles.emptyState}>
-              <View style={[styles.emptyIconBg, { backgroundColor: colors.border + '40' }]}>
-                <Ionicons name="search" size={32} color={colors.textSecondary} />
+              <View style={styles.emptyIconBg}>
+                <Ionicons name="search" size={32} color={COLORS.grayText} />
               </View>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>No restaurants found</Text>
-              <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
+              <Text style={[styles.emptyTitle, { color: COLORS.darkNavy }]}>No restaurants found</Text>
+              <Text style={[styles.emptyDesc, { color: COLORS.grayText }]}>
                 We couldn't find anything matching "{searchQuery}". Try different keywords.
               </Text>
             </View>
@@ -328,8 +357,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   chipActive: {
-    backgroundColor: '#8B3358', // Primary Color
-    borderColor: '#8B3358',
+    backgroundColor: COLORS.aeroBlue, // Updated to Aero Blue
+    borderColor: COLORS.aeroBlue,
   },
   chipText: {
     fontSize: 13,
@@ -344,7 +373,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   clearFiltersText: {
-    color: '#8B3358',
+    color: COLORS.steelBlue, // Updated to Steel Blue
     fontSize: 13,
     fontWeight: '600',
   },
@@ -421,6 +450,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: COLORS.aeroBlueLight, // Updated Background
   },
   emptyTitle: {
     fontSize: 18,

@@ -29,6 +29,20 @@ if (Platform.OS === 'android') {
   }
 }
 
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS_THEME = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.05)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  error: "#EF4444",
+};
+
 export default function CartScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
@@ -54,13 +68,13 @@ export default function CartScreen() {
   
   // Animation for list entrance
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true })
+    ]).start();
   }, []);
 
   const handleClearCart = () => {
@@ -99,15 +113,15 @@ export default function CartScreen() {
     const itemTotal = (parseFloat(item.price.replace(/[^0-9.]/g, '')) || 0) * item.quantity;
 
     return (
-      <View style={[styles.cartItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={[styles.cartItem, { backgroundColor: COLORS_THEME.white, borderColor: COLORS_THEME.border }]}>
         <View style={styles.itemContent}>
           {/* Image */}
           <View style={styles.imageWrapper}>
             {item.image ? (
               <Image source={{ uri: item.image }} style={styles.itemImage} />
             ) : (
-              <View style={[styles.placeholderImage, { backgroundColor: colors.background }]}>
-                <Ionicons name="fast-food" size={24} color={colors.textSecondary} />
+              <View style={[styles.placeholderImage, { backgroundColor: COLORS_THEME.background }]}>
+                <Ionicons name="fast-food" size={24} color={COLORS_THEME.grayText} />
               </View>
             )}
           </View>
@@ -115,21 +129,21 @@ export default function CartScreen() {
           {/* Details */}
           <View style={styles.itemDetails}>
             <View style={styles.itemHeader}>
-              <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+              <Text style={[styles.itemName, { color: COLORS_THEME.darkNavy }]} numberOfLines={1}>{item.name}</Text>
               <TouchableOpacity onPress={() => removeItem(item.id)} hitSlop={10}>
-                <Ionicons name="close" size={18} color={colors.textSecondary} />
+                <Ionicons name="close-circle" size={20} color={COLORS_THEME.grayText} style={{ opacity: 0.6 }} />
               </TouchableOpacity>
             </View>
             
-            <Text style={[styles.itemVariant, { color: colors.textSecondary }]} numberOfLines={1}>
+            <Text style={[styles.itemVariant, { color: COLORS_THEME.grayText }]} numberOfLines={1}>
               {item.restaurantName}
             </Text>
             
             <View style={styles.itemFooter}>
-              <Text style={[styles.itemPrice, { color: colors.text }]}>₹{itemTotal.toFixed(2)}</Text>
+              <Text style={[styles.itemPrice, { color: COLORS_THEME.darkNavy }]}>₹{itemTotal.toFixed(2)}</Text>
               
               {/* Quantity Stepper */}
-              <View style={[styles.qtyContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <View style={styles.qtyContainer}>
                 <TouchableOpacity 
                   onPress={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -137,9 +151,11 @@ export default function CartScreen() {
                   }}
                   style={styles.qtyBtn}
                 >
-                  <Ionicons name="remove" size={14} color={colors.text} />
+                  <Ionicons name="remove" size={16} color={COLORS_THEME.steelBlue} />
                 </TouchableOpacity>
-                <Text style={[styles.qtyText, { color: colors.text }]}>{item.quantity}</Text>
+                
+                <Text style={[styles.qtyText, { color: COLORS_THEME.darkNavy }]}>{item.quantity}</Text>
+                
                 <TouchableOpacity 
                   onPress={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -147,7 +163,7 @@ export default function CartScreen() {
                   }}
                   style={styles.qtyBtn}
                 >
-                  <Ionicons name="add" size={14} color={colors.primary} />
+                  <Ionicons name="add" size={16} color={COLORS_THEME.steelBlue} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -160,21 +176,39 @@ export default function CartScreen() {
   // --- Empty State ---
   if (totalItems === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar barStyle="dark-content" />
+      <View style={[styles.container, { backgroundColor: COLORS_THEME.background }]}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
+        {/* Simple Header for Empty State */}
+        <View style={styles.emptyHeader}>
+           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButtonDark}>
+              <Ionicons name="arrow-back" size={24} color={COLORS_THEME.darkNavy} />
+           </TouchableOpacity>
+           <Text style={[styles.headerTitle, { color: COLORS_THEME.darkNavy }]}>My Cart</Text>
+           <View style={{ width: 40 }} />
+        </View>
+
         <View style={styles.emptyContainer}>
-          <View style={[styles.emptyIconBg, { backgroundColor: colors.card }]}>
-            <Ionicons name="cart-outline" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+          <View style={[styles.emptyIconBg, { backgroundColor: COLORS_THEME.aeroBlueLight }]}>
+            <Ionicons name="cart-outline" size={64} color={COLORS_THEME.steelBlue} style={{ opacity: 0.8 }} />
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>Cart is empty</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-            Discover restaurants and add items to start your order.
+          <Text style={[styles.emptyTitle, { color: COLORS_THEME.darkNavy }]}>Cart is empty</Text>
+          <Text style={[styles.emptySubtitle, { color: COLORS_THEME.grayText }]}>
+            Looks like you haven't added anything to your cart yet.
           </Text>
           <TouchableOpacity 
-            style={[styles.browseButton, { backgroundColor: colors.primary }]}
+            style={styles.browseButton}
             onPress={() => navigation.goBack()}
+            activeOpacity={0.9}
           >
-            <Text style={styles.browseText}>Explore Restaurants</Text>
+            <LinearGradient
+              colors={[COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.browseGradient}
+            >
+              <Text style={styles.browseText}>Start Ordering</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
@@ -182,13 +216,13 @@ export default function CartScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: COLORS_THEME.background }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
       {/* Header Area */}
       <View style={styles.headerContainer}>
         <LinearGradient
-          colors={["#8B3358", "#670D2F", "#3A081C"]}
+          colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerBackground}
@@ -206,19 +240,19 @@ export default function CartScreen() {
       </View>
 
       <Animated.ScrollView 
-        style={[styles.scrollView, { opacity: fadeAnim }]}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        style={[styles.scrollView, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+        contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Restaurant Info Banner */}
         {cart.length > 0 && (
-          <View style={[styles.restaurantBanner, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-            <View style={[styles.storeIcon, { backgroundColor: colors.primary + '15' }]}>
-              <Ionicons name="storefront" size={16} color={colors.primary} />
+          <View style={[styles.restaurantBanner, { backgroundColor: COLORS_THEME.white, borderBottomColor: COLORS_THEME.border }]}>
+            <View style={[styles.storeIcon, { backgroundColor: COLORS_THEME.aeroBlueLight }]}>
+              <Ionicons name="storefront" size={18} color={COLORS_THEME.steelBlue} />
             </View>
             <View>
-              <Text style={[styles.restaurantLabel, { color: colors.textSecondary }]}>Ordering from</Text>
-              <Text style={[styles.restaurantName, { color: colors.text }]}>{cart[0]?.restaurantName}</Text>
+              <Text style={[styles.restaurantLabel, { color: COLORS_THEME.grayText }]}>Ordering from</Text>
+              <Text style={[styles.restaurantName, { color: COLORS_THEME.darkNavy }]}>{cart[0]?.restaurantName}</Text>
             </View>
           </View>
         )}
@@ -233,48 +267,55 @@ export default function CartScreen() {
         </View>
 
         {/* Bill Details */}
-        <View style={[styles.billSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.billHeader, { color: colors.text }]}>Payment Summary</Text>
+        <View style={[styles.billSection, { backgroundColor: COLORS_THEME.white, borderColor: COLORS_THEME.border }]}>
+          <Text style={[styles.billHeader, { color: COLORS_THEME.darkNavy }]}>Payment Summary</Text>
           
           <View style={styles.billRow}>
-            <Text style={[styles.billLabel, { color: colors.textSecondary }]}>Item Total</Text>
-            <Text style={[styles.billValue, { color: colors.text }]}>{formattedSubtotal}</Text>
+            <Text style={[styles.billLabel, { color: COLORS_THEME.grayText }]}>Item Total</Text>
+            <Text style={[styles.billValue, { color: COLORS_THEME.darkNavy }]}>{formattedSubtotal}</Text>
           </View>
           
           <View style={styles.billRow}>
-            <Text style={[styles.billLabel, { color: colors.textSecondary }]}>Delivery Fee</Text>
-            <Text style={[styles.billValue, { color: colors.text }]}>{formattedDeliveryFee}</Text>
+            <Text style={[styles.billLabel, { color: COLORS_THEME.grayText }]}>Delivery Fee</Text>
+            <Text style={[styles.billValue, { color: COLORS_THEME.darkNavy }]}>{formattedDeliveryFee}</Text>
           </View>
           
           <View style={styles.billRow}>
-            <Text style={[styles.billLabel, { color: colors.textSecondary }]}>Taxes & Charges</Text>
-            <Text style={[styles.billValue, { color: colors.text }]}>{formattedTax}</Text>
+            <Text style={[styles.billLabel, { color: COLORS_THEME.grayText }]}>Taxes & Charges</Text>
+            <Text style={[styles.billValue, { color: COLORS_THEME.darkNavy }]}>{formattedTax}</Text>
           </View>
           
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <View style={[styles.divider, { backgroundColor: COLORS_THEME.border }]} />
           
           <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { color: colors.text }]}>To Pay</Text>
-            <Text style={[styles.totalValue, { color: colors.text }]}>{formattedTotal}</Text>
+            <Text style={[styles.totalLabel, { color: COLORS_THEME.darkNavy }]}>To Pay</Text>
+            <Text style={[styles.totalValue, { color: COLORS_THEME.darkNavy }]}>{formattedTotal}</Text>
           </View>
         </View>
       </Animated.ScrollView>
 
       {/* Checkout Footer */}
-      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+      <View style={[styles.footer, { backgroundColor: COLORS_THEME.white }]}>
         <View style={styles.footerContent}>
           <View>
-            <Text style={[styles.footerTotalLabel, { color: colors.textSecondary }]}>Total</Text>
-            <Text style={[styles.footerTotalValue, { color: colors.text }]}>{formattedTotal}</Text>
+            <Text style={[styles.footerTotalLabel, { color: COLORS_THEME.grayText }]}>Total</Text>
+            <Text style={[styles.footerTotalValue, { color: COLORS_THEME.darkNavy }]}>{formattedTotal}</Text>
           </View>
           
           <TouchableOpacity 
-            style={[styles.checkoutBtn, { backgroundColor: colors.primary }]}
+            style={styles.checkoutBtnWrapper}
             onPress={handleCheckout}
             activeOpacity={0.9}
           >
-            <Text style={styles.checkoutText}>Proceed to Pay</Text>
-            <Ionicons name="arrow-forward" size={18} color="#FFF" />
+            <LinearGradient
+              colors={[COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.checkoutGradient}
+            >
+              <Text style={styles.checkoutText}>Proceed to Pay</Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFF" />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
@@ -287,7 +328,7 @@ const styles = StyleSheet.create({
   
   // Header
   headerContainer: {
-    height: 110, // Shorter, cleaner header
+    height: 110,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     overflow: 'hidden',
@@ -306,51 +347,57 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FFF',
     letterSpacing: 0.5,
   },
   backButton: {
-    padding: 8,
-    marginLeft: -8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   clearText: {
     color: 'rgba(255,255,255,0.9)',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 
   // Restaurant Banner
   restaurantBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 20,
     marginBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   storeIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   restaurantLabel: {
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginBottom: 2,
   },
   restaurantName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 
   // Scroll Content
   scrollView: {
     flex: 1,
+    marginTop: -10, // Slight overlap if needed, or remove for flat layout
   },
   listContainer: {
     paddingHorizontal: 16,
@@ -358,11 +405,15 @@ const styles = StyleSheet.create({
 
   // Cart Item
   cartItem: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    // Removed heavy shadows for a cleaner flat look
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
+    elevation: 1,
   },
   itemContent: {
     flexDirection: 'row',
@@ -371,21 +422,22 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   itemImage: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
+    width: 80,
+    height: 80,
+    borderRadius: 12,
     backgroundColor: '#f0f0f0',
   },
   placeholderImage: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
+    width: 80,
+    height: 80,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   itemDetails: {
     flex: 1,
     justifyContent: 'space-between',
+    paddingVertical: 2,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -393,8 +445,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   itemName: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     flex: 1,
     marginRight: 8,
     lineHeight: 20,
@@ -410,7 +462,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   itemPrice: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   
@@ -418,20 +470,21 @@ const styles = StyleSheet.create({
   qtyContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    backgroundColor: COLORS_THEME.background,
     borderRadius: 8,
     height: 32,
+    paddingHorizontal: 4,
   },
   qtyBtn: {
-    width: 32,
+    width: 28,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
   qtyText: {
     fontSize: 14,
-    fontWeight: '600',
-    marginHorizontal: 4,
+    fontWeight: '700',
+    marginHorizontal: 8,
     minWidth: 16,
     textAlign: 'center',
   },
@@ -439,10 +492,15 @@ const styles = StyleSheet.create({
   // Bill Section
   billSection: {
     marginHorizontal: 16,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     marginTop: 8,
     borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   billHeader: {
     fontSize: 16,
@@ -456,10 +514,11 @@ const styles = StyleSheet.create({
   },
   billLabel: {
     fontSize: 14,
+    fontWeight: '500',
   },
   billValue: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   divider: {
     height: 1,
@@ -472,24 +531,29 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   totalLabel: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
   },
   totalValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
   },
 
   // Footer
   footer: {
-    padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
-    borderTopWidth: 1,
-    elevation: 8, // subtle elevation for sticky footer
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 12,
+    elevation: 20,
   },
   footerContent: {
     flexDirection: 'row',
@@ -498,46 +562,68 @@ const styles = StyleSheet.create({
   },
   footerTotalLabel: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginBottom: 2,
   },
   footerTotalValue: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
   },
-  checkoutBtn: {
+  checkoutBtnWrapper: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: COLORS_THEME.steelBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  checkoutGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingHorizontal: 28,
     gap: 8,
   },
   checkoutText: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 
   // Empty State
+  emptyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'android' ? 40 : 50,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  backButtonDark: {
+    padding: 8,
+    marginLeft: -8,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+    marginTop: -60, // visual center adjust
   },
   emptyIconBg: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     marginBottom: 8,
   },
   emptySubtitle: {
@@ -547,13 +633,23 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   browseButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 12,
+    width: '100%',
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: COLORS_THEME.steelBlue,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  browseGradient: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   browseText: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 });

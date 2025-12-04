@@ -91,7 +91,7 @@ const NearbyRestaurants = ({ restaurants, loading, onRestaurantPress }) => {
 
 const styles = StyleSheet.create({
   listContainer: {
-    paddingBottom: 20,
+    paddingBottom: 0, // Removed excessive bottom padding
   },
   
   // Skeleton Styles

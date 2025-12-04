@@ -22,9 +22,24 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getVendorMenu } from '../api';
 
 const { width, height } = Dimensions.get('window');
-const HEADER_HEIGHT = width / 1.8;
-// Increased sticky header height
+const HEADER_HEIGHT = width / 1.6; // Slightly taller for better impact
 const HEADER_MIN_HEIGHT = Platform.OS === 'ios' ? 110 : 90;
+
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS_THEME = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.08)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  success: "#10B981",
+  error: "#EF4444",
+  warning: "#F59E0B",
+};
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android') {
@@ -34,21 +49,21 @@ if (Platform.OS === 'android') {
 }
 
 // --- Menu Item Skeleton ---
-const MenuSkeleton = ({ colors }) => (
+const MenuSkeleton = () => (
   <View style={styles.skeletonContainer}>
     <View style={{ flex: 1, paddingRight: 16 }}>
-      <View style={[styles.skeletonBox, { width: 16, height: 16, borderRadius: 4, marginBottom: 8, backgroundColor: colors.border }]} />
-      <View style={[styles.skeletonBox, { width: '70%', height: 20, marginBottom: 8, backgroundColor: colors.border }]} />
-      <View style={[styles.skeletonBox, { width: '30%', height: 16, marginBottom: 12, backgroundColor: colors.border }]} />
-      <View style={[styles.skeletonBox, { width: '90%', height: 14, marginBottom: 6, backgroundColor: colors.border }]} />
-      <View style={[styles.skeletonBox, { width: '60%', height: 14, backgroundColor: colors.border }]} />
+      <View style={[styles.skeletonBox, { width: 16, height: 16, borderRadius: 4, marginBottom: 8 }]} />
+      <View style={[styles.skeletonBox, { width: '70%', height: 20, marginBottom: 8 }]} />
+      <View style={[styles.skeletonBox, { width: '30%', height: 16, marginBottom: 12 }]} />
+      <View style={[styles.skeletonBox, { width: '90%', height: 14, marginBottom: 6 }]} />
+      <View style={[styles.skeletonBox, { width: '60%', height: 14 }]} />
     </View>
-    <View style={[styles.skeletonBox, { width: 120, height: 120, borderRadius: 12, backgroundColor: colors.border }]} />
+    <View style={[styles.skeletonBox, { width: 120, height: 120, borderRadius: 12 }]} />
   </View>
 );
 
 // --- Menu Item Component ---
-const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, index }) => {
+const MenuItem = ({ item, quantity, onAdd, onIncrement, onDecrement, index }) => {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -73,7 +88,6 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
         {
           opacity: anim,
           transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
-          borderBottomColor: colors.border + '30',
         }
       ]}
     >
@@ -83,30 +97,25 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
           {/* Veg/Non-Veg Icon */}
           <View style={[
             styles.vegIcon,
-            { borderColor: item.isVeg ? '#10B981' : '#EF4444' }
+            { borderColor: item.isVeg ? COLORS_THEME.success : COLORS_THEME.error }
           ]}>
             <View style={[
               styles.vegCircle,
-              { backgroundColor: item.isVeg ? '#10B981' : '#EF4444' }
+              { backgroundColor: item.isVeg ? COLORS_THEME.success : COLORS_THEME.error }
             ]} />
           </View>
 
           {item.bestseller && (
             <View style={styles.bestsellerBadge}>
-              <Ionicons name="star" size={8} color="#B45309" />
+              <Ionicons name="star" size={8} color={COLORS_THEME.warning} />
               <Text style={styles.bestsellerText}>BESTSELLER</Text>
             </View>
           )}
         </View>
 
-        <Text style={[styles.menuName, { color: colors.text }]}>{item.name}</Text>
-
-        <Text style={[styles.menuPrice, { color: colors.text }]}>{item.price}</Text>
-
-        <Text
-          style={[styles.menuDescription, { color: colors.textSecondary }]}
-          numberOfLines={2}
-        >
+        <Text style={styles.menuName}>{item.name}</Text>
+        <Text style={styles.menuPrice}>{item.price}</Text>
+        <Text style={styles.menuDescription} numberOfLines={2}>
           {item.description}
         </Text>
       </View>
@@ -117,8 +126,8 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.menuImage} />
           ) : (
-            <View style={[styles.placeholderImage, { backgroundColor: colors.border + '40' }]}>
-              <Ionicons name="restaurant" size={28} color={colors.textSecondary + '80'} />
+            <View style={styles.placeholderImage}>
+              <Ionicons name="restaurant" size={28} color={COLORS_THEME.grayText} />
             </View>
           )}
         </View>
@@ -126,25 +135,25 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
         {/* Floating Action Area */}
         <View style={styles.addButtonContainer}>
           {!item.available ? (
-            <View style={[styles.unavailableBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.unavailableText, { color: colors.textSecondary }]}>Sold Out</Text>
+            <View style={styles.unavailableBadge}>
+              <Text style={styles.unavailableText}>Sold Out</Text>
             </View>
           ) : quantity > 0 ? (
-            <View style={[styles.qtyContainer, { backgroundColor: colors.card }]}>
+            <View style={styles.qtyContainer}>
               <TouchableOpacity
                 onPress={() => handleAction(() => onDecrement(item.id))}
                 style={styles.qtyBtn}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="remove" size={20} color="#8B3358" />
+                <Ionicons name="remove" size={18} color={COLORS_THEME.steelBlue} />
               </TouchableOpacity>
-              <Text style={[styles.qtyText, { color: "#8B3358" }]}>{quantity}</Text>
+              <Text style={styles.qtyText}>{quantity}</Text>
               <TouchableOpacity
                 onPress={() => handleAction(() => onIncrement(item.id))}
                 style={styles.qtyBtn}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="add" size={20} color="#8B3358" />
+                <Ionicons name="add" size={18} color={COLORS_THEME.steelBlue} />
               </TouchableOpacity>
             </View>
           ) : (
@@ -153,10 +162,10 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
               activeOpacity={0.9}
               style={styles.addBtnWrapper}
             >
-              <View style={[styles.addBtn, { backgroundColor: colors.card }]}>
+              <View style={styles.addBtn}>
                 <Text style={styles.addBtnText}>ADD</Text>
                 <View style={styles.addBtnPlus}>
-                  <Ionicons name="add" size={10} color="#8B3358" />
+                  <Ionicons name="add" size={10} color={COLORS_THEME.steelBlue} />
                 </View>
               </View>
             </TouchableOpacity>
@@ -250,13 +259,13 @@ export default function RestaurantDetails() {
   }, 0);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* 1. Sticky Header (Fades in) */}
-      <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity, backgroundColor: colors.background }]}>
+      <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity }]}>
         <View style={styles.stickyContent}>
-          <Text style={[styles.stickyTitle, { color: colors.text }]} numberOfLines={1}>{restaurant.name}</Text>
+          <Text style={styles.stickyTitle} numberOfLines={1}>{restaurant.name}</Text>
         </View>
       </Animated.View>
 
@@ -277,7 +286,7 @@ export default function RestaurantDetails() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
         )}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: totalItems > 0 ? 100 : 30 }}
       >
         {/* 2. Parallax Image */}
         <View style={styles.headerContainer}>
@@ -288,7 +297,7 @@ export default function RestaurantDetails() {
             }]}
           />
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.8)']}
+            colors={['transparent', 'rgba(10, 35, 66, 0.6)', 'rgba(10, 35, 66, 0.9)']}
             style={styles.gradientOverlay}
           />
         </View>
@@ -296,46 +305,42 @@ export default function RestaurantDetails() {
         {/* 3. Content Sheet */}
         <Animated.View style={[
           styles.contentSheet,
-          {
-            backgroundColor: colors.background,
-            transform: [{ translateY: contentTranslateY }]
-          }
+          { transform: [{ translateY: contentTranslateY }] }
         ]}>
 
           {/* Restaurant Info */}
           <View style={styles.infoSection}>
             <View style={styles.nameRow}>
-              <Text style={[styles.resName, { color: colors.text }]}>{restaurant.name}</Text>
+              <Text style={styles.resName}>{restaurant.name}</Text>
               {/* Rating Pill */}
               <View style={styles.ratingBox}>
                 <Text style={styles.ratingText}>{restaurant.rating}</Text>
                 <Ionicons name="star" size={10} color="#FFF" style={{ marginLeft: 2 }} />
               </View>
             </View>
-
-
-
-            {/* Stats Pills */}
-
+         
+            
+            {/* Stats Row */}
+            
           </View>
 
           {/* Menu */}
           <View style={styles.menuContainer}>
             <View style={styles.menuHeader}>
-              <Text style={[styles.menuTitle, { color: colors.text }]}>MENU</Text>
-              <View style={[styles.menuLine, { backgroundColor: colors.border }]} />
+              <Text style={styles.menuTitle}>MENU</Text>
+              <View style={styles.menuLine} />
             </View>
 
             {loading ? (
               <>
-                <MenuSkeleton colors={colors} />
-                <MenuSkeleton colors={colors} />
-                <MenuSkeleton colors={colors} />
+                <MenuSkeleton />
+                <MenuSkeleton />
+                <MenuSkeleton />
               </>
             ) : (
               Object.keys(groupedMenu).map((category) => (
                 <View key={category} style={styles.categorySection}>
-                  <Text style={[styles.categoryTitle, { color: colors.text }]}>{category}</Text>
+                  <Text style={styles.categoryTitle}>{category}</Text>
                   {groupedMenu[category].map((item, idx) => {
                     const cartItem = cart.find(c => c.id === item.id);
                     return (
@@ -344,7 +349,6 @@ export default function RestaurantDetails() {
                         item={item}
                         index={idx}
                         quantity={cartItem ? cartItem.quantity : 0}
-                        colors={colors}
                         onAdd={(i) => addItem({ ...i, restaurantName: restaurant.name, restaurantId: restaurant.id })}
                         onIncrement={incrementItem}
                         onDecrement={(id) => cartItem?.quantity === 1 ? removeItem(id) : decrementItem(id)}
@@ -367,7 +371,7 @@ export default function RestaurantDetails() {
             activeOpacity={0.95}
           >
             <LinearGradient
-              colors={["#8B3358", "#670D2F"]}
+              colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.cartGradient}
@@ -389,7 +393,7 @@ export default function RestaurantDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: COLORS_THEME.background },
 
   // Header
   headerContainer: {
@@ -440,7 +444,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: COLORS_THEME.border,
+    backgroundColor: COLORS_THEME.white,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -454,6 +459,7 @@ const styles = StyleSheet.create({
   stickyTitle: {
     fontSize: 18,
     fontWeight: '700',
+    color: COLORS_THEME.darkNavy,
   },
 
   // Content Sheet
@@ -463,7 +469,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     paddingTop: 32,
     paddingHorizontal: 16,
-    minHeight: height,
+    minHeight: height - (HEADER_HEIGHT - 60),
+    backgroundColor: COLORS_THEME.white,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
@@ -473,7 +480,7 @@ const styles = StyleSheet.create({
 
   // Info Section
   infoSection: {
-    marginBottom: 32,
+    marginBottom: 24,
     paddingHorizontal: 4,
   },
   nameRow: {
@@ -483,14 +490,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   resName: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
     flex: 1,
     marginRight: 10,
-    lineHeight: 32,
+    lineHeight: 30,
+    color: COLORS_THEME.darkNavy,
   },
   ratingBox: {
-    backgroundColor: '#166534', // Darker Green
+    backgroundColor: '#166534',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
@@ -505,25 +513,33 @@ const styles = StyleSheet.create({
   },
   resCuisine: {
     fontSize: 15,
-    marginBottom: 20,
+    marginBottom: 16,
     lineHeight: 20,
+    color: COLORS_THEME.grayText,
+    fontWeight: '500',
   },
-  statsScroll: {
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    marginTop: 4,
   },
-  statPill: {
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    gap: 6,
+    gap: 4,
   },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+  statText: {
+    fontSize: 13,
+    color: COLORS_THEME.grayText,
+    fontWeight: '500',
+  },
+  dotSeparator: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS_THEME.grayText,
+    marginHorizontal: 8,
+    opacity: 0.5,
   },
 
   // Menu Section
@@ -542,11 +558,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 2,
     marginRight: 16,
+    color: COLORS_THEME.darkNavy,
   },
   menuLine: {
     flex: 1,
     height: 1,
-    opacity: 0.1,
+    backgroundColor: COLORS_THEME.border,
   },
   categorySection: {
     marginBottom: 32,
@@ -556,12 +573,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 16,
     paddingHorizontal: 4,
+    color: COLORS_THEME.darkNavy,
   },
 
   // Menu Item Card
   menuItemContainer: {
     flexDirection: 'row',
-    paddingVertical: 24,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
@@ -605,20 +623,22 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   menuName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 6,
-    lineHeight: 24,
+    lineHeight: 22,
+    color: COLORS_THEME.darkNavy,
   },
   menuPrice: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 10,
+    marginBottom: 8,
+    color: COLORS_THEME.darkNavy,
   },
   menuDescription: {
-    fontSize: 14,
-    lineHeight: 22,
-    opacity: 0.6,
+    fontSize: 13,
+    lineHeight: 18,
+    color: COLORS_THEME.grayText,
   },
 
   // Image and Button Container
@@ -632,7 +652,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 16, // Space for button overlap
+    marginBottom: 16,
   },
   menuImage: {
     width: '100%',
@@ -645,6 +665,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F3F4F6',
   },
 
   // ADD BUTTON STYLES
@@ -675,10 +696,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: COLORS_THEME.aeroBlue,
+    backgroundColor: COLORS_THEME.white,
   },
   addBtnText: {
-    color: '#8B3358', // Theme color
+    color: COLORS_THEME.steelBlue,
     fontSize: 16,
     fontWeight: '800',
   },
@@ -698,8 +720,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: '#8B3358',
-    shadowColor: "#8B3358",
+    borderColor: COLORS_THEME.steelBlue,
+    backgroundColor: COLORS_THEME.white,
+    shadowColor: COLORS_THEME.steelBlue,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -711,6 +734,7 @@ const styles = StyleSheet.create({
   qtyText: {
     fontWeight: '800',
     fontSize: 16,
+    color: COLORS_THEME.steelBlue,
   },
   unavailableBadge: {
     paddingVertical: 8,
@@ -721,10 +745,13 @@ const styles = StyleSheet.create({
     width: 100,
     height: 36,
     borderWidth: 1,
+    borderColor: COLORS_THEME.border,
+    backgroundColor: COLORS_THEME.background,
   },
   unavailableText: {
     fontSize: 12,
     fontWeight: '700',
+    color: COLORS_THEME.grayText,
   },
 
   // Skeleton
@@ -735,8 +762,8 @@ const styles = StyleSheet.create({
     borderColor: '#f0f0f0',
   },
   skeletonBox: {
-    backgroundColor: '#E5E7EB',
     borderRadius: 4,
+    backgroundColor: '#E5E7EB',
   },
 
   // Floating Cart
@@ -750,7 +777,7 @@ const styles = StyleSheet.create({
   cartButton: {
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: "#8B3358",
+    shadowColor: COLORS_THEME.steelBlue,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
     shadowRadius: 20,

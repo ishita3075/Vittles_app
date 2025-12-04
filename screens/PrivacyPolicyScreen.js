@@ -13,8 +13,7 @@ import {
   Linking
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme } from "../contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 // Enable LayoutAnimation for Android
@@ -24,8 +23,21 @@ if (Platform.OS === 'android') {
   }
 }
 
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.05)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+};
+
 // --- Helper: Policy Section (Accordion) ---
-const PolicySection = ({ title, content, icon, index, colors }) => {
+const PolicySection = ({ title, content, icon, index }) => {
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpand = () => {
@@ -35,24 +47,30 @@ const PolicySection = ({ title, content, icon, index, colors }) => {
 
   return (
     <TouchableOpacity
-      style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      style={[
+        styles.sectionCard, 
+        { 
+          backgroundColor: COLORS.card, 
+          borderColor: expanded ? COLORS.aeroBlue : COLORS.border 
+        }
+      ]}
       onPress={toggleExpand}
       activeOpacity={0.9}
     >
       <View style={styles.sectionHeader}>
-        <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
-          <Ionicons name={icon} size={20} color={colors.primary} />
+        <View style={[styles.iconContainer, { backgroundColor: COLORS.aeroBlueLight }]}>
+          <Ionicons name={icon} size={20} color={COLORS.steelBlue} />
         </View>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.sectionTitle, { color: COLORS.darkNavy }]}>{title}</Text>
         <Ionicons
           name={expanded ? "chevron-up" : "chevron-down"}
           size={20}
-          color={colors.textSecondary}
+          color={COLORS.grayText}
         />
       </View>
       {expanded && (
         <View style={styles.sectionBody}>
-          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+          <Text style={[styles.sectionContent, { color: COLORS.grayText }]}>
             {content}
           </Text>
         </View>
@@ -62,7 +80,6 @@ const PolicySection = ({ title, content, icon, index, colors }) => {
 };
 
 export default function PrivacyPolicyScreen() {
-  const { colors } = useTheme();
   const navigation = useNavigation();
 
   // Animation
@@ -105,13 +122,13 @@ export default function PrivacyPolicyScreen() {
   ];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
+    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* 1. Curved Header */}
       <View style={styles.headerBackground}>
         <LinearGradient
-          colors={["#8B3358", "#670D2F", "#3A081C"]}
+          colors={[COLORS.aeroBlue, COLORS.darkNavy]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
@@ -134,12 +151,12 @@ export default function PrivacyPolicyScreen() {
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
           {/* Intro Card */}
-          <View style={[styles.introCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.introTitle, { color: colors.text }]}>Your Privacy Matters</Text>
-            <Text style={[styles.introText, { color: colors.textSecondary }]}>
+          <View style={[styles.introCard, { backgroundColor: COLORS.card }]}>
+            <Text style={[styles.introTitle, { color: COLORS.darkNavy }]}>Your Privacy Matters</Text>
+            <Text style={[styles.introText, { color: COLORS.grayText }]}>
               At Vittle, we are committed to protecting your personal data. This policy outlines our practices regarding data collection and usage.
             </Text>
-            <View style={styles.updateBadge}>
+            <View style={[styles.updateBadge, { backgroundColor: COLORS.steelBlue }]}>
               <Ionicons name="time-outline" size={12} color="#FFF" />
               <Text style={styles.updateText}>Updated: Nov 2025</Text>
             </View>
@@ -152,18 +169,17 @@ export default function PrivacyPolicyScreen() {
                 key={index}
                 index={index}
                 {...section}
-                colors={colors}
               />
             ))}
           </View>
 
           {/* Contact Footer */}
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+            <Text style={[styles.footerText, { color: COLORS.grayText }]}>
               Have questions about our data practices?
             </Text>
             <TouchableOpacity onPress={() => Linking.openURL('mailto:privacy@vittle.com')}>
-              <Text style={[styles.footerLink, { color: colors.primary }]}>Contact Privacy Team</Text>
+              <Text style={[styles.footerLink, { color: COLORS.steelBlue }]}>Contact Privacy Team</Text>
             </TouchableOpacity>
           </View>
 
@@ -224,7 +240,7 @@ const styles = StyleSheet.create({
 
   // Intro Card
   introCard: {
-    padding: 20,
+    padding: 24,
     borderRadius: 20,
     marginBottom: 24,
     shadowColor: "#000",
@@ -245,12 +261,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
     marginBottom: 16,
-    opacity: 0.8,
+    opacity: 0.9,
   },
   updateBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#8B3358',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
