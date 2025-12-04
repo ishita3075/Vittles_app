@@ -2,10 +2,8 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
-  FlatList,
   Dimensions,
   TouchableOpacity,
-  Image,
   LayoutAnimation,
   Platform,
   UIManager,
@@ -17,7 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 
-// Import assets (Mocking the imports based on your snippet)
+// Use same assets as restaurant & promo
 import one from '../assets/1.png';
 import two from '../assets/2.png';
 import three from '../assets/3.png';
@@ -31,49 +29,72 @@ if (Platform.OS === 'android') {
 }
 
 const { width } = Dimensions.get("window");
-const ITEM_WIDTH = width; // Item takes full width for paging, but content is padded
-const ASPECT_RATIO = 16 / 9; // Cinematic aspect ratio
-const HEIGHT = (width - 32) / ASPECT_RATIO; // Height based on padded width
+const ITEM_WIDTH = width; // full-width paging
+const HEIGHT = 180; // fixed to match RestaurantCard
 
 const data = [
-  { id: "1", image: one, title: "Special Offer", subtitle: "Get 50% OFF" },
-  { id: "2", image: two, title: "New Arrival", subtitle: "Try our latest dish" },
-  { id: "3", image: three, title: "Best Seller", subtitle: "Everyone's favorite" },
-  { id: "4", image: four, title: "Limited Time", subtitle: "Order before it's gone" },
+  { id: "1", image: one },
+  { id: "2", image: two },
+  { id: "3", image: three },
+  { id: "4", image: four },
 ];
 
-// Extracted Item Component to safely use Hooks
+// Rich item with subtle parallax + 3D tilt; promo-specific: no title/subtitle shown
 const CarouselItem = ({ item, index, scrollX, colors, isDark }) => {
-  // Parallax Interpolation
+  // Position input range
   const inputRange = [
     (index - 1) * ITEM_WIDTH,
     index * ITEM_WIDTH,
     (index + 1) * ITEM_WIDTH,
   ];
 
-  // Image moves slightly (Background Layer)
-  const translateX = scrollX.interpolate({
+  // Subtle horizontal parallax for image (-12 to +12 px)
+  const imageTranslate = scrollX.interpolate({
     inputRange,
-    outputRange: [-width * 0.08, 0, width * 0.08],
+    outputRange: [-12, 0, 12],
+    extrapolate: 'clamp',
   });
 
-  // Text moves faster (Foreground Layer) for 3D effect
+  // Very subtle scale effect on the centered item
+  const imageScale = scrollX.interpolate({
+    inputRange,
+    outputRange: [1, 1.03, 1],
+    extrapolate: 'clamp',
+  });
+
+  // Text moves slightly and fades (CTA only)
   const textTranslateX = scrollX.interpolate({
     inputRange,
-    outputRange: [width * 0.2, 0, -width * 0.2],
+    outputRange: [16, 0, -16],
+    extrapolate: 'clamp',
   });
 
   const textOpacity = scrollX.interpolate({
     inputRange,
-    outputRange: [0, 1, 0],
+    outputRange: [0.7, 1, 0.7],
+    extrapolate: 'clamp',
   });
 
-  // Press Animation
+  // 3D tilt (rotateY) based on position: -8deg .. 0 .. 8deg
+  const rotateY = scrollX.interpolate({
+    inputRange,
+    outputRange: ["8deg", "0deg", "-8deg"],
+    extrapolate: 'clamp',
+  });
+
+  // Slight Z-translation illusion via scale; combine for nicer 3D feel
+  const cardScale = scrollX.interpolate({
+    inputRange,
+    outputRange: [0.98, 1, 0.98],
+    extrapolate: 'clamp',
+  });
+
+  // Press animation (unchanged)
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const onPressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.96,
+      toValue: 0.97,
       useNativeDriver: true,
     }).start();
   };
@@ -92,40 +113,47 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark }) => {
         onPressOut={onPressOut}
         style={styles.pressableArea}
       >
+        {/* Outer press-scale to keep original press behaviour */}
         <Animated.View style={[styles.shadowContainer, { transform: [{ scale: scaleAnim }] }]}>
-          <View
+          {/* Card container receives 3D tilt + subtle overall scale */}
+          <Animated.View
             style={[
               styles.cardContainer,
               {
                 backgroundColor: colors.card,
-                borderColor: !isDark ? '#591A32' : 'rgba(255,255,255,0.2)'
-              }
+                borderColor: !isDark ? '#591A32' : 'rgba(255,255,255,0.12)',
+                transform: [
+                  { perspective: 1200 }, // crucial for 3D
+                  { rotateY },            // 3D tilt from scroll
+                  { scale: cardScale },   // subtle pop for center
+                ],
+              },
             ]}
           >
-            {/* Parallax Image */}
+            {/* Animated image wrapper for parallax + scale */}
             <Animated.View
               style={[
                 styles.imageContainer,
                 {
-                  transform: [{ translateX }],
+                  transform: [{ translateX: imageTranslate }, { scale: imageScale }],
                 },
               ]}
             >
-              <Image
+              <Animated.Image
                 source={item.image}
                 style={styles.image}
                 resizeMode="cover"
               />
             </Animated.View>
 
-            {/* Gradient Overlay */}
+            {/* Slightly stronger gradient to improve readability */}
             <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.9)']}
-              locations={[0, 0.4, 0.7, 1]}
+              colors={['transparent', 'rgba(0,0,0,0.08)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.85)']}
+              locations={[0, 0.45, 0.72, 1]}
               style={styles.gradientOverlay}
             />
 
-            {/* Animated Text Overlay */}
+            {/* Animated CTA-only Overlay (no offers/titles) */}
             <Animated.View
               style={[
                 styles.textOverlay,
@@ -136,8 +164,7 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark }) => {
               ]}
             >
               <View style={styles.textContent}>
-                {/* Removed Title and Subtitle as per user request */}
-
+                {/* Removed title/subtitle as requested (promo shows only CTA) */}
                 <View style={styles.ctaButton}>
                   <Text style={styles.ctaText}>Shop Now</Text>
                   <Ionicons name="arrow-forward" size={14} color="#FFF" />
@@ -145,7 +172,7 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark }) => {
               </View>
             </Animated.View>
 
-          </View>
+          </Animated.View>
         </Animated.View>
       </Pressable>
     </View>
@@ -159,10 +186,10 @@ export default function PromoCarousel() {
   const isInteracting = useRef(false);
   const { colors, isDark } = useTheme();
 
-  // Parallax Animation Value
+  // Parallax / tilt animation value (used)
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  // --- Auto Scroll Logic ---
+  // --- Auto Scroll Logic (unchanged) ---
   const startAutoScroll = useCallback(() => {
     stopAutoScroll();
     autoScrollTimer.current = setInterval(() => {
@@ -191,7 +218,7 @@ export default function PromoCarousel() {
     return () => stopAutoScroll();
   }, [startAutoScroll]);
 
-  // --- Event Handlers ---
+  // --- Event Handlers (unchanged) ---
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
       const index = viewableItems[0].index;
@@ -250,7 +277,9 @@ export default function PromoCarousel() {
         onScrollBeginDrag={onScrollBeginDrag}
         onScrollEndDrag={onScrollEndDrag}
         scrollEventThrottle={16}
-        decelerationRate="fast"
+        decelerationRate={0.80}
+        // snapToAlignment="center"
+        // disableIntervalMomentum={true}
         snapToInterval={ITEM_WIDTH}
         contentContainerStyle={styles.flatListContent}
         removeClippedSubviews={false}
@@ -273,8 +302,8 @@ export default function PromoCarousel() {
               style={[
                 styles.dot,
                 {
-                  backgroundColor: i === activeIndex ? "#FFFFFF" : "rgba(255,255,255,0.5)",
-                  width: i === activeIndex ? 24 : 8,
+                  backgroundColor: i === activeIndex ? "#FFFFFF" : "rgba(255,255,255,0.45)",
+                  width: i === activeIndex ? 22 : 8,
                 },
               ]}
             />
@@ -287,11 +316,11 @@ export default function PromoCarousel() {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 0, // Removed extra margin
+    marginBottom: 0,
     position: 'relative',
   },
   flatListContent: {
-    paddingVertical: 20, // Reduced padding
+    paddingVertical: 18,
   },
   itemContainer: {
     width: ITEM_WIDTH,
@@ -304,25 +333,27 @@ const styles = StyleSheet.create({
   shadowContainer: {
     width: '100%',
     height: HEIGHT,
-    borderRadius: 24,
+    borderRadius: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 15,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    elevation: 12,
     backgroundColor: 'white',
+    overflow: 'visible',
   },
   cardContainer: {
     width: '100%',
     height: '100%',
-    borderRadius: 24,
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
   },
+  // Slight overflow so parallax motion doesn't show hard edges but is subtle
   imageContainer: {
-    width: '110%',
+    width: '105%',
     height: '100%',
-    left: '-5%',
+    left: '-2.5%',
   },
   image: {
     width: '100%',
@@ -333,7 +364,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '80%', // Taller gradient for better text readability
+    height: '78%',
     zIndex: 1,
   },
   textOverlay: {
@@ -341,7 +372,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    padding: 14,
     zIndex: 2,
     justifyContent: 'flex-end',
   },
@@ -349,35 +380,36 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   subtitleText: {
-    color: '#FFD6E7', // Light pink accent
-    fontSize: 12,
+    color: '#FFD6E7',
+    fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 0.6,
     textTransform: 'uppercase',
     marginBottom: 4,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowColor: 'rgba(0,0,0,0.45)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowRadius: 1.5,
   },
   titleText: {
     color: '#FFFFFF',
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: '800',
-    marginBottom: 12,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    marginBottom: 10,
+    textShadowColor: 'rgba(0,0,0,0.45)',
     textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    textShadowRadius: 3,
   },
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.16)',
     paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: 'rgba(255,255,255,0.32)',
     gap: 6,
+    marginTop: 4,
   },
   ctaText: {
     color: '#FFFFFF',
@@ -386,14 +418,14 @@ const styles = StyleSheet.create({
   },
   paginationContainer: {
     position: 'absolute',
-    bottom: 46,
-    right: 36, // Moved to right to balance with left-aligned text
+    bottom: 42,
+    right: 34,
     flexDirection: 'row',
     zIndex: 2,
-    gap: 4,
+    gap: 6,
   },
   dotTouchArea: {
-    padding: 4,
+    padding: 6,
   },
   dot: {
     height: 8,

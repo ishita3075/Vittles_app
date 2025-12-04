@@ -22,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getVendorMenu } from '../api';
 
 const { width, height } = Dimensions.get('window');
-const HEADER_HEIGHT = 340;
+const HEADER_HEIGHT = width / 1.8;
 // Increased sticky header height
 const HEADER_MIN_HEIGHT = Platform.OS === 'ios' ? 110 : 90;
 
@@ -67,13 +67,13 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
   };
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
-        styles.menuItemContainer, 
-        { 
+        styles.menuItemContainer,
+        {
           opacity: anim,
           transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
-          borderBottomColor: colors.border + '30', 
+          borderBottomColor: colors.border + '30',
         }
       ]}
     >
@@ -82,15 +82,15 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
         <View style={styles.menuHeaderRow}>
           {/* Veg/Non-Veg Icon */}
           <View style={[
-            styles.vegIcon, 
+            styles.vegIcon,
             { borderColor: item.isVeg ? '#10B981' : '#EF4444' }
           ]}>
             <View style={[
-              styles.vegCircle, 
+              styles.vegCircle,
               { backgroundColor: item.isVeg ? '#10B981' : '#EF4444' }
             ]} />
           </View>
-          
+
           {item.bestseller && (
             <View style={styles.bestsellerBadge}>
               <Ionicons name="star" size={8} color="#B45309" />
@@ -100,11 +100,11 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
         </View>
 
         <Text style={[styles.menuName, { color: colors.text }]}>{item.name}</Text>
-        
+
         <Text style={[styles.menuPrice, { color: colors.text }]}>{item.price}</Text>
-        
-        <Text 
-          style={[styles.menuDescription, { color: colors.textSecondary }]} 
+
+        <Text
+          style={[styles.menuDescription, { color: colors.textSecondary }]}
           numberOfLines={2}
         >
           {item.description}
@@ -131,24 +131,24 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
             </View>
           ) : quantity > 0 ? (
             <View style={[styles.qtyContainer, { backgroundColor: colors.card }]}>
-              <TouchableOpacity 
-                onPress={() => handleAction(() => onDecrement(item.id))} 
+              <TouchableOpacity
+                onPress={() => handleAction(() => onDecrement(item.id))}
                 style={styles.qtyBtn}
-                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="remove" size={20} color="#8B3358" />
               </TouchableOpacity>
               <Text style={[styles.qtyText, { color: "#8B3358" }]}>{quantity}</Text>
-              <TouchableOpacity 
-                onPress={() => handleAction(() => onIncrement(item.id))} 
+              <TouchableOpacity
+                onPress={() => handleAction(() => onIncrement(item.id))}
                 style={styles.qtyBtn}
-                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="add" size={20} color="#8B3358" />
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => handleAction(() => onAdd(item))}
               activeOpacity={0.9}
               style={styles.addBtnWrapper}
@@ -173,7 +173,7 @@ export default function RestaurantDetails() {
   const { restaurant } = route.params;
   const { addItem, removeItem, incrementItem, decrementItem, cart } = useCart();
   const { colors } = useTheme();
-  
+
   const scrollY = useRef(new Animated.Value(0)).current;
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -213,11 +213,9 @@ export default function RestaurantDetails() {
 
         if (menuData && Array.isArray(menuData)) {
           setMenuItems(menuData.map(transformMenuItem));
-        } else {
-          setMenuItems(getFallbackMenu());
         }
       } catch (err) {
-        setMenuItems(getFallbackMenu());
+        console.error("Failed to fetch menu:", err);
       } finally {
         setLoading(false);
       }
@@ -236,13 +234,6 @@ export default function RestaurantDetails() {
     available: item.available !== undefined ? item.available : true,
     isVeg: item.isVeg || Math.random() > 0.5,
   });
-
-  const getFallbackMenu = () => [
-    { id: "1", name: "Butter Chicken", description: "Tender chicken cooked in a rich, creamy tomato gravy with butter and spices.", price: "₹250", category: "Main Course", bestseller: true, available: true, image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=400" },
-    { id: "2", name: "Paneer Tikka", description: "Chunks of paneer marinated in spices and grilled in a tandoor.", price: "₹220", category: "Starters", bestseller: true, available: true, isVeg: true, image: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400" },
-    { id: "3", name: "Garlic Naan", description: "Leavened flatbread made from white flour, topped with garlic and coriander.", price: "₹60", category: "Breads", available: true, isVeg: true },
-    { id: "4", name: "Hyderabadi Veg Biryani", description: "Aromatic basmati rice cooked with fresh mixed vegetables and exotic spices.", price: "₹180", category: "Main Course", available: true, isVeg: true, image: "https://images.unsplash.com/photo-1563379091339-03246963d9fb?w=400" },
-  ];
 
   const groupedMenu = menuItems.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
@@ -292,8 +283,8 @@ export default function RestaurantDetails() {
         <View style={styles.headerContainer}>
           <Animated.Image
             source={{ uri: restaurant.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800" }}
-            style={[styles.headerImage, { 
-              transform: [{ translateY: headerTranslateY }, { scale: imageScale }] 
+            style={[styles.headerImage, {
+              transform: [{ translateY: headerTranslateY }, { scale: imageScale }]
             }]}
           />
           <LinearGradient
@@ -304,13 +295,13 @@ export default function RestaurantDetails() {
 
         {/* 3. Content Sheet */}
         <Animated.View style={[
-          styles.contentSheet, 
-          { 
+          styles.contentSheet,
+          {
             backgroundColor: colors.background,
             transform: [{ translateY: contentTranslateY }]
           }
         ]}>
-          
+
           {/* Restaurant Info */}
           <View style={styles.infoSection}>
             <View style={styles.nameRow}>
@@ -321,11 +312,11 @@ export default function RestaurantDetails() {
                 <Ionicons name="star" size={10} color="#FFF" style={{ marginLeft: 2 }} />
               </View>
             </View>
-            
-           
+
+
 
             {/* Stats Pills */}
-  
+
           </View>
 
           {/* Menu */}
@@ -348,7 +339,7 @@ export default function RestaurantDetails() {
                   {groupedMenu[category].map((item, idx) => {
                     const cartItem = cart.find(c => c.id === item.id);
                     return (
-                      <MenuItem 
+                      <MenuItem
                         key={item.id}
                         item={item}
                         index={idx}
@@ -370,7 +361,7 @@ export default function RestaurantDetails() {
       {/* 4. Floating Cart Bar */}
       {totalItems > 0 && (
         <Animated.View style={styles.floatingCartContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.cartButton}
             onPress={() => navigation.navigate("Cart")}
             activeOpacity={0.95}
@@ -399,7 +390,7 @@ export default function RestaurantDetails() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  
+
   // Header
   headerContainer: {
     height: HEADER_HEIGHT,
@@ -416,7 +407,7 @@ const styles = StyleSheet.create({
   gradientOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
-  
+
   // Navbar
   navButtons: {
     position: 'absolute',
@@ -437,7 +428,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
-  
+
   // Sticky Header
   stickyHeader: {
     position: 'absolute',
@@ -479,7 +470,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
-  
+
   // Info Section
   infoSection: {
     marginBottom: 32,
@@ -566,7 +557,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 4,
   },
-  
+
   // Menu Item Card
   menuItemContainer: {
     flexDirection: 'row',
@@ -629,10 +620,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     opacity: 0.6,
   },
-  
+
   // Image and Button Container
   menuImageWrapper: {
-    width: 130, 
+    width: 130,
     alignItems: 'center',
     position: 'relative',
   },
@@ -655,11 +646,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   // ADD BUTTON STYLES
   addButtonContainer: {
     position: 'absolute',
-    bottom: -6, 
+    bottom: -6,
     width: 100,
     height: 36,
     zIndex: 10,
@@ -696,7 +687,7 @@ const styles = StyleSheet.create({
     top: 4,
     right: 6,
   },
-  
+
   // Quantity Styles
   qtyContainer: {
     width: '100%',
