@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 
 // Use same assets as restaurant & promo
@@ -33,14 +34,14 @@ const ITEM_WIDTH = width; // full-width paging
 const HEIGHT = 180; // fixed to match RestaurantCard
 
 const data = [
-  { id: "1", image: one },
-  { id: "2", image: two },
-  { id: "3", image: three },
-  { id: "4", image: four },
+  { id: "1", image: one, name: "Special Sushi Set" },
+  { id: "2", image: two, name: "Gourmet Burger" },
+  { id: "3", image: three, name: "Italian Pasta" },
+  { id: "4", image: four, name: "Berry Smoothie" },
 ];
 
-// Rich item with subtle parallax + 3D tilt; promo-specific: no title/subtitle shown
-const CarouselItem = ({ item, index, scrollX, colors, isDark }) => {
+// Rich item with subtle parallax + 3D tilt
+const CarouselItem = ({ item, index, scrollX, colors, isDark, onPress }) => {
   // Position input range
   const inputRange = [
     (index - 1) * ITEM_WIDTH,
@@ -89,7 +90,7 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark }) => {
     extrapolate: 'clamp',
   });
 
-  // Press animation (unchanged)
+  // Press animation
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const onPressIn = () => {
@@ -109,6 +110,7 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark }) => {
   return (
     <View style={styles.itemContainer}>
       <Pressable
+        onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         style={styles.pressableArea}
@@ -153,7 +155,17 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark }) => {
               style={styles.gradientOverlay}
             />
 
-            {/* Animated CTA-only Overlay (no offers/titles) */}
+            {/* --- Top Label (Moved Here) --- */}
+            <Animated.View 
+              style={[
+                styles.topLabelContainer, 
+                { opacity: textOpacity } // Fade out slightly when scrolling
+              ]}
+            >
+              <Text style={styles.topLabelText}>Recommended for you</Text>
+            </Animated.View>
+
+            {/* Animated Bottom CTA Overlay */}
             <Animated.View
               style={[
                 styles.textOverlay,
@@ -164,7 +176,6 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark }) => {
               ]}
             >
               <View style={styles.textContent}>
-                {/* Removed title/subtitle as requested (promo shows only CTA) */}
                 <View style={styles.ctaButton}>
                   <Text style={styles.ctaText}>Shop Now</Text>
                   <Ionicons name="arrow-forward" size={14} color="#FFF" />
@@ -185,11 +196,32 @@ export default function PromoCarousel() {
   const autoScrollTimer = useRef(null);
   const isInteracting = useRef(false);
   const { colors, isDark } = useTheme();
+  const navigation = useNavigation();
 
   // Parallax / tilt animation value (used)
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  // --- Auto Scroll Logic (unchanged) ---
+  // --- Navigation Logic ---
+  const handleItemPress = (item) => {
+    // Construct a dummy restaurant object for the details screen
+    const mockRestaurant = {
+      id: `promo_${item.id}`,
+      name: item.name,
+      rating: "4.8",
+      time: "25-35 min",
+      distance: "2.0 km",
+      cuisine: "Special • Trending",
+      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop", 
+      price: "₹450 for two",
+      discount: "PROMO DEAL",
+      description: "Experience the taste of our specially curated recommended items.",
+      vendor_id: "v_promo"
+    };
+
+    navigation.navigate("RestaurantDetails", { restaurant: mockRestaurant });
+  };
+
+  // --- Auto Scroll Logic ---
   const startAutoScroll = useCallback(() => {
     stopAutoScroll();
     autoScrollTimer.current = setInterval(() => {
@@ -218,7 +250,7 @@ export default function PromoCarousel() {
     return () => stopAutoScroll();
   }, [startAutoScroll]);
 
-  // --- Event Handlers (unchanged) ---
+  // --- Event Handlers ---
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
       const index = viewableItems[0].index;
@@ -258,6 +290,7 @@ export default function PromoCarousel() {
         scrollX={scrollX}
         colors={colors}
         isDark={isDark}
+        onPress={() => handleItemPress(item)}
       />
     );
   };
@@ -278,8 +311,6 @@ export default function PromoCarousel() {
         onScrollEndDrag={onScrollEndDrag}
         scrollEventThrottle={16}
         decelerationRate={0.80}
-        // snapToAlignment="center"
-        // disableIntervalMomentum={true}
         snapToInterval={ITEM_WIDTH}
         contentContainerStyle={styles.flatListContent}
         removeClippedSubviews={false}
@@ -349,7 +380,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
   },
-  // Slight overflow so parallax motion doesn't show hard edges but is subtle
   imageContainer: {
     width: '105%',
     height: '100%',
@@ -367,6 +397,28 @@ const styles = StyleSheet.create({
     height: '78%',
     zIndex: 1,
   },
+  
+  // --- Top Label Styles ---
+  topLabelContainer: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    zIndex: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  topLabelText: {
+    color: '#FFD6E7',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+
   textOverlay: {
     position: 'absolute',
     bottom: 0,
@@ -378,26 +430,6 @@ const styles = StyleSheet.create({
   },
   textContent: {
     alignItems: 'flex-start',
-  },
-  subtitleText: {
-    color: '#FFD6E7',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-    textShadowColor: 'rgba(0,0,0,0.45)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1.5,
-  },
-  titleText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 10,
-    textShadowColor: 'rgba(0,0,0,0.45)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 3,
   },
   ctaButton: {
     flexDirection: 'row',

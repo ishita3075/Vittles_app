@@ -20,6 +20,19 @@ import { useAuth } from "../contexts/AuthContext";
 
 const { width, height } = Dimensions.get('window');
 
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.05)",
+  card: "#FFFFFF",
+  error: "#EF4444"
+};
+
 // --- Helper Components ---
 
 // 1. Stat Item Component
@@ -37,7 +50,6 @@ const StatItem = ({ label, value, icon, color, delay }) => {
   }, []);
 
   return (
-    // FIX: opacity must be outside the transform array
     <Animated.View style={[styles.statItem, { opacity: anim, transform: [{ scale: anim }] }]}>
       <View style={[styles.statIconContainer, { backgroundColor: color + '15' }]}>
         <Ionicons name={icon} size={18} color={color} />
@@ -49,18 +61,17 @@ const StatItem = ({ label, value, icon, color, delay }) => {
 };
 
 // 2. Menu Group Component
-const MenuGroup = ({ title, items, colors, navigation }) => {
+const MenuGroup = ({ title, items, navigation }) => {
   return (
     <View style={styles.menuGroupContainer}>
-      {title && <Text style={[styles.menuGroupTitle, { color: colors.textSecondary }]}>{title}</Text>}
-      <View style={[styles.menuList, { backgroundColor: colors.card }]}>
+      {title && <Text style={styles.menuGroupTitle}>{title}</Text>}
+      <View style={styles.menuList}>
         {items.map((item, index) => (
           <TouchableOpacity
             key={index}
             style={[
               styles.menuItem,
               index === items.length - 1 && styles.lastMenuItem,
-              { borderBottomColor: colors.border }
             ]}
             onPress={item.onPress}
             activeOpacity={0.7}
@@ -68,7 +79,7 @@ const MenuGroup = ({ title, items, colors, navigation }) => {
             <View style={[styles.menuIconBox, { backgroundColor: item.color + '15' }]}>
               <Ionicons name={item.icon} size={20} color={item.color} />
             </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>{item.title}</Text>
+            <Text style={styles.menuText}>{item.title}</Text>
 
             {item.badge && (
               <View style={styles.menuBadge}>
@@ -76,7 +87,7 @@ const MenuGroup = ({ title, items, colors, navigation }) => {
               </View>
             )}
 
-            <Ionicons name="chevron-forward" size={16} color={colors.textSecondary + '80'} />
+            <Ionicons name="chevron-forward" size={16} color={COLORS.grayText} />
           </TouchableOpacity>
         ))}
       </View>
@@ -85,7 +96,6 @@ const MenuGroup = ({ title, items, colors, navigation }) => {
 };
 
 export default function ProfileScreen({ navigation }) {
-  const { colors } = useTheme();
   const { logout, user } = useAuth();
 
   // State
@@ -119,7 +129,7 @@ export default function ProfileScreen({ navigation }) {
     ]).start();
   }, []);
 
-  // --- Modal Logic (Preserved & Polished) ---
+  // --- Modal Logic ---
   const showSignOutAlert = () => {
     setIsModalVisible(true);
     fadeAnim.setValue(0);
@@ -166,15 +176,13 @@ export default function ProfileScreen({ navigation }) {
 
   // --- Data ---
   const accountItems = [
-
     { icon: "receipt-outline", title: "Order History", onPress: () => navigation.navigate("Account", { screen: "OrderHistory" }), color: "#F59E0B" },
-
   ];
 
   const appItems = [
-    { icon: "settings-outline", title: "Settings", onPress: () => navigation.navigate("Account", { screen: "Settings" }), color: "#6366F1" },
-    { icon: "help-circle-outline", title: "Help & Support", onPress: () => navigation.navigate("Account", { screen: "HelpSupport" }), color: "#8B5CF6" },
-    { icon: "shield-checkmark-outline", title: "Privacy Policy", onPress: () => navigation.navigate("Account", { screen: "PrivacyPolicy" }), color: "#3B82F6" },
+    { icon: "settings-outline", title: "Settings", onPress: () => navigation.navigate("Account", { screen: "Settings" }), color: COLORS.steelBlue },
+    { icon: "help-circle-outline", title: "Help & Support", onPress: () => navigation.navigate("Account", { screen: "HelpSupport" }), color: COLORS.aeroBlue },
+    { icon: "shield-checkmark-outline", title: "Privacy Policy", onPress: () => navigation.navigate("Account", { screen: "PrivacyPolicy" }), color: COLORS.darkNavy },
   ];
 
   const rotateInterpolate = rotateAnim.interpolate({
@@ -183,13 +191,13 @@ export default function ProfileScreen({ navigation }) {
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* 1. Curve Header Background */}
       <View style={styles.headerBackground}>
         <LinearGradient
-          colors={["#8B3358", "#670D2F", "#3A081C"]}
+          colors={[COLORS.aeroBlue, COLORS.darkNavy]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
@@ -209,33 +217,29 @@ export default function ProfileScreen({ navigation }) {
           style={[
             styles.profileCard,
             {
-              backgroundColor: colors.card,
               opacity: headerAnim,
               transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }]
             }
           ]}
         >
-          {/* Avatar & Edit */}
+          {/* Avatar & Info */}
           <View style={styles.profileHeader}>
             <View style={styles.avatarWrapper}>
               <LinearGradient
-                colors={['#FFD1DC', '#FFF']}
+                colors={['#E1F0FA', '#FFF']}
                 style={styles.avatarGradient}
               >
                 <Text style={styles.avatarText}>
                   {user?.name ? user.name.charAt(0).toUpperCase() : "G"}
                 </Text>
               </LinearGradient>
-              {/* <TouchableOpacity style={styles.editIconBadge}>
-                   <Ionicons name="camera" size={12} color="#FFF" />
-                </TouchableOpacity> */}
             </View>
 
             <View style={styles.profileInfo}>
-              <Text style={[styles.userName, { color: colors.text }]}>
+              <Text style={styles.userName}>
                 {user?.name || "Guest User"}
               </Text>
-              <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+              <Text style={styles.userEmail}>
                 {user?.email || "guest@app.com"}
               </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Account", { screen: "PersonalInfo" })}>
@@ -243,9 +247,6 @@ export default function ProfileScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Stats Dashboard */}
-
         </Animated.View>
 
         {/* 3. Menu Sections */}
@@ -258,14 +259,12 @@ export default function ProfileScreen({ navigation }) {
           <MenuGroup
             title="My Account"
             items={accountItems}
-            colors={colors}
             navigation={navigation}
           />
 
           <MenuGroup
             title="App Settings"
             items={appItems}
-            colors={colors}
             navigation={navigation}
           />
 
@@ -278,14 +277,13 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.signOutButtonText}>Sign Out</Text>
           </TouchableOpacity>
 
-
         </Animated.View>
 
         {/* Padding for Bottom Tab */}
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* --- Beautiful Alert Modal (Reused Logic) --- */}
+      {/* --- Alert Modal --- */}
       <Modal
         visible={isModalVisible}
         transparent
@@ -298,33 +296,32 @@ export default function ProfileScreen({ navigation }) {
             style={[
               styles.customAlertContainer,
               {
-                backgroundColor: colors.card,
                 transform: [{ translateY: slideAnim }, { scale: scaleAnim }]
               }
             ]}
           >
             {/* Modal Background Pattern */}
             <View style={styles.modalBgPattern}>
-              <View style={[styles.modalCircle, { backgroundColor: '#8B3358', top: -30, right: -30 }]} />
-              <View style={[styles.modalCircle, { backgroundColor: '#670D2F', bottom: -20, left: -20 }]} />
+              <View style={[styles.modalCircle, { backgroundColor: COLORS.aeroBlue, top: -30, right: -30, opacity: 0.1 }]} />
+              <View style={[styles.modalCircle, { backgroundColor: COLORS.steelBlue, bottom: -20, left: -20, opacity: 0.1 }]} />
             </View>
 
             <TouchableOpacity style={styles.closeModalBtn} onPress={() => hideAlert()}>
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
+              <Ionicons name="close" size={24} color={COLORS.grayText} />
             </TouchableOpacity>
 
             <View style={styles.modalContent}>
               <Animated.View style={[styles.modalIconBox, { transform: [{ rotate: rotateInterpolate }] }]}>
                 <LinearGradient
-                  colors={["#8B3358", "#3A081C"]}
+                  colors={[COLORS.aeroBlue, COLORS.darkNavy]}
                   style={styles.modalIconGradient}
                 >
                   <Ionicons name="log-out" size={32} color="#FFF" style={{ marginLeft: 4 }} />
                 </LinearGradient>
               </Animated.View>
 
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Log Out?</Text>
-              <Text style={[styles.modalMessage, { color: colors.textSecondary }]}>
+              <Text style={styles.modalTitle}>Log Out?</Text>
+              <Text style={styles.modalMessage}>
                 Are you sure you want to sign out? You'll need to login again to access your orders.
               </Text>
 
@@ -333,7 +330,7 @@ export default function ProfileScreen({ navigation }) {
                 onPress={handleSignOut}
               >
                 <LinearGradient
-                  colors={["#8B3358", "#670D2F"]}
+                  colors={[COLORS.aeroBlue, COLORS.steelBlue]}
                   style={styles.modalBtnGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -343,7 +340,7 @@ export default function ProfileScreen({ navigation }) {
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => hideAlert()}>
-                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Cancel</Text>
+                <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -354,7 +351,7 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: COLORS.background },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 30 },
 
@@ -397,7 +394,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     borderRadius: 24,
     padding: 24,
-    // Soft Shadow
+    backgroundColor: COLORS.white,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.08,
@@ -408,7 +405,6 @@ const styles = StyleSheet.create({
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
   },
   avatarWrapper: {
     position: 'relative',
@@ -426,20 +422,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#8B3358',
-  },
-  editIconBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#8B3358',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
+    color: COLORS.darkNavy,
   },
   profileInfo: {
     flex: 1,
@@ -448,24 +431,20 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     marginBottom: 4,
+    color: COLORS.darkNavy,
   },
   userEmail: {
     fontSize: 14,
     marginBottom: 8,
+    color: COLORS.grayText,
   },
   editProfileLink: {
-    color: '#8B3358',
+    color: COLORS.steelBlue,
     fontSize: 14,
     fontWeight: '600',
   },
 
   // Stats Row
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 20,
-    borderTopWidth: 1,
-  },
   statItem: {
     alignItems: 'center',
     flex: 1,
@@ -501,16 +480,19 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    color: COLORS.grayText,
   },
   menuList: {
     borderRadius: 16,
     overflow: 'hidden',
+    backgroundColor: COLORS.white,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   lastMenuItem: {
     borderBottomWidth: 0,
@@ -527,9 +509,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '500',
+    color: COLORS.darkNavy,
   },
   menuBadge: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: COLORS.error,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -556,11 +539,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  versionText: {
-    textAlign: 'center',
-    fontSize: 12,
-    marginBottom: 20,
-  },
 
   // Modal Styles
   modalOverlay: {
@@ -578,10 +556,10 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     position: 'relative',
+    backgroundColor: COLORS.white,
   },
   modalBgPattern: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.1,
   },
   modalCircle: {
     position: 'absolute',
@@ -606,7 +584,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 36,
     marginBottom: 20,
-    shadowColor: "#8B3358",
+    shadowColor: COLORS.steelBlue,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -623,12 +601,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     marginBottom: 10,
+    color: COLORS.darkNavy,
   },
   modalMessage: {
     textAlign: 'center',
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 24,
+    color: COLORS.grayText,
   },
   modalConfirmBtn: {
     width: '100%',
@@ -654,5 +634,6 @@ const styles = StyleSheet.create({
   modalCancelText: {
     fontSize: 15,
     fontWeight: '600',
+    color: COLORS.grayText,
   },
 });

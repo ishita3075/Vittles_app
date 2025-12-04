@@ -18,17 +18,19 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAuth } from "../contexts/AuthContext"; // Import the auth context
+import { useAuth } from "../contexts/AuthContext";
 
 const { width, height } = Dimensions.get("window");
 
 // --- PALETTE CONSTANTS ---
 const COLORS = {
-  jaffa: "#F2913D",
-  tango: "#F27F3D",
-  fire: "#BF3604",
-  redOxide: "#730C02",
-  chocolate: "#400101",
+  // New Theme Colors (Aero Blue)
+  aeroBlue: "#7CB9E8",          // Primary Light Blue
+  steelBlue: "#5A94C4",         // Mid Blue (for gradients/text)
+  darkNavy: "#0A2342",          // Deep background (matches Navbar)
+  aeroBlueLight: "rgba(124, 185, 232, 0.1)", // Light background for icons
+  
+  // Base Colors
   white: "#FFFFFF",
   grayText: "#6B7280",
   inputBg: "#F9FAFB",
@@ -42,7 +44,6 @@ if (Platform.OS === 'android') {
 }
 
 export default function LoginScreen({ navigation }) {
-  // Use the actual auth context instead of mock function
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -53,16 +54,21 @@ export default function LoginScreen({ navigation }) {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  // Start the form completely off-screen (at the bottom)
+  const slideAnim = useRef(new Animated.Value(height)).current; 
+
+  // Keyboard & Header Animations
   const formTranslateY = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(0)).current;
   const headerOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Initial fade in animation
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
+    // Entrance Animation: Smooth slide up from bottom (Sheet effect)
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      damping: 15,    // Controls oscillation
+      stiffness: 90,  // Controls speed
+      mass: 1,        // Controls weight
       useNativeDriver: true,
     }).start();
 
@@ -75,7 +81,7 @@ export default function LoginScreen({ navigation }) {
         setKeyboardHeight(keyboardHeight);
         
         // Calculate form movement - we want it to rise above keyboard
-        const moveUpBy = keyboardHeight + 20; // Rise above keyboard with padding
+        const moveUpBy = keyboardHeight + 20;
         
         // Animate form up
         Animated.parallel([
@@ -126,7 +132,6 @@ export default function LoginScreen({ navigation }) {
           })
         ]).start();
         
-        // Clear keyboard height after animation
         setTimeout(() => setKeyboardHeight(0), 300);
       }
     );
@@ -154,10 +159,8 @@ export default function LoginScreen({ navigation }) {
 
     setIsLoading(true);
     try {
-      // Use the actual login function from auth context
       const result = await login(email, password);
       if (result.success) {
-        // Navigate to MainTabs after successful login
         navigation.reset({ index: 0, routes: [{ name: "MainTabs" }] });
       } else {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -175,22 +178,20 @@ export default function LoginScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
-      {/* Background Image with Overlay */}
       <ImageBackground
         source={{ uri: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop" }}
         style={styles.background}
         resizeMode="cover"
       >
         <LinearGradient
-          colors={['rgba(64, 1, 1, 0.7)', 'rgba(46, 10, 24, 0.9)']}
+          // Dark Navy overlay
+          colors={['rgba(10, 35, 66, 0.7)', 'rgba(10, 35, 66, 0.9)']}
           style={styles.overlay}
         />
 
-        {/* Decorative Circles */}
         <View style={styles.circle1} />
         <View style={styles.circle2} />
 
-        {/* Animated Header - Moves up and fades when keyboard opens */}
         <Animated.View style={[
           styles.header,
           { 
@@ -210,13 +211,14 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.tagline}>Experience flavor in every bite</Text>
         </Animated.View>
 
-        {/* Animated Form Container */}
         <Animated.View 
           style={[
             styles.formContainer,
             {
-              opacity: fadeAnim,
-              transform: [{ translateY: formTranslateY }]
+              transform: [
+                { translateY: formTranslateY }, // For keyboard movement
+                { translateY: slideAnim }       // Entrance: Slide up from bottom
+              ]
             }
           ]}
         >
@@ -230,7 +232,6 @@ export default function LoginScreen({ navigation }) {
             bounces={false}
             keyboardDismissMode="interactive"
           >
-            {/* Show "Welcome Back" text inside the form */}
             <View style={styles.formHeader}>
               <Text style={styles.welcomeText}>Welcome Back</Text>
               <Text style={styles.instructionText}>Sign in to continue your food journey</Text>
@@ -247,7 +248,8 @@ export default function LoginScreen({ navigation }) {
               <Text style={styles.label}>Email Address</Text>
               <View style={styles.inputContainer}>
                 <View style={styles.iconBox}>
-                  <Ionicons name="mail" size={18} color={COLORS.fire} />
+                  {/* Updated Icon Color to Steel Blue */}
+                  <Ionicons name="mail" size={18} color={COLORS.steelBlue} />
                 </View>
                 <TextInput
                   style={styles.input}
@@ -266,7 +268,8 @@ export default function LoginScreen({ navigation }) {
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputContainer}>
                 <View style={styles.iconBox}>
-                  <Ionicons name="lock-closed" size={18} color={COLORS.fire} />
+                  {/* Updated Icon Color to Steel Blue */}
+                  <Ionicons name="lock-closed" size={18} color={COLORS.steelBlue} />
                 </View>
                 <TextInput
                   style={styles.input}
@@ -305,7 +308,8 @@ export default function LoginScreen({ navigation }) {
               activeOpacity={0.9}
             >
               <LinearGradient
-                colors={[COLORS.jaffa, COLORS.tango]}
+                // Updated Gradient: Aero Blue -> Steel Blue
+                colors={[COLORS.aeroBlue, COLORS.steelBlue]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.gradientButton}
@@ -316,7 +320,8 @@ export default function LoginScreen({ navigation }) {
                   <>
                     <Text style={styles.loginButtonText}>Sign In</Text>
                     <View style={styles.btnArrow}>
-                      <Ionicons name="arrow-forward" size={16} color={COLORS.fire} />
+                      {/* Updated Arrow Color */}
+                      <Ionicons name="arrow-forward" size={16} color={COLORS.steelBlue} />
                     </View>
                   </>
                 )}
@@ -342,7 +347,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.chocolate,
+    backgroundColor: COLORS.darkNavy, // Updated Background
   },
   background: {
     flex: 1,
@@ -499,7 +504,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: 'rgba(191, 54, 4, 0.1)',
+    backgroundColor: COLORS.aeroBlueLight, // Updated Background
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -518,14 +523,14 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   forgotText: {
-    color: COLORS.fire,
+    color: COLORS.steelBlue, // Updated Text
     fontSize: 13,
     fontWeight: '600',
   },
   loginButton: {
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: COLORS.jaffa,
+    shadowColor: COLORS.aeroBlue, // Updated Shadow
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -565,7 +570,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   signupLink: {
-    color: COLORS.fire,
+    color: COLORS.steelBlue, // Updated Link
     fontSize: 14,
     fontWeight: '800',
   },

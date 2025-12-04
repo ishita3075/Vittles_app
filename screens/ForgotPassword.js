@@ -24,11 +24,13 @@ const { width, height } = Dimensions.get("window");
 
 // --- PALETTE CONSTANTS ---
 const COLORS = {
-  jaffa: "#F2913D",
-  tango: "#F27F3D",
-  fire: "#BF3604",
-  redOxide: "#730C02",
-  chocolate: "#400101",
+  // New Theme Colors (Aero Blue)
+  aeroBlue: "#7CB9E8",          // Primary Light Blue
+  steelBlue: "#5A94C4",         // Mid Blue (for gradients/text)
+  darkNavy: "#0A2342",          // Deep background (matches Navbar)
+  aeroBlueLight: "rgba(124, 185, 232, 0.1)", // Light background for icons
+  
+  // Base Colors
   white: "#FFFFFF",
   grayText: "#6B7280",
   inputBg: "#F9FAFB",
@@ -56,10 +58,10 @@ const ModernInput = ({ icon, value, onChangeText, placeholder, error }) => {
 
   const borderColor = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#F3F4F6', COLORS.fire]
+    outputRange: ['#F3F4F6', COLORS.steelBlue]
   });
 
-  const iconColor = isFocused ? COLORS.fire : '#9CA3AF';
+  const iconColor = isFocused ? COLORS.steelBlue : '#9CA3AF';
 
   return (
     <View style={styles.inputWrapper}>
@@ -73,7 +75,7 @@ const ModernInput = ({ icon, value, onChangeText, placeholder, error }) => {
       ]}>
         <View style={[
           styles.iconBox, 
-          { backgroundColor: isFocused ? 'rgba(191, 54, 4, 0.1)' : 'rgba(191, 54, 4, 0.05)' }
+          { backgroundColor: isFocused ? COLORS.aeroBlueLight : 'rgba(124, 185, 232, 0.05)' }
         ]}>
           <Ionicons name={icon} size={20} color={error ? '#EF4444' : iconColor} />
         </View>
@@ -87,8 +89,8 @@ const ModernInput = ({ icon, value, onChangeText, placeholder, error }) => {
           onBlur={() => setIsFocused(false)}
           keyboardType="email-address"
           autoCapitalize="none"
-          cursorColor={COLORS.fire}
-          selectionColor={`rgba(${parseInt(COLORS.fire.slice(1, 3), 16)}, ${parseInt(COLORS.fire.slice(3, 5), 16)}, ${parseInt(COLORS.fire.slice(5, 7), 16)}, 0.2)`}
+          cursorColor={COLORS.steelBlue}
+          selectionColor={`rgba(${parseInt(COLORS.steelBlue.slice(1, 3), 16)}, ${parseInt(COLORS.steelBlue.slice(3, 5), 16)}, ${parseInt(COLORS.steelBlue.slice(5, 7), 16)}, 0.2)`}
         />
       </Animated.View>
       {error ? (
@@ -107,7 +109,9 @@ export default function ForgotPasswordScreen({ navigation }) {
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  // Start the form completely off-screen (at the bottom)
+  const slideAnim = useRef(new Animated.Value(height)).current; 
+
   const formTranslateY = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(0)).current;
   const headerOpacity = useRef(new Animated.Value(1)).current;
@@ -115,10 +119,12 @@ export default function ForgotPasswordScreen({ navigation }) {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
-    // Initial fade in animation
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
+    // Entrance Animation: Smooth slide up from bottom (Sheet effect)
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      damping: 15,
+      stiffness: 90,
+      mass: 1,
       useNativeDriver: true,
     }).start();
 
@@ -247,7 +253,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         activeOpacity={0.9}
       >
         <LinearGradient
-          colors={[COLORS.jaffa, COLORS.tango]}
+          colors={[COLORS.aeroBlue, COLORS.steelBlue]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradientButton}
@@ -257,7 +263,9 @@ export default function ForgotPasswordScreen({ navigation }) {
           ) : (
             <>
               <Text style={styles.submitButtonText}>Send Reset Link</Text>
-              <Ionicons name="arrow-forward" size={20} color="#FFF" />
+              <View style={styles.btnArrow}>
+                <Ionicons name="arrow-forward" size={16} color={COLORS.steelBlue} />
+              </View>
             </>
           )}
         </LinearGradient>
@@ -267,7 +275,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         style={styles.backButtonContainer}
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="chevron-back" size={18} color={COLORS.fire} />
+        <Ionicons name="chevron-back" size={18} color={COLORS.steelBlue} />
         <Text style={styles.backButtonText}>Back to Login</Text>
       </TouchableOpacity>
     </>
@@ -305,7 +313,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         onPress={openEmailApp}
       >
         <LinearGradient
-          colors={[COLORS.jaffa, COLORS.tango]}
+          colors={[COLORS.aeroBlue, COLORS.steelBlue]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.primaryActionGradient}
@@ -346,7 +354,8 @@ export default function ForgotPasswordScreen({ navigation }) {
         resizeMode="cover"
       >
         <LinearGradient
-          colors={['rgba(64, 1, 1, 0.7)', 'rgba(46, 10, 24, 0.9)']}
+          // Dark Navy overlay
+          colors={['rgba(10, 35, 66, 0.7)', 'rgba(10, 35, 66, 0.9)']}
           style={styles.overlay}
         />
 
@@ -379,8 +388,10 @@ export default function ForgotPasswordScreen({ navigation }) {
           style={[
             styles.formContainer,
             {
-              opacity: fadeAnim,
-              transform: [{ translateY: formTranslateY }]
+              transform: [
+                { translateY: formTranslateY },
+                { translateY: slideAnim } // Sheet Slide Up Animation
+              ]
             }
           ]}
         >
@@ -406,7 +417,7 @@ export default function ForgotPasswordScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.chocolate,
+    backgroundColor: COLORS.darkNavy,
   },
   background: {
     flex: 1,
@@ -539,7 +550,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   inputFocused: {
-    shadowColor: COLORS.fire,
+    shadowColor: COLORS.aeroBlue,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -570,7 +581,7 @@ const styles = StyleSheet.create({
   submitButton: {
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: COLORS.jaffa,
+    shadowColor: COLORS.aeroBlue,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
@@ -590,6 +601,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
+  btnArrow: {
+    backgroundColor: '#FFF',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   backButtonContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -598,7 +617,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   backButtonText: {
-    color: COLORS.fire,
+    color: COLORS.steelBlue,
     fontSize: 15,
     fontWeight: '700',
     marginLeft: 6,
@@ -658,7 +677,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: COLORS.jaffa,
+    shadowColor: COLORS.aeroBlue,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -703,7 +722,7 @@ const styles = StyleSheet.create({
   },
   resendLink: {
     fontSize: 14,
-    color: COLORS.fire,
+    color: COLORS.steelBlue,
     fontWeight: '700',
   },
 });
