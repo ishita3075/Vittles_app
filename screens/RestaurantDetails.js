@@ -33,6 +33,20 @@ if (Platform.OS === 'android') {
   }
 }
 
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS_THEME = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.05)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  error: "#EF4444",
+};
+
 // --- Menu Item Skeleton ---
 const MenuSkeleton = ({ colors }) => (
   <View style={styles.skeletonContainer}>
@@ -136,15 +150,15 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
                 style={styles.qtyBtn}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="remove" size={20} color="#8B3358" />
+                <Ionicons name="remove" size={20} color={COLORS_THEME.steelBlue} />
               </TouchableOpacity>
-              <Text style={[styles.qtyText, { color: "#8B3358" }]}>{quantity}</Text>
+              <Text style={[styles.qtyText, { color: COLORS_THEME.steelBlue }]}>{quantity}</Text>
               <TouchableOpacity
                 onPress={() => handleAction(() => onIncrement(item.id))}
                 style={styles.qtyBtn}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="add" size={20} color="#8B3358" />
+                <Ionicons name="add" size={20} color={COLORS_THEME.steelBlue} />
               </TouchableOpacity>
             </View>
           ) : (
@@ -156,7 +170,7 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
               <View style={[styles.addBtn, { backgroundColor: colors.card }]}>
                 <Text style={styles.addBtnText}>ADD</Text>
                 <View style={styles.addBtnPlus}>
-                  <Ionicons name="add" size={10} color="#8B3358" />
+                  <Ionicons name="add" size={10} color={COLORS_THEME.steelBlue} />
                 </View>
               </View>
             </TouchableOpacity>
@@ -366,7 +380,7 @@ export default function RestaurantDetails() {
             activeOpacity={0.95}
           >
             <LinearGradient
-              colors={["#8B3358", "#670D2F"]}
+              colors={[COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.cartGradient}
@@ -677,7 +691,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.05)',
   },
   addBtnText: {
-    color: '#8B3358', // Theme color
+    color: COLORS_THEME.steelBlue, // Theme color
     fontSize: 16,
     fontWeight: '800',
   },
@@ -697,8 +711,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: '#8B3358',
-    shadowColor: "#8B3358",
+    borderColor: COLORS_THEME.steelBlue,
+    shadowColor: COLORS_THEME.steelBlue,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -749,7 +763,7 @@ const styles = StyleSheet.create({
   cartButton: {
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: "#8B3358",
+    shadowColor: COLORS_THEME.steelBlue,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
     shadowRadius: 20,

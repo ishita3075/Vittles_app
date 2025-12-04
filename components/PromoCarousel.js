@@ -155,16 +155,6 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark, onPress }) => {
               style={styles.gradientOverlay}
             />
 
-            {/* --- Top Label (Moved Here) --- */}
-            <Animated.View 
-              style={[
-                styles.topLabelContainer, 
-                { opacity: textOpacity } // Fade out slightly when scrolling
-              ]}
-            >
-              <Text style={styles.topLabelText}>Recommended for you</Text>
-            </Animated.View>
-
             {/* Animated Bottom CTA Overlay */}
             <Animated.View
               style={[
@@ -211,7 +201,7 @@ export default function PromoCarousel() {
       time: "25-35 min",
       distance: "2.0 km",
       cuisine: "Special • Trending",
-      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop", 
+      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop",
       price: "₹450 for two",
       discount: "PROMO DEAL",
       description: "Experience the taste of our specially curated recommended items.",
@@ -396,27 +386,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: '78%',
     zIndex: 1,
-  },
-  
-  // --- Top Label Styles ---
-  topLabelContainer: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    zIndex: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  topLabelText: {
-    color: '#FFD6E7',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
 
   textOverlay: {

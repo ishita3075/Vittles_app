@@ -33,7 +33,7 @@ const COLORS = {
   aeroBlue: "#7CB9E8",          // Primary Light Blue
   steelBlue: "#5A94C4",         // Mid Blue (Accents)
   darkNavy: "#0A2342",          // Deep Blue (Text/Dark Mode)
-  aeroBlueLight: "rgba(124, 185, 232, 0.1)", 
+  aeroBlueLight: "rgba(124, 185, 232, 0.1)",
   border: "rgba(0,0,0,0.05)",
   card: "#FFFFFF",
   white: "#FFFFFF",
@@ -60,21 +60,6 @@ const responsive = {
 };
 
 // --- Helper Components ---
-
-// 1. Quick Filter Chip Component
-const FilterChip = ({ label, icon, active, onPress }) => (
-  <TouchableOpacity
-    style={[
-      styles.chip,
-      active && styles.chipActive
-    ]}
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    {icon && <Ionicons name={icon} size={14} color={active ? "#FFF" : "#666"} style={{ marginRight: 4 }} />}
-    <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
-  </TouchableOpacity>
-);
 
 // 2. Skeleton Loader Component (Premium Feel)
 const RestaurantSkeleton = () => (
@@ -122,11 +107,6 @@ export default function HomeScreen({ navigation }) {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  // Quick Filters State
-  const [filterVeg, setFilterVeg] = useState(false);
-  const [filterFast, setFilterFast] = useState(false);
-  const [filterTopRated, setFilterTopRated] = useState(false);
 
   // Fetch Logic
   const fetchVendors = async () => {
@@ -179,13 +159,8 @@ export default function HomeScreen({ navigation }) {
       );
     }
 
-    // 3. Quick Filters
-    if (filterVeg) result = result.filter(r => r.isPureVeg);
-    if (filterFast) result = result.filter(r => parseInt(r.time) < 30);
-    if (filterTopRated) result = result.filter(r => parseFloat(r.rating) >= 4.5);
-
     setFilteredRestaurants(result);
-  }, [searchQuery, selectedCategory, filterVeg, filterFast, filterTopRated, vendors]);
+  }, [searchQuery, selectedCategory, vendors]);
 
   // Handlers
   const handleClearSearch = () => setSearchQuery("");
@@ -230,44 +205,6 @@ export default function HomeScreen({ navigation }) {
         {/* 2. Categories List (Horizontal) */}
         {/* We assume CategoriesList handles its own UI and callbacks */}
 
-
-        {/* 3. Quick Filters (Chips) */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipsContainer}
-          style={styles.chipsScroll}
-        >
-          {/* Example Chip usage - you would typically map these */}
-          <FilterChip 
-            label="Pure Veg" 
-            icon="leaf" 
-            active={filterVeg} 
-            onPress={() => setFilterVeg(!filterVeg)} 
-          />
-          <FilterChip 
-            label="Fast Delivery" 
-            icon="time" 
-            active={filterFast} 
-            onPress={() => setFilterFast(!filterFast)} 
-          />
-          <FilterChip 
-            label="Top Rated" 
-            icon="star" 
-            active={filterTopRated} 
-            onPress={() => setFilterTopRated(!filterTopRated)} 
-          />
-
-          {/* Reset Filter Button if any filter is active */}
-          {(filterVeg || filterFast || filterTopRated) && (
-            <TouchableOpacity
-              onPress={() => { setFilterVeg(false); setFilterFast(false); setFilterTopRated(false); }}
-              style={styles.clearFiltersBtn}
-            >
-              <Text style={styles.clearFiltersText}>Clear</Text>
-            </TouchableOpacity>
-          )}
-        </ScrollView>
 
         {/* 4. Main Restaurant List */}
         <View style={styles.listSection}>
@@ -331,51 +268,6 @@ const styles = StyleSheet.create({
   },
   categoriesSection: {
     marginBottom: responsive.spacing.md,
-  },
-
-  // Chips
-  chipsScroll: {
-    marginBottom: responsive.spacing.xl,
-  },
-  chipsContainer: {
-    paddingHorizontal: responsive.spacing.lg,
-    gap: 8,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  chipActive: {
-    backgroundColor: COLORS.aeroBlue, // Updated to Aero Blue
-    borderColor: COLORS.aeroBlue,
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  chipTextActive: {
-    color: '#FFF',
-  },
-  clearFiltersBtn: {
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-  },
-  clearFiltersText: {
-    color: COLORS.steelBlue, // Updated to Steel Blue
-    fontSize: 13,
-    fontWeight: '600',
   },
 
   // List Section
