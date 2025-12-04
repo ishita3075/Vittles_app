@@ -278,7 +278,7 @@ notificationApi.interceptors.response.use(
 export const getNotifications = async (userId) => {
   // TODO: change this to match your Spring Boot notification route
   // Example: GET /notifications/user/{userId}
-  const res = await notificationApi.get(`/notifications/user/${userId}`);
+  const res = await notificationApi.get(`/notifications/${userId}`);
   return res.data; // expecting array
 };
 
