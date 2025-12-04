@@ -7,20 +7,33 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StatusBar,
   Animated,
   Dimensions,
   LayoutAnimation,
-  UIManager
+  UIManager,
+  ImageBackground,
+  Keyboard,
+  Platform
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../contexts/AuthContext";
 
 const { width, height } = Dimensions.get("window");
+
+// --- PALETTE CONSTANTS ---
+const COLORS = {
+  jaffa: "#F2913D",
+  tango: "#F27F3D",
+  fire: "#BF3604",
+  redOxide: "#730C02",
+  chocolate: "#400101",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  inputBg: "#F9FAFB",
+};
 
 // Enable LayoutAnimation
 if (Platform.OS === 'android') {
@@ -37,30 +50,98 @@ export default function SignupScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(100)).current;
+  const formTranslateY = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        tension: 20,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // Initial fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+
+    // Keyboard listeners
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        const keyboardHeight = e.endCoordinates.height;
+        setKeyboardHeight(keyboardHeight);
+        
+        // Calculate form movement - we want it to rise above keyboard
+        const moveUpBy = keyboardHeight + 20; // Rise above keyboard with padding
+        
+        // Animate form up
+        Animated.parallel([
+          Animated.timing(formTranslateY, {
+            toValue: -moveUpBy,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          // Fade out header when keyboard opens
+          Animated.timing(headerOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          // Move header up slightly
+          Animated.timing(headerTranslateY, {
+            toValue: -30,
+            duration: 300,
+            useNativeDriver: true,
+          })
+        ]).start();
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        
+        // Animate everything back to original positions
+        Animated.parallel([
+          Animated.timing(formTranslateY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          // Fade header back in
+          Animated.timing(headerOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          // Move header back down
+          Animated.timing(headerTranslateY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          })
+        ]).start();
+        
+        // Clear keyboard height after animation
+        setTimeout(() => setKeyboardHeight(0), 300);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
   }, []);
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSignUp = async () => {
+    Keyboard.dismiss();
+    
     setError("");
 
     // Validation
@@ -104,55 +185,66 @@ export default function SignupScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={["#8B3358", "#591A32", "#2E0A18"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      {/* Background Image with Overlay */}
+      <ImageBackground
+        source={{ uri: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop" }}
         style={styles.background}
-      />
-
-      {/* Decorative Circles */}
-      <View style={styles.circle1} />
-      <View style={styles.circle2} />
-
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoid}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        resizeMode="cover"
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header Section */}
-          <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-            <View style={styles.logoContainer}>
-              <LinearGradient
-                colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']}
-                style={styles.logoGradient}
-              >
-                <Ionicons name="restaurant" size={40} color="#FFFFFF" />
-              </LinearGradient>
-            </View>
-            <Text style={styles.appName}>Vittles</Text>
-            <Text style={styles.tagline}>Join the culinary adventure</Text>
-          </Animated.View>
+        <LinearGradient
+          colors={['rgba(64, 1, 1, 0.7)', 'rgba(46, 10, 24, 0.9)']}
+          style={styles.overlay}
+        />
 
-          {/* Signup Form Container */}
-          <Animated.View 
-            style={[
-              styles.formContainer, 
-              { 
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }] 
-              }
-            ]}
+        {/* Decorative Circles */}
+        <View style={styles.circle1} />
+        <View style={styles.circle2} />
+
+        {/* Animated Header - Moves up and fades when keyboard opens */}
+        <Animated.View style={[
+          styles.header,
+          { 
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslateY }]
+          }
+        ]}>
+          <View style={styles.logoContainer}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']}
+              style={styles.logoGradient}
+            >
+              <Ionicons name="restaurant" size={40} color="#FFFFFF" />
+            </LinearGradient>
+          </View>
+          <Text style={styles.appName}>Vittles</Text>
+          <Text style={styles.tagline}>Join the culinary adventure</Text>
+        </Animated.View>
+
+        {/* Animated Form Container */}
+        <Animated.View 
+          style={[
+            styles.formContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: formTranslateY }]
+            }
+          ]}
+        >
+          <View style={styles.dragHandle} />
+          
+          <ScrollView 
+            style={styles.formScroll}
+            contentContainerStyle={styles.formScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+            keyboardDismissMode="interactive"
           >
-            <View style={styles.dragHandle} />
-            
-            <Text style={styles.welcomeText}>Create Account</Text>
-            <Text style={styles.instructionText}>Sign up to get started</Text>
+            {/* Form Header */}
+            <View style={styles.formHeader}>
+              <Text style={styles.welcomeText}>Create Account</Text>
+              <Text style={styles.instructionText}>Sign up to get started</Text>
+            </View>
 
             {error ? (
               <View style={styles.errorContainer}>
@@ -165,7 +257,7 @@ export default function SignupScreen({ navigation }) {
               <Text style={styles.label}>Full Name</Text>
               <View style={styles.inputContainer}>
                 <View style={styles.iconBox}>
-                  <Ionicons name="person" size={18} color="#8B3358" />
+                  <Ionicons name="person" size={18} color={COLORS.fire} />
                 </View>
                 <TextInput
                   style={styles.input}
@@ -174,6 +266,7 @@ export default function SignupScreen({ navigation }) {
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
+                  returnKeyType="next"
                 />
               </View>
             </View>
@@ -182,7 +275,7 @@ export default function SignupScreen({ navigation }) {
               <Text style={styles.label}>Email Address</Text>
               <View style={styles.inputContainer}>
                 <View style={styles.iconBox}>
-                  <Ionicons name="mail" size={18} color="#8B3358" />
+                  <Ionicons name="mail" size={18} color={COLORS.fire} />
                 </View>
                 <TextInput
                   style={styles.input}
@@ -192,6 +285,7 @@ export default function SignupScreen({ navigation }) {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  returnKeyType="next"
                 />
               </View>
             </View>
@@ -200,7 +294,7 @@ export default function SignupScreen({ navigation }) {
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputContainer}>
                 <View style={styles.iconBox}>
-                  <Ionicons name="lock-closed" size={18} color="#8B3358" />
+                  <Ionicons name="lock-closed" size={18} color={COLORS.fire} />
                 </View>
                 <TextInput
                   style={styles.input}
@@ -210,6 +304,8 @@ export default function SignupScreen({ navigation }) {
                   onChangeText={setPassword}
                   secureTextEntry={!isPasswordVisible}
                   autoCapitalize="none"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSignUp}
                 />
                 <TouchableOpacity 
                   onPress={() => setIsPasswordVisible(!isPasswordVisible)}
@@ -227,7 +323,7 @@ export default function SignupScreen({ navigation }) {
               activeOpacity={0.9}
             >
               <LinearGradient
-                colors={["#8B3358", "#670D2F"]}
+                colors={[COLORS.jaffa, COLORS.tango]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.gradientButton}
@@ -238,7 +334,7 @@ export default function SignupScreen({ navigation }) {
                   <>
                     <Text style={styles.signupButtonText}>Create Account</Text>
                     <View style={styles.btnArrow}>
-                      <Ionicons name="arrow-forward" size={16} color="#8B3358" />
+                      <Ionicons name="arrow-forward" size={16} color={COLORS.fire} />
                     </View>
                   </>
                 )}
@@ -247,7 +343,10 @@ export default function SignupScreen({ navigation }) {
 
             <View style={styles.loginRow}>
               <Text style={styles.loginText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+              <TouchableOpacity onPress={() => {
+                Keyboard.dismiss();
+                navigation.navigate("Login");
+              }}>
                 <Text style={styles.loginLink}>Log In</Text>
               </TouchableOpacity>
             </View>
@@ -257,9 +356,9 @@ export default function SignupScreen({ navigation }) {
                 By signing up, you agree to our Terms & Privacy Policy
               </Text>
             </View>
-          </Animated.View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </Animated.View>
+      </ImageBackground>
     </View>
   );
 }
@@ -267,9 +366,14 @@ export default function SignupScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2E0A18',
+    backgroundColor: COLORS.chocolate,
   },
   background: {
+    flex: 1,
+    width: width,
+    height: height,
+  },
+  overlay: {
     ...StyleSheet.absoluteFillObject,
   },
   circle1: {
@@ -277,7 +381,7 @@ const styles = StyleSheet.create({
     width: width * 1.2,
     height: width * 1.2,
     borderRadius: width * 0.6,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(255,255,255,0.03)",
     top: -width * 0.5,
     left: -width * 0.1,
   },
@@ -286,23 +390,17 @@ const styles = StyleSheet.create({
     width: width * 0.8,
     height: width * 0.8,
     borderRadius: width * 0.4,
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: "rgba(255,255,255,0.02)",
     top: -width * 0.2,
     right: -width * 0.3,
   },
-  keyboardAvoid: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'space-between',
-  },
-  
-  // Header Styles
   header: {
+    position: "absolute",
+    top: height * 0.10,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    paddingTop: height * 0.08,
-    paddingBottom: 30,
+    zIndex: 10,
   },
   logoContainer: {
     marginBottom: 16,
@@ -327,28 +425,43 @@ const styles = StyleSheet.create({
     color: '#FFF',
     letterSpacing: 0.5,
     marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   tagline: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.9)',
     fontWeight: '500',
     letterSpacing: 0.5,
   },
-
-  // Form Sheet
   formContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    paddingHorizontal: 32,
     paddingTop: 24,
-    paddingBottom: 40,
-    flex: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
+    shadowOpacity: 0.3,
+    shadowRadius: 25,
     elevation: 20,
+    maxHeight: height * 0.75,
+    minHeight: height * 0.6,
+  },
+  formScroll: {
+    flex: 1,
+  },
+  formScrollContent: {
+    paddingHorizontal: 32,
+    paddingBottom: 40,
+    paddingTop: 10,
+  },
+  formHeader: {
+    marginBottom: 20,
   },
   dragHandle: {
     width: 40,
@@ -366,11 +479,9 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     fontSize: 15,
-    color: '#6B7280',
+    color: COLORS.grayText,
     marginBottom: 28,
   },
-
-  // Error
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -388,8 +499,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontWeight: '500',
   },
-
-  // Inputs
   inputWrapper: {
     marginBottom: 18,
   },
@@ -403,7 +512,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.inputBg,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#F3F4F6',
@@ -414,7 +523,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: 'rgba(139, 51, 88, 0.1)',
+    backgroundColor: 'rgba(191, 54, 4, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -428,12 +537,10 @@ const styles = StyleSheet.create({
   eyeIcon: {
     padding: 8,
   },
-
-  // Main Button
   signupButton: {
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#8B3358',
+    shadowColor: COLORS.jaffa,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -462,8 +569,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  // Login Link Footer
   loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -471,17 +576,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   loginText: {
-    color: '#6B7280',
+    color: COLORS.grayText,
     fontSize: 14,
     fontWeight: '500',
   },
   loginLink: {
-    color: '#8B3358',
+    color: COLORS.fire,
     fontSize: 14,
     fontWeight: '800',
   },
-  
-  // Bottom Footer
   footer: {
     alignItems: 'center',
   },
@@ -489,5 +592,6 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 11,
     textAlign: 'center',
+    lineHeight: 16,
   },
 });

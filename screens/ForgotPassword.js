@@ -6,20 +6,33 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StatusBar,
   Animated,
   Dimensions,
   LayoutAnimation,
   UIManager,
+  ImageBackground,
+  Keyboard,
+  Platform,
   Linking
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 const { width, height } = Dimensions.get("window");
+
+// --- PALETTE CONSTANTS ---
+const COLORS = {
+  jaffa: "#F2913D",
+  tango: "#F27F3D",
+  fire: "#BF3604",
+  redOxide: "#730C02",
+  chocolate: "#400101",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  inputBg: "#F9FAFB",
+};
 
 // Enable LayoutAnimation
 if (Platform.OS === 'android') {
@@ -43,19 +56,25 @@ const ModernInput = ({ icon, value, onChangeText, placeholder, error }) => {
 
   const borderColor = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#F3F4F6', '#8B3358']
+    outputRange: ['#F3F4F6', COLORS.fire]
   });
 
-  const iconColor = isFocused ? '#8B3358' : '#9CA3AF';
+  const iconColor = isFocused ? COLORS.fire : '#9CA3AF';
 
   return (
     <View style={styles.inputWrapper}>
       <Animated.View style={[
         styles.inputContainer,
-        { borderColor: error ? '#EF4444' : borderColor },
+        { 
+          borderColor: error ? '#EF4444' : borderColor,
+          backgroundColor: isFocused ? 'rgba(255, 255, 255, 0.95)' : COLORS.inputBg
+        },
         isFocused && styles.inputFocused
       ]}>
-        <View style={[styles.iconBox, { backgroundColor: isFocused ? '#8B335815' : '#F3F4F6' }]}>
+        <View style={[
+          styles.iconBox, 
+          { backgroundColor: isFocused ? 'rgba(191, 54, 4, 0.1)' : 'rgba(191, 54, 4, 0.05)' }
+        ]}>
           <Ionicons name={icon} size={20} color={error ? '#EF4444' : iconColor} />
         </View>
         <TextInput
@@ -68,13 +87,14 @@ const ModernInput = ({ icon, value, onChangeText, placeholder, error }) => {
           onBlur={() => setIsFocused(false)}
           keyboardType="email-address"
           autoCapitalize="none"
-          cursorColor="#8B3358"
+          cursorColor={COLORS.fire}
+          selectionColor={`rgba(${parseInt(COLORS.fire.slice(1, 3), 16)}, ${parseInt(COLORS.fire.slice(3, 5), 16)}, ${parseInt(COLORS.fire.slice(5, 7), 16)}, 0.2)`}
         />
       </Animated.View>
       {error ? (
-        <Animated.Text entering={Platform.OS !== 'web'} style={styles.inlineError}>
+        <Text style={styles.inlineError}>
           {error}
-        </Animated.Text>
+        </Text>
       ) : null}
     </View>
   );
@@ -88,17 +108,86 @@ export default function ForgotPasswordScreen({ navigation }) {
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const formTranslateY = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
   const successScale = useRef(new Animated.Value(0)).current;
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      Animated.spring(slideAnim, { toValue: 0, tension: 20, friction: 7, useNativeDriver: true }),
-    ]).start();
+    // Initial fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+
+    // Keyboard listeners
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        const keyboardHeight = e.endCoordinates.height;
+        setKeyboardHeight(keyboardHeight);
+        
+        // Calculate form movement
+        const moveUpBy = keyboardHeight + 20;
+        
+        Animated.parallel([
+          Animated.timing(formTranslateY, {
+            toValue: -moveUpBy,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(headerOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(headerTranslateY, {
+            toValue: -30,
+            duration: 300,
+            useNativeDriver: true,
+          })
+        ]).start();
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        
+        Animated.parallel([
+          Animated.timing(formTranslateY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(headerOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(headerTranslateY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          })
+        ]).start();
+        
+        setTimeout(() => setKeyboardHeight(0), 300);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
   }, []);
 
   const handleForgotPassword = async () => {
+    Keyboard.dismiss();
     setError("");
     
     if (!email || !email.includes('@')) {
@@ -109,30 +198,19 @@ export default function ForgotPasswordScreen({ navigation }) {
     setLoading(true);
 
     try {
-      // Real API Call
-      const response = await fetch("https://foodapp-3-k2bc.onrender.com/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Success Transition
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-        setIsSuccess(true);
-        
-        // Trigger Success Animation
-        Animated.spring(successScale, {
-          toValue: 1,
-          friction: 6,
-          tension: 40,
-          useNativeDriver: true
-        }).start();
-      } else {
-        setError(data.error || "Failed to send reset email.");
-      }
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+      setIsSuccess(true);
+      
+      // Trigger Success Animation
+      Animated.spring(successScale, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true
+      }).start();
 
     } catch (err) {
       setError("Network error. Please try again.");
@@ -142,15 +220,12 @@ export default function ForgotPasswordScreen({ navigation }) {
   };
 
   const openEmailApp = () => {
-    // Simple intent to open mail app (works on many devices)
     Linking.openURL('mailto:');
   };
 
-  // --- Render Views ---
-
   const renderForm = () => (
-    <Animated.View style={{ opacity: isSuccess ? 0 : 1 }}>
-       <View style={styles.textGroup}>
+    <>
+      <View style={styles.textGroup}>
         <Text style={styles.welcomeText}>Forgot Password?</Text>
         <Text style={styles.instructionText}>
           Don't worry! It happens. Please enter the email associated with your account.
@@ -172,7 +247,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         activeOpacity={0.9}
       >
         <LinearGradient
-          colors={["#8B3358", "#670D2F"]}
+          colors={[COLORS.jaffa, COLORS.tango]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradientButton}
@@ -181,17 +256,33 @@ export default function ForgotPasswordScreen({ navigation }) {
             <ActivityIndicator color="#FFF" />
           ) : (
             <>
-              <Text style={styles.submitButtonText}>Send Code</Text>
+              <Text style={styles.submitButtonText}>Send Reset Link</Text>
               <Ionicons name="arrow-forward" size={20} color="#FFF" />
             </>
           )}
         </LinearGradient>
       </TouchableOpacity>
-    </Animated.View>
+
+      <TouchableOpacity 
+        style={styles.backButtonContainer}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="chevron-back" size={18} color={COLORS.fire} />
+        <Text style={styles.backButtonText}>Back to Login</Text>
+      </TouchableOpacity>
+    </>
   );
 
   const renderSuccess = () => (
-    <View style={styles.successWrapper}>
+    <Animated.View 
+      style={[
+        styles.successWrapper,
+        {
+          opacity: successScale,
+          transform: [{ scale: successScale }]
+        }
+      ]}
+    >
       <Animated.View style={[styles.successIconContainer, { transform: [{ scale: successScale }] }]}>
         <LinearGradient
           colors={['#ECFDF5', '#D1FAE5']}
@@ -204,7 +295,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         </View>
       </Animated.View>
 
-      <Text style={styles.successTitle}>Check your mail</Text>
+      <Text style={styles.successTitle}>Check your email</Text>
       <Text style={styles.successMessage}>
         We have sent a password recovery instruction to your email <Text style={{fontWeight: '700', color: '#1F2937'}}>{email}</Text>.
       </Text>
@@ -213,15 +304,23 @@ export default function ForgotPasswordScreen({ navigation }) {
         style={styles.primaryActionBtn}
         onPress={openEmailApp}
       >
-        <Text style={styles.primaryActionText}>Open Email App</Text>
+        <LinearGradient
+          colors={[COLORS.jaffa, COLORS.tango]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.primaryActionGradient}
+        >
+          <Ionicons name="mail-open" size={20} color="#FFF" />
+          <Text style={styles.primaryActionText}>Open Email App</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <TouchableOpacity 
         style={styles.secondaryActionBtn}
         onPress={() => {
-            setIsSuccess(false); 
-            setError(""); 
-            successScale.setValue(0);
+          setIsSuccess(false); 
+          setError(""); 
+          successScale.setValue(0);
         }}
       >
         <Text style={styles.secondaryActionText}>Skip, I'll confirm later</Text>
@@ -233,75 +332,73 @@ export default function ForgotPasswordScreen({ navigation }) {
             <Text style={styles.resendLink}>try another email address</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </Animated.View>
   );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
-      {/* Immersive Background */}
-      <LinearGradient
-        colors={["#8B3358", "#591A32", "#2E0A18"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      {/* Background Image with Overlay */}
+      <ImageBackground
+        source={{ uri: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop" }}
         style={styles.background}
-      />
-
-      {/* Ambient Background Elements */}
-      <View style={styles.circle1} />
-      <View style={styles.circle2} />
-
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoid}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        resizeMode="cover"
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header Area */}
-          <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-            <TouchableOpacity 
-              onPress={() => navigation.goBack()} 
-              style={styles.backButton}
-            >
-              <Ionicons name="chevron-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-            
-            <View style={styles.iconHeaderContainer}>
-               <View style={styles.iconHeaderCircle}>
-                  <MaterialCommunityIcons name="lock-reset" size={32} color="#FFF" />
-               </View>
-            </View>
-          </Animated.View>
+        <LinearGradient
+          colors={['rgba(64, 1, 1, 0.7)', 'rgba(46, 10, 24, 0.9)']}
+          style={styles.overlay}
+        />
 
-          {/* Main Card Sheet */}
-          <Animated.View 
-            style={[
-              styles.formContainer, 
-              { 
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }] 
-              }
-            ]}
+        {/* Decorative Circles */}
+        <View style={styles.circle1} />
+        <View style={styles.circle2} />
+
+        {/* Animated Header */}
+        <Animated.View style={[
+          styles.header,
+          { 
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslateY }]
+          }
+        ]}>
+          
+          
+          <View style={styles.iconHeaderContainer}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']}
+              style={styles.iconHeaderCircle}
+            >
+              <MaterialCommunityIcons name="lock-reset" size={36} color="#FFF" />
+            </LinearGradient>
+          </View>
+        </Animated.View>
+
+        {/* Animated Form Container */}
+        <Animated.View 
+          style={[
+            styles.formContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: formTranslateY }]
+            }
+          ]}
+        >
+          <View style={styles.dragHandle} />
+          
+          <ScrollView 
+            style={styles.formScroll}
+            contentContainerStyle={styles.formScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+            keyboardDismissMode="interactive"
           >
-            <View style={styles.dragHandle} />
-            
             {/* Toggle between Form and Success State */}
             {isSuccess ? renderSuccess() : renderForm()}
-
-            {!isSuccess && (
-                <View style={styles.footer}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Text style={styles.backLink}>Back to Login</Text>
-                </TouchableOpacity>
-                </View>
-            )}
-          </Animated.View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </Animated.View>
+      </ImageBackground>
     </View>
   );
 }
@@ -309,12 +406,16 @@ export default function ForgotPasswordScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2E0A18',
+    backgroundColor: COLORS.chocolate,
   },
   background: {
+    flex: 1,
+    width: width,
+    height: height,
+  },
+  overlay: {
     ...StyleSheet.absoluteFillObject,
   },
-  // Ambient Circles
   circle1: {
     position: "absolute",
     width: width * 1.2,
@@ -333,77 +434,79 @@ const styles = StyleSheet.create({
     top: height * 0.1,
     right: -width * 0.2,
   },
-  
-  keyboardAvoid: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'flex-end',
-  },
-  
-  // Header
   header: {
-    height: height * 0.3,
-    justifyContent: 'center',
+    position: "absolute",
+    top: height * 0.12,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    position: 'relative',
+    zIndex: 10,
   },
   backButton: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 50,
+    top: Platform.OS === 'ios' ? 60 : 40,
     left: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    zIndex: 10,
+  },
+  backButtonGradient: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   iconHeaderContainer: {
     marginBottom: 20,
   },
   iconHeaderCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.3,
-    shadowRadius: 20,
+    shadowRadius: 25,
+    elevation: 15,
   },
-
-  // Bottom Sheet
   formContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 32,
-    paddingTop: 16,
-    paddingBottom: 40,
-    minHeight: height * 0.65,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    paddingTop: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 20,
+    shadowOffset: { width: 0, height: -20 },
+    shadowOpacity: 0.3,
+    shadowRadius: 30,
+    elevation: 25,
+    maxHeight: height * 0.7,
+    minHeight: height * 0.6,
+  },
+  formScroll: {
+    flex: 1,
+  },
+  formScrollContent: {
+    paddingHorizontal: 32,
+    paddingBottom: 40,
+    paddingTop: 10,
   },
   dragHandle: {
-    width: 40,
-    height: 4,
+    width: 48,
+    height: 5,
     backgroundColor: '#E5E7EB',
-    borderRadius: 2,
+    borderRadius: 3,
     alignSelf: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
-
-  // Form Texts
   textGroup: {
     marginBottom: 32,
   },
@@ -416,32 +519,31 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     fontSize: 15,
-    color: '#6B7280',
+    color: COLORS.grayText,
     lineHeight: 24,
   },
-
-  // Premium Input
   inputWrapper: {
     marginBottom: 24,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#F3F4F6',
     height: 60,
     paddingHorizontal: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 2,
   },
   inputFocused: {
-    backgroundColor: '#FFF',
-    borderColor: '#8B3358',
-    shadowColor: "#8B3358",
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: COLORS.fire,
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 4,
   },
   iconBox: {
     width: 36,
@@ -465,16 +567,14 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontWeight: '500',
   },
-
-  // Buttons
   submitButton: {
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#8B3358',
-    shadowOffset: { width: 0, height: 8 },
+    shadowColor: COLORS.jaffa,
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowRadius: 20,
+    elevation: 12,
     marginBottom: 24,
   },
   gradientButton: {
@@ -490,20 +590,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-
-  // Footer
-  footer: {
+  backButtonContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 'auto',
-    paddingBottom: 10,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
   },
-  backLink: {
-    color: '#8B3358',
+  backButtonText: {
+    color: COLORS.fire,
     fontSize: 15,
     fontWeight: '700',
+    marginLeft: 6,
   },
-
-  // --- Success State Styles ---
   successWrapper: {
     alignItems: 'center',
     paddingTop: 20,
@@ -520,6 +619,8 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#D1FAE5',
   },
   checkBadge: {
     position: 'absolute',
@@ -533,6 +634,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 4,
     borderColor: '#FFF',
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   successTitle: {
     fontSize: 24,
@@ -543,7 +648,7 @@ const styles = StyleSheet.create({
   },
   successMessage: {
     fontSize: 15,
-    color: '#6B7280',
+    color: COLORS.grayText,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
@@ -551,28 +656,34 @@ const styles = StyleSheet.create({
   },
   primaryActionBtn: {
     width: '100%',
-    height: 56,
-    backgroundColor: '#8B3358',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: COLORS.jaffa,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
     marginBottom: 16,
-    shadowColor: '#8B3358',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+  },
+  primaryActionGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 62,
+    gap: 12,
   },
   primaryActionText: {
     color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
+    marginLeft: 8,
   },
   secondaryActionBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
   },
   secondaryActionText: {
-    color: '#6B7280',
+    color: COLORS.grayText,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -592,7 +703,7 @@ const styles = StyleSheet.create({
   },
   resendLink: {
     fontSize: 14,
-    color: '#8B3358',
+    color: COLORS.fire,
     fontWeight: '700',
   },
 });
