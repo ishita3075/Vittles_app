@@ -179,96 +179,79 @@ export default function VendorDashboard() {
 
       const vendorOrders = await getOrdersByVendor(vendorId);
 
-      // 1️⃣ Normalize any possible backend status
-      const normalizeStatus = (rawStatus) => {
-        if (!rawStatus) return "pending";
+      // --- NORMALIZER ---
+      const normalizeStatus = (s) => {
+        if (!s) return "pending";
+        const st = s.toString().trim().toLowerCase();
 
-        const raw = rawStatus.toString().trim().toLowerCase();
-
-        if (raw.includes("pending")) return "pending";
-        if (raw.includes("prepar")) return "preparing"; // preparing, preparation
-        if (raw.includes("complete") || raw.includes("done") || raw.includes("deliver") || raw.includes("ready"))
+        if (st.includes("pend")) return "pending";
+        if (st.includes("prep") || st.includes("cook") || st.includes("progress"))
+          return "preparing";
+        if (st.includes("complet") || st.includes("done") || st.includes("ready"))
           return "completed";
 
-        return "pending"; // fallback
+        return "pending";
       };
 
       const grouped = {};
 
-      vendorOrders
-        .map(order => ({
-          ...order,
-          normalizedStatus: normalizeStatus(
-            order.status ?? order.order_status ?? order.orderStatus
-          )
+      vendorOrders.forEach(order => {
+        const orderId = order.orderId;
+        if (!orderId) return;
+
+        const status = normalizeStatus(order.status);
+        const customerId = order.customerId;
+        const menuName = order.menuName;
+        const qty = Number(order.quantity ?? 1);
+        const price = Number(order.totalPrice ?? 0);
+        const orderDate = new Date();
+
+        if (!grouped[orderId]) {
+          grouped[orderId] = {
+            id: orderId,
+            customerId,
+            customer: order.customerName,
+            address: "Pickup",
+            status: status.toLowerCase(),       // already normalized lowercase
+            time: orderDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            price: 0,
+            items: []
+          };
+        } else {
+          // If any item in order is pending/preparing → whole order is active
+          if (grouped[orderId].status === "completed" && status !== "completed") {
+              grouped[orderId].status = status.toLowerCase();
+          }
+        }
+
+
+        // --- MERGE ITEMS ---
+        const exists = grouped[orderId].items.find(i => i.name === menuName);
+        if (exists) exists.quantity += qty;
+        else grouped[orderId].items.push({ name: menuName, quantity: qty });
+
+        grouped[orderId].price += price;
+      });
+
+      const finalData = Object.values(grouped)
+        .filter(o => o.status === "pending" || o.status === "preparing")
+        .map(o => ({
+          ...o,
+          items: o.items.map(i => `${i.quantity}x ${i.name}`)
         }))
-        // 2️⃣ Only show active orders (pending + preparing)
-        .filter(order =>
-          order.normalizedStatus === "pending" ||
-          order.normalizedStatus === "preparing"
-        )
-        .forEach(order => {
-
-          const customerId = order.customer_id ?? order.customerId;
-          const menuName   = order.menu_name ?? order.menuName;
-          const qty        = Number(order.quantity ?? order.qty ?? 1);
-          const price      = Number(order.total_price ?? order.totalPrice ?? 0);
-
-          // 3️⃣ Extract clean date (YYYY-MM-DD)
-          const dateOnly = (order.order_date ?? order.orderDate ?? "")
-            .toString()
-            .slice(0, 10);
-
-          // 4️⃣ Group key = customer + date
-          const groupKey = `${customerId}_${dateOnly}`;
-
-          // 5️⃣ Initialize first card
-          if (!grouped[groupKey]) {
-            grouped[groupKey] = {
-              id: order.id,
-              customerId,
-              customer: order.customer_name ?? order.customerName,
-              address: order.address ?? "Pickup",
-              status: order.normalizedStatus,
-              time: new Date(order.order_date ?? order.orderDate)
-                .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-              price: 0,
-              items: []
-            };
-          }
-
-          // 6️⃣ Merge duplicate items
-          const existingItem = grouped[groupKey].items.find(i => i.name === menuName);
-
-          if (existingItem) {
-            existingItem.quantity += qty;
-          } else {
-            grouped[groupKey].items.push({ name: menuName, quantity: qty });
-          }
-
-          // Add price
-          grouped[groupKey].price += price;
-
-          // 7️⃣ Priority resolve — pending > preparing > completed
-          const Rank = { pending: 3, preparing: 2, completed: 1 };
-          if (Rank[order.normalizedStatus] > Rank[grouped[groupKey].status]) {
-            grouped[groupKey].status = order.normalizedStatus;
-          }
-        });
-
-      // 8️⃣ Final transformation
-      const finalData = Object.values(grouped).map(g => ({
-        ...g,
-        items: g.items.map(i => `${i.quantity}x ${i.name}`)
-      }));
+        .sort((a, b) => b.id - a.id);
 
       setOrders(finalData);
     } catch (err) {
-      console.log("Error loading orders:", err);
+      console.log("Error loading vendor orders:", err);
     } finally {
       setLoading(false);
     }
   };
+
+
+
+
 
 
 
