@@ -198,7 +198,10 @@ export default function VendorDashboard() {
         const menuName = order.menuName;
         const qty = Number(order.quantity ?? 1);
         const price = Number(order.totalPrice ?? 0);
-        const orderDate = new Date();
+        const createdAt = new Date(order.createdAt);
+
+        // Convert UTC → IST (+5:30)
+        const ist = new Date(createdAt.getTime() + 5.5 * 60 * 60 * 1000);
 
         if (!grouped[orderId]) {
           grouped[orderId] = {
@@ -207,7 +210,7 @@ export default function VendorDashboard() {
             customer: order.customerName || "Guest",
             address: "Pickup",
             status: status.toLowerCase(),
-            time: orderDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            time: ist.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true }),
             price: 0,
             items: []
           };
@@ -234,8 +237,31 @@ export default function VendorDashboard() {
 
       setOrders(finalData);
       
-      const income = finalData.reduce((sum, order) => sum + order.price, 0);
-      setDailyIncome(income);
+      // -----------------------------
+      // FIXED: TODAY'S EARNINGS (IST)
+      // -----------------------------
+      const todayIST = new Date();
+      todayIST.setHours(0, 0, 0, 0);
+
+      const todaysIncome = vendorOrders
+        .filter(o => {
+          const createdUTC = new Date(o.createdAt);
+
+          // Convert UTC → IST (+5:30)
+          const createdIST = new Date(createdUTC.getTime() + 5.5 * 60 * 60 * 1000);
+
+          createdIST.setHours(0, 0, 0, 0);
+
+          return (
+            o.status?.toLowerCase().includes("complet") &&
+            createdIST.getTime() === todayIST.getTime()
+          );
+        })
+        .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
+
+      setDailyIncome(todaysIncome);
+
+
 
     } catch (err) {
       console.log("Error loading vendor orders:", err);
