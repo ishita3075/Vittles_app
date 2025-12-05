@@ -60,14 +60,23 @@ const formatStatus = (status) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return "Just now";
-  const date = new Date(dateString);
-  return date.toLocaleString("en-IN", {
+
+  // Convert backend UTC → Date object
+  const utcDate = new Date(dateString);
+
+  // Convert to IST (UTC + 5:30)
+  const istDate = new Date(utcDate.getTime() + 5.5 * 60 * 60 * 1000);
+
+  // Format in 12-hour clock & Indian style
+  return istDate.toLocaleString("en-IN", {
     month: "short",
     day: "numeric",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
+    hour12: true
   });
 };
+
 
 // --- Helper Components ---
 
@@ -248,31 +257,33 @@ export default function OrderHistoryScreen({ navigation }) {
             restaurant: order.vendorName,
             items: 0,
             total: 0,
-            status: order.status,
-            date: order.createdAt || order.date || new Date().toISOString(),
+            status: formatStatus(order.status),
+            date: order.createdAt || new Date().toISOString(),
             type: "Delivery",
-            _itemsList: []   // ADD THIS
+            _itemsList: []
           };
         }
 
-        // Add item details
+        // Treat each row as one order item
+        const qty = Number(order.quantity || 1);
+        const lineTotal = Number(order.totalPrice || 0);
+        const unitPrice = qty > 0 ? (lineTotal / qty) : lineTotal;
+
         grouped[oid]._itemsList.push({
           menuName: order.menuName,
-          quantity: Number(order.quantity || 1),
-          price: Number(order.totalPrice || 0)
+          quantity: qty,
+          price: unitPrice
         });
 
+        grouped[oid].items += qty;
+        grouped[oid].total += lineTotal;
 
-        // Add item count
-        grouped[oid].items += Number(order.quantity ?? 1);
-
-        // Add price
-        grouped[oid].total += Number(order.totalPrice ?? 0);
-
-        // Update status priority
-        const normalize = formatStatus(order.status);
-        grouped[oid].status = normalize;
+        grouped[oid].status = formatStatus(order.status);
       });
+
+
+
+
 
       // 3️⃣ Convert object → array
       const formatted = Object.values(grouped).map(o => ({
