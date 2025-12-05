@@ -12,21 +12,20 @@ import {
   Platform,
   UIManager,
   LayoutAnimation,
-  Easing
+  Easing,
+  ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useCart } from "../contexts/CartContext";
-import { useTheme } from "../contexts/ThemeContext";
 import { LinearGradient } from 'expo-linear-gradient';
 import { getVendorMenu } from '../api';
 
 const { width, height } = Dimensions.get('window');
-const HEADER_HEIGHT = width / 1.8;
-// Increased sticky header height
-const HEADER_MIN_HEIGHT = Platform.OS === 'ios' ? 110 : 90;
+const HEADER_HEIGHT = width / 1.5; // Balanced height
+const HEADER_MIN_HEIGHT = Platform.OS === 'ios' ? 90 : 80;
 
-// Enable LayoutAnimation for Android
+// Enable LayoutAnimation
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -41,37 +40,29 @@ const COLORS_THEME = {
   white: "#FFFFFF",
   grayText: "#6B7280",
   background: "#F9FAFB",
-  border: "rgba(0,0,0,0.05)",
+  border: "rgba(0,0,0,0.08)",
   card: "#FFFFFF",
   aeroBlueLight: "rgba(124, 185, 232, 0.15)",
-  error: "#EF4444",
   success: "#10B981",
+  error: "#EF4444",
   warning: "#F59E0B",
 };
 
-const getRatingColor = (rating) => {
-  const score = parseFloat(rating);
-  if (score >= 4.0) return COLORS_THEME.success;
-  if (score >= 3.0) return COLORS_THEME.warning;
-  return COLORS_THEME.error;
-};
-
 // --- Menu Item Skeleton ---
-const MenuSkeleton = ({ colors }) => (
+const MenuSkeleton = () => (
   <View style={styles.skeletonContainer}>
     <View style={{ flex: 1, paddingRight: 16 }}>
-      <View style={[styles.skeletonBox, { width: 16, height: 16, borderRadius: 4, marginBottom: 8, backgroundColor: colors.border }]} />
-      <View style={[styles.skeletonBox, { width: '70%', height: 20, marginBottom: 8, backgroundColor: colors.border }]} />
-      <View style={[styles.skeletonBox, { width: '30%', height: 16, marginBottom: 12, backgroundColor: colors.border }]} />
-      <View style={[styles.skeletonBox, { width: '90%', height: 14, marginBottom: 6, backgroundColor: colors.border }]} />
-      <View style={[styles.skeletonBox, { width: '60%', height: 14, backgroundColor: colors.border }]} />
+      <View style={[styles.skeletonBox, { width: 16, height: 16, borderRadius: 4, marginBottom: 8 }]} />
+      <View style={[styles.skeletonBox, { width: '70%', height: 20, marginBottom: 8 }]} />
+      <View style={[styles.skeletonBox, { width: '30%', height: 16, marginBottom: 12 }]} />
+      <View style={[styles.skeletonBox, { width: '90%', height: 14, marginBottom: 6 }]} />
     </View>
-    <View style={[styles.skeletonBox, { width: 120, height: 120, borderRadius: 12, backgroundColor: colors.border }]} />
+    <View style={[styles.skeletonBox, { width: 110, height: 110, borderRadius: 12 }]} />
   </View>
 );
 
 // --- Menu Item Component ---
-const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, index }) => {
+const MenuItem = ({ item, quantity, onAdd, onIncrement, onDecrement, index }) => {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -96,78 +87,72 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
         {
           opacity: anim,
           transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
-          borderBottomColor: colors.border + '30',
         }
       ]}
     >
-      {/* Left Content: Info */}
+      {/* Left Content */}
       <View style={styles.menuTextContainer}>
         <View style={styles.menuHeaderRow}>
-          {/* Veg/Non-Veg Icon */}
+          {/* Veg/Non-Veg Indicator */}
           <View style={[
             styles.vegIcon,
-            { borderColor: item.isVeg ? '#10B981' : '#EF4444' }
+            { borderColor: item.isVeg ? COLORS_THEME.success : COLORS_THEME.error }
           ]}>
             <View style={[
               styles.vegCircle,
-              { backgroundColor: item.isVeg ? '#10B981' : '#EF4444' }
+              { backgroundColor: item.isVeg ? COLORS_THEME.success : COLORS_THEME.error }
             ]} />
           </View>
 
           {item.bestseller && (
             <View style={styles.bestsellerBadge}>
-              <Ionicons name="star" size={8} color="#B45309" />
+              <Ionicons name="star" size={8} color={COLORS_THEME.warning} />
               <Text style={styles.bestsellerText}>BESTSELLER</Text>
             </View>
           )}
         </View>
 
-        <Text style={[styles.menuName, { color: colors.text }]}>{item.name}</Text>
-
-        <Text style={[styles.menuPrice, { color: colors.text }]}>{item.price}</Text>
-
-        <Text
-          style={[styles.menuDescription, { color: colors.textSecondary }]}
-          numberOfLines={2}
-        >
+        <Text style={styles.menuName}>{item.name}</Text>
+        <Text style={styles.menuPrice}>{item.price}</Text>
+        <Text style={styles.menuDescription} numberOfLines={2}>
           {item.description}
         </Text>
       </View>
 
-      {/* Right Content: Image & Button */}
+      {/* Right Content */}
       <View style={styles.menuImageWrapper}>
         <View style={styles.imageContainer}>
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.menuImage} />
           ) : (
-            <View style={[styles.placeholderImage, { backgroundColor: colors.border + '40' }]}>
-              <Ionicons name="restaurant" size={28} color={colors.textSecondary + '80'} />
+            <View style={styles.placeholderImage}>
+              <Ionicons name="restaurant" size={28} color={COLORS_THEME.grayText} />
             </View>
           )}
         </View>
 
-        {/* Floating Action Area */}
+        {/* Add Button Logic */}
         <View style={styles.addButtonContainer}>
           {!item.available ? (
-            <View style={[styles.unavailableBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.unavailableText, { color: colors.textSecondary }]}>Sold Out</Text>
+            <View style={styles.unavailableBadge}>
+              <Text style={styles.unavailableText}>Sold Out</Text>
             </View>
           ) : quantity > 0 ? (
-            <View style={[styles.qtyContainer, { backgroundColor: colors.card }]}>
+            <View style={styles.qtyContainer}>
               <TouchableOpacity
                 onPress={() => handleAction(() => onDecrement(item.id))}
                 style={styles.qtyBtn}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="remove" size={20} color={COLORS_THEME.steelBlue} />
+                <Ionicons name="remove" size={18} color={COLORS_THEME.steelBlue} />
               </TouchableOpacity>
-              <Text style={[styles.qtyText, { color: COLORS_THEME.steelBlue }]}>{quantity}</Text>
+              <Text style={styles.qtyText}>{quantity}</Text>
               <TouchableOpacity
                 onPress={() => handleAction(() => onIncrement(item.id))}
                 style={styles.qtyBtn}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="add" size={20} color={COLORS_THEME.steelBlue} />
+                <Ionicons name="add" size={18} color={COLORS_THEME.steelBlue} />
               </TouchableOpacity>
             </View>
           ) : (
@@ -176,11 +161,9 @@ const MenuItem = ({ item, colors, quantity, onAdd, onIncrement, onDecrement, ind
               activeOpacity={0.9}
               style={styles.addBtnWrapper}
             >
-              <View style={[styles.addBtn, { backgroundColor: colors.card }]}>
+              <View style={styles.addBtn}>
                 <Text style={styles.addBtnText}>ADD</Text>
-                <View style={styles.addBtnPlus}>
-                  <Ionicons name="add" size={10} color={COLORS_THEME.steelBlue} />
-                </View>
+                <Ionicons name="add" size={12} color={COLORS_THEME.steelBlue} style={styles.addBtnPlus} />
               </View>
             </TouchableOpacity>
           )}
@@ -195,13 +178,12 @@ export default function RestaurantDetails() {
   const navigation = useNavigation();
   const { restaurant } = route.params;
   const { addItem, removeItem, incrementItem, decrementItem, cart } = useCart();
-  const { colors } = useTheme();
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- Header Animations ---
+  // Animations
   const headerTranslateY = scrollY.interpolate({
     inputRange: [0, HEADER_HEIGHT],
     outputRange: [0, -HEADER_HEIGHT / 2],
@@ -222,11 +204,11 @@ export default function RestaurantDetails() {
 
   const contentTranslateY = scrollY.interpolate({
     inputRange: [0, HEADER_HEIGHT],
-    outputRange: [0, 100],
+    outputRange: [0, 80], // Slightly reduced overlap movement
     extrapolate: 'clamp',
   });
 
-  // --- Data Fetching ---
+  // Data Fetching
   useEffect(() => {
     const fetchVendorMenu = async () => {
       try {
@@ -249,7 +231,7 @@ export default function RestaurantDetails() {
   const transformMenuItem = (item) => ({
     id: item.id?.toString() || item.menu_id?.toString(),
     name: item.itemName || item.name || "Menu Item",
-    description: item.description || "Freshly prepared with authentic spices and premium ingredients.",
+    description: item.description || "Freshly prepared with authentic spices.",
     price: `₹${item.price || item.item_price || 150}`,
     image: item.image || item.image_url,
     category: item.category || "Recommended",
@@ -264,27 +246,26 @@ export default function RestaurantDetails() {
     return acc;
   }, {});
 
-  // --- Cart Calculations ---
+  // Cart Logic
   const restaurantCartItems = cart.filter(item => item.restaurantId === restaurant.id);
   const totalItems = restaurantCartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = restaurantCartItems.reduce((sum, item) => {
-    // FIX: Use parseFloat and preserve decimal points
     const price = parseFloat(item.price.toString().replace(/[^0-9.]/g, '')) || 0;
     return sum + price * item.quantity;
   }, 0);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* 1. Sticky Header (Fades in) */}
-      <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity, backgroundColor: colors.background }]}>
+      {/* 1. Sticky Header (Fades in on scroll) */}
+      <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity }]}>
         <View style={styles.stickyContent}>
-          <Text style={[styles.stickyTitle, { color: colors.text }]} numberOfLines={1}>{restaurant.name}</Text>
+          <Text style={styles.stickyTitle} numberOfLines={1}>{restaurant.name}</Text>
         </View>
       </Animated.View>
 
-      {/* Back & Search Buttons (Fixed) */}
+      {/* Navigation Buttons */}
       <View style={styles.navButtons}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
@@ -301,9 +282,10 @@ export default function RestaurantDetails() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
         )}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        // 🔴 FIX: Remove excessive padding bottom to prevent huge gap
+        contentContainerStyle={{ paddingBottom: totalItems > 0 ? 120 : 40 }}
       >
-        {/* 2. Parallax Image */}
+        {/* 2. Header Image */}
         <View style={styles.headerContainer}>
           <Animated.Image
             source={{ uri: restaurant.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800" }}
@@ -312,7 +294,7 @@ export default function RestaurantDetails() {
             }]}
           />
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.8)']}
+            colors={['transparent', 'rgba(10, 35, 66, 0.5)', 'rgba(10, 35, 66, 0.9)']}
             style={styles.gradientOverlay}
           />
         </View>
@@ -320,44 +302,56 @@ export default function RestaurantDetails() {
         {/* 3. Content Sheet */}
         <Animated.View style={[
           styles.contentSheet,
-          {
-            backgroundColor: colors.background,
-            transform: [{ translateY: contentTranslateY }]
-          }
+          { transform: [{ translateY: contentTranslateY }] }
         ]}>
-
-          {/* Restaurant Info */}
+          
+          {/* Info Section */}
           <View style={styles.infoSection}>
             <View style={styles.nameRow}>
-              <Text style={[styles.resName, { color: colors.text }]}>{restaurant.name}</Text>
-              {/* Rating Pill */}
-              <View style={[styles.ratingBox, { backgroundColor: getRatingColor(restaurant.rating) }]}>
+              <Text style={styles.resName}>{restaurant.name}</Text>
+              <View style={styles.ratingBox}>
                 <Text style={styles.ratingText}>{restaurant.rating}</Text>
                 <Ionicons name="star" size={10} color="#FFF" style={{ marginLeft: 2 }} />
               </View>
             </View>
-
-            {/* Stats Pills */}
-
+            <Text style={styles.resCuisine}>{restaurant.cuisine || "North Indian • Chinese • Fast Food"}</Text>
+            
+            {/* Stats */}
+            <View style={styles.statsRow}>
+               <View style={styles.statItem}>
+                  <Ionicons name="time-outline" size={16} color={COLORS_THEME.grayText} />
+                  <Text style={styles.statText}>{restaurant.time || '30 mins'}</Text>
+               </View>
+               <View style={styles.dotSeparator} />
+               <View style={styles.statItem}>
+                  <Ionicons name="location-outline" size={16} color={COLORS_THEME.grayText} />
+                  <Text style={styles.statText}>{restaurant.distance || '2.5 km'}</Text>
+               </View>
+               <View style={styles.dotSeparator} />
+               <View style={styles.statItem}>
+                  <Ionicons name="pricetag-outline" size={16} color={COLORS_THEME.grayText} />
+                  <Text style={styles.statText}>{restaurant.price || '₹200 for two'}</Text>
+               </View>
+            </View>
           </View>
 
-          {/* Menu */}
+          {/* Menu List */}
           <View style={styles.menuContainer}>
             <View style={styles.menuHeader}>
-              <Text style={[styles.menuTitle, { color: colors.text }]}>MENU</Text>
-              <View style={[styles.menuLine, { backgroundColor: colors.border }]} />
+              <Text style={styles.menuTitle}>MENU</Text>
+              <View style={styles.menuLine} />
             </View>
 
             {loading ? (
               <>
-                <MenuSkeleton colors={colors} />
-                <MenuSkeleton colors={colors} />
-                <MenuSkeleton colors={colors} />
+                <MenuSkeleton />
+                <MenuSkeleton />
+                <MenuSkeleton />
               </>
             ) : (
               Object.keys(groupedMenu).map((category) => (
                 <View key={category} style={styles.categorySection}>
-                  <Text style={[styles.categoryTitle, { color: colors.text }]}>{category}</Text>
+                  <Text style={styles.categoryTitle}>{category}</Text>
                   {groupedMenu[category].map((item, idx) => {
                     const cartItem = cart.find(c => c.id === item.id);
                     return (
@@ -366,7 +360,6 @@ export default function RestaurantDetails() {
                         item={item}
                         index={idx}
                         quantity={cartItem ? cartItem.quantity : 0}
-                        colors={colors}
                         onAdd={(i) => addItem({ ...i, restaurantName: restaurant.name, restaurantId: restaurant.id })}
                         onIncrement={incrementItem}
                         onDecrement={(id) => cartItem?.quantity === 1 ? removeItem(id) : decrementItem(id)}
@@ -380,16 +373,16 @@ export default function RestaurantDetails() {
         </Animated.View>
       </Animated.ScrollView>
 
-      {/* 4. Floating Cart Bar */}
+      {/* 4. Floating Cart */}
       {totalItems > 0 && (
-        <Animated.View style={styles.floatingCartContainer}>
+        <View style={styles.floatingCartContainer}>
           <TouchableOpacity
             style={styles.cartButton}
             onPress={() => navigation.navigate("Cart")}
             activeOpacity={0.95}
           >
             <LinearGradient
-              colors={[COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]}
+              colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.cartGradient}
@@ -404,14 +397,14 @@ export default function RestaurantDetails() {
               </View>
             </LinearGradient>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: COLORS_THEME.white },
 
   // Header
   headerContainer: {
@@ -462,8 +455,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-    shadowColor: "#0A2342",
+    borderBottomColor: COLORS_THEME.border,
+    backgroundColor: COLORS_THEME.white,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -476,6 +470,7 @@ const styles = StyleSheet.create({
   stickyTitle: {
     fontSize: 18,
     fontWeight: '700',
+    color: COLORS_THEME.darkNavy,
   },
 
   // Content Sheet
@@ -485,8 +480,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     paddingTop: 32,
     paddingHorizontal: 16,
-    minHeight: height,
-    shadowColor: "#0A2342",
+    minHeight: height - (HEADER_HEIGHT - 60), // Ensures it fills remaining screen but no more
+    backgroundColor: COLORS_THEME.white,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -495,7 +491,7 @@ const styles = StyleSheet.create({
 
   // Info Section
   infoSection: {
-    marginBottom: 32,
+    marginBottom: 24,
     paddingHorizontal: 4,
   },
   nameRow: {
@@ -505,14 +501,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   resName: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
     flex: 1,
     marginRight: 10,
-    lineHeight: 32,
+    lineHeight: 30,
+    color: COLORS_THEME.darkNavy,
   },
   ratingBox: {
-    backgroundColor: '#166534', // Darker Green
+    backgroundColor: '#166534',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
@@ -527,30 +524,38 @@ const styles = StyleSheet.create({
   },
   resCuisine: {
     fontSize: 15,
-    marginBottom: 20,
+    marginBottom: 16,
     lineHeight: 20,
+    color: COLORS_THEME.grayText,
+    fontWeight: '500',
   },
-  statsScroll: {
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    marginTop: 4,
   },
-  statPill: {
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    gap: 6,
+    gap: 4,
   },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+  statText: {
+    fontSize: 13,
+    color: COLORS_THEME.grayText,
+    fontWeight: '500',
+  },
+  dotSeparator: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS_THEME.grayText,
+    marginHorizontal: 8,
+    opacity: 0.5,
   },
 
   // Menu Section
   menuContainer: {
-    paddingBottom: 30,
+    paddingBottom: 10,
   },
   menuHeader: {
     flexDirection: 'row',
@@ -564,11 +569,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 2,
     marginRight: 16,
+    color: COLORS_THEME.darkNavy,
   },
   menuLine: {
     flex: 1,
     height: 1,
-    opacity: 0.1,
+    backgroundColor: COLORS_THEME.border,
   },
   categorySection: {
     marginBottom: 32,
@@ -578,12 +584,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 16,
     paddingHorizontal: 4,
+    color: COLORS_THEME.darkNavy,
   },
 
   // Menu Item Card
   menuItemContainer: {
     flexDirection: 'row',
-    paddingVertical: 24,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
@@ -627,20 +634,22 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   menuName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 6,
-    lineHeight: 24,
+    lineHeight: 22,
+    color: COLORS_THEME.darkNavy,
   },
   menuPrice: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 10,
+    marginBottom: 8,
+    color: COLORS_THEME.darkNavy,
   },
   menuDescription: {
-    fontSize: 14,
-    lineHeight: 22,
-    opacity: 0.6,
+    fontSize: 13,
+    lineHeight: 18,
+    color: COLORS_THEME.grayText,
   },
 
   // Image and Button Container
@@ -650,11 +659,11 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   imageContainer: {
-    width: 120,
-    height: 120,
+    width: 110,
+    height: 110,
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 16, // Space for button overlap
+    marginBottom: 16,
   },
   menuImage: {
     width: '100%',
@@ -662,52 +671,53 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   placeholderImage: {
-    width: 120,
-    height: 120,
+    width: 110,
+    height: 110,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F3F4F6',
   },
 
   // ADD BUTTON STYLES
   addButtonContainer: {
     position: 'absolute',
-    bottom: -6,
-    width: 100,
-    height: 36,
+    bottom: -8,
+    width: 90,
+    height: 32,
     zIndex: 10,
     alignItems: 'center',
   },
   addBtnWrapper: {
     width: '100%',
     height: '100%',
-    shadowColor: "#0A2342",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 5,
     elevation: 5,
     backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 8,
   },
   addBtn: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: COLORS_THEME.aeroBlue,
+    backgroundColor: COLORS_THEME.white,
   },
   addBtnText: {
-    color: COLORS_THEME.steelBlue, // Theme color
-    fontSize: 16,
+    color: COLORS_THEME.steelBlue,
+    fontSize: 14,
     fontWeight: '800',
+    marginRight: 4,
   },
   addBtnPlus: {
-    position: 'absolute',
-    top: 4,
-    right: 6,
+    // removed absolute positioning for flow
   },
 
   // Quantity Styles
@@ -717,11 +727,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 12,
-    paddingHorizontal: 8,
+    borderRadius: 8,
+    paddingHorizontal: 6,
     borderWidth: 1,
     borderColor: COLORS_THEME.steelBlue,
-    shadowColor: "#0A2342",
+    backgroundColor: COLORS_THEME.white,
+    shadowColor: COLORS_THEME.steelBlue,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -732,21 +743,25 @@ const styles = StyleSheet.create({
   },
   qtyText: {
     fontWeight: '800',
-    fontSize: 16,
+    fontSize: 14,
+    color: COLORS_THEME.steelBlue,
   },
   unavailableBadge: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 100,
-    height: 36,
+    width: 90,
+    height: 32,
     borderWidth: 1,
+    borderColor: COLORS_THEME.border,
+    backgroundColor: COLORS_THEME.background,
   },
   unavailableText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
+    color: COLORS_THEME.grayText,
   },
 
   // Skeleton
@@ -757,8 +772,8 @@ const styles = StyleSheet.create({
     borderColor: '#f0f0f0',
   },
   skeletonBox: {
-    backgroundColor: '#E5E7EB',
     borderRadius: 4,
+    backgroundColor: '#E5E7EB',
   },
 
   // Floating Cart
@@ -772,7 +787,7 @@ const styles = StyleSheet.create({
   cartButton: {
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: "#0A2342",
+    shadowColor: COLORS_THEME.steelBlue,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
     shadowRadius: 20,

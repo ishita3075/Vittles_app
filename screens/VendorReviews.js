@@ -1,4 +1,3 @@
-// screens/VendorReviews.js
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -12,10 +11,39 @@ import {
   Animated,
   StatusBar,
   Platform,
+  Dimensions,
+  LayoutAnimation,
+  UIManager
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
+import { LinearGradient } from "expo-linear-gradient";
+
+const { width } = Dimensions.get('window');
+
+// Enable LayoutAnimation
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS_THEME = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.08)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  success: "#10B981",
+  warning: "#F59E0B",
+  error: "#EF4444",
+};
 
 // Helper to get initials and a consistent color based on name
 const getAvatarDetails = (name = "") => {
@@ -60,22 +88,20 @@ export default function VendorReviews({ navigation }) {
 
   // Fade animation
   useEffect(() => {
-    const anim = Animated.timing(fadeAnim, {
+    Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
       useNativeDriver: true,
-    });
-    anim.start();
-    return () => anim.stop();
+    }).start();
   }, []);
 
   // Load reviews when the user is available
   useEffect(() => {
-    if (user?.uid) loadReviews();
+    if (user?.uid || user?.id) loadReviews();
   }, [user]);
 
   async function fetchVendorReviews(id) {
-    await new Promise((r) => setTimeout(r, 100)); // Fake API delay
+    await new Promise((r) => setTimeout(r, 800)); // Fake API delay
 
     return [
       {
@@ -119,7 +145,7 @@ export default function VendorReviews({ navigation }) {
   async function loadReviews() {
     setLoading(true);
     try {
-      const data = await fetchVendorReviews(user?.uid);
+      const data = await fetchVendorReviews(user?.uid || user?.id);
       setReviews(data);
       setFiltered(data);
     } catch (err) {
@@ -129,11 +155,11 @@ export default function VendorReviews({ navigation }) {
     }
   }
 
-  // FIXED: Now takes optional source list
-  const applyFilter = (value, source = reviews) => {
+  const applyFilter = (value) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setFilter(value);
-    if (value === "All") setFiltered(source);
-    else setFiltered(source.filter((r) => r.rating === Number(value)));
+    if (value === "All") setFiltered(reviews);
+    else setFiltered(reviews.filter((r) => r.rating === Number(value)));
 
     listRef.current?.scrollTo({ y: 0, animated: true });
   };
@@ -143,7 +169,6 @@ export default function VendorReviews({ navigation }) {
     setReplyText(review.reply || "");
     setReplyModalVisible(true);
 
-    // Delay autofocus for Android modal
     setTimeout(() => {
       inputRef.current?.focus();
     }, 120);
@@ -157,7 +182,11 @@ export default function VendorReviews({ navigation }) {
     );
 
     setReviews(updated);
-    applyFilter(filter, updated); // FIXED
+    
+    // Re-apply filter
+    if (filter === "All") setFiltered(updated);
+    else setFiltered(updated.filter((r) => r.rating === Number(filter)));
+
     setReplyModalVisible(false);
   };
 
@@ -168,9 +197,9 @@ export default function VendorReviews({ navigation }) {
           <Ionicons
             key={i}
             name={i <= count ? "star" : "star-outline"}
-            size={16}
-            color={i <= count ? "#FBBF24" : colors.border}
-            style={{ marginRight: 3 }}
+            size={14}
+            color={i <= count ? COLORS_THEME.warning : COLORS_THEME.border}
+            style={{ marginRight: 2 }}
           />
         ))}
       </View>
@@ -178,36 +207,6 @@ export default function VendorReviews({ navigation }) {
   };
 
   const filterOptions = ["All", "5", "4", "3", "2", "1"];
-  const isDark =
-    colors.background === "#000000" || colors.background === "#121212";
-
-  // Header Component
-  const Header = () => (
-    <View
-      style={[
-        styles.header,
-        { backgroundColor: colors.card, borderBottomColor: colors.border },
-      ]}
-    >
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.headerBtn}
-      >
-        <Ionicons name="chevron-back" size={24} color={colors.text} />
-      </TouchableOpacity>
-      <View>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Customer Reviews
-        </Text>
-        <Text
-          style={[styles.headerSubtitle, { color: colors.textSecondary }]}
-        >
-          {reviews.length} total reviews
-        </Text>
-      </View>
-      <View style={styles.headerBtn} />
-    </View>
-  );
 
   // Review Card Component
   const ReviewCard = ({ review }) => {
@@ -215,16 +214,7 @@ export default function VendorReviews({ navigation }) {
     const hasReply = !!review.reply;
 
     return (
-      <View
-        style={[
-          styles.reviewCard,
-          {
-            backgroundColor: colors.card,
-            shadowColor: colors.shadow || "#000",
-            borderColor: isDark ? colors.border : "transparent",
-          },
-        ]}
-      >
+      <View style={styles.reviewCard}>
         {/* Card Header */}
         <View style={styles.cardHeaderRow}>
           <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
@@ -232,54 +222,32 @@ export default function VendorReviews({ navigation }) {
           </View>
 
           <View style={{ flex: 1 }}>
-            <Text style={[styles.userName, { color: colors.text }]}>
-              {review.user}
-            </Text>
+            <Text style={styles.userName}>{review.user}</Text>
             {renderStars(review.rating)}
           </View>
 
-          <Text style={[styles.date, { color: colors.textSecondary }]}>
-            {review.date}
-          </Text>
+          <Text style={styles.date}>{review.date}</Text>
         </View>
 
         <View style={styles.divider} />
 
         {/* Customer Comment */}
-        <Text style={[styles.comment, { color: colors.text }]}>
-          {review.comment}
-        </Text>
+        <Text style={styles.comment}>{review.comment}</Text>
 
         {/* Vendor Reply */}
         {hasReply && (
-          <View
-            style={[
-              styles.existingReplyBox,
-              {
-                backgroundColor: isDark ? "#27272a" : "#F3F4F6",
-                borderLeftColor: colors.primary,
-              },
-            ]}
-          >
+          <View style={styles.existingReplyBox}>
             <View style={styles.replyHeaderRow}>
               <Ionicons
                 name="return-down-forward"
                 size={16}
-                color={colors.primary}
+                color={COLORS_THEME.steelBlue}
                 style={{ marginRight: 6 }}
               />
-              <Text
-                style={[styles.replyLabel, { color: colors.primary }]}
-              >
-                Response sent:
-              </Text>
+              <Text style={styles.replyLabel}>Response sent:</Text>
             </View>
 
-            <Text
-              style={[styles.replyText, { color: colors.textSecondary }]}
-            >
-              {review.reply}
-            </Text>
+            <Text style={styles.replyText}>{review.reply}</Text>
           </View>
         )}
 
@@ -287,16 +255,19 @@ export default function VendorReviews({ navigation }) {
         <TouchableOpacity
           style={[
             styles.actionButton,
-            { backgroundColor: colors.primary },
+            { backgroundColor: hasReply ? COLORS_THEME.aeroBlueLight : COLORS_THEME.steelBlue },
           ]}
           onPress={() => openReplyModal(review)}
         >
           <Ionicons
             name={hasReply ? "create-outline" : "chatbox-ellipses-outline"}
-            size={18}
-            color="#FFF"
+            size={16}
+            color={hasReply ? COLORS_THEME.steelBlue : "#FFF"}
           />
-          <Text style={styles.actionButtonText}>
+          <Text style={[
+            styles.actionButtonText, 
+            { color: hasReply ? COLORS_THEME.steelBlue : "#FFF" }
+          ]}>
             {hasReply ? "Edit Response" : "Reply to Customer"}
           </Text>
         </TouchableOpacity>
@@ -305,298 +276,333 @@ export default function VendorReviews({ navigation }) {
   };
 
   return (
-    <Animated.View
-      style={{
-        flex: 1,
-        backgroundColor: colors.background,
-        opacity: fadeAnim,
-        paddingTop: StatusBar.currentHeight || 0,
-      }}
-    >
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+    <View style={[styles.container, { backgroundColor: COLORS_THEME.background }]}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <Header />
-
-      {loading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text
-            style={[
-              styles.loadingText,
-              { color: colors.textSecondary },
-            ]}
-          >
-            Gathering feedback...
-          </Text>
-        </View>
-      ) : (
-        <>
-          {/* Filters */}
-          <View style={{ backgroundColor: colors.background }}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterContainer}
-            >
-              {filterOptions.map((f) => {
-                const isActive = filter === f;
-                return (
-                  <TouchableOpacity
-                    key={f}
-                    style={[
-                      styles.filterChip,
-                      {
-                        backgroundColor: isActive
-                          ? colors.primary
-                          : colors.card,
-                        borderColor: isActive
-                          ? colors.primary
-                          : colors.border,
-                        borderWidth: isActive ? 0 : 1,
-                      },
-                    ]}
-                    onPress={() => applyFilter(f)}
-                  >
-                    {f !== "All" && (
-                      <Ionicons
-                        name="star"
-                        size={14}
-                        color={isActive ? "#FFF" : "#FBBF24"}
-                        style={{ marginRight: 4 }}
-                      />
-                    )}
-                    <Text
-                      style={{
-                        color: isActive ? "#FFF" : colors.text,
-                        fontWeight: isActive ? "700" : "600",
-                        fontSize: 13,
-                      }}
-                    >
-                      {f}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.headerTitle}>Reviews</Text>
+              <Text style={styles.headerSubtitle}>{reviews.length} Total Reviews</Text>
+            </View>
+            <View style={{ width: 40 }} />
           </View>
+        </LinearGradient>
+      </View>
 
-          {/* List */}
+      <View style={styles.contentContainer}>
+        {/* Filters */}
+        <View style={styles.filterWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterContainer}
+          >
+            {filterOptions.map((f) => {
+              const isActive = filter === f;
+              return (
+                <TouchableOpacity
+                  key={f}
+                  style={[
+                    styles.filterChip,
+                    {
+                      backgroundColor: isActive ? COLORS_THEME.steelBlue : COLORS_THEME.white,
+                      borderColor: isActive ? COLORS_THEME.steelBlue : COLORS_THEME.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                  onPress={() => applyFilter(f)}
+                >
+                  {f !== "All" && (
+                    <Ionicons
+                      name="star"
+                      size={12}
+                      color={isActive ? "#FFF" : COLORS_THEME.warning}
+                      style={{ marginRight: 4 }}
+                    />
+                  )}
+                  <Text
+                    style={{
+                      color: isActive ? "#FFF" : COLORS_THEME.grayText,
+                      fontWeight: isActive ? "700" : "600",
+                      fontSize: 13,
+                    }}
+                  >
+                    {f}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* List */}
+        {loading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color={COLORS_THEME.steelBlue} />
+            <Text style={styles.loadingText}>Gathering feedback...</Text>
+          </View>
+        ) : (
           <ScrollView
             ref={listRef}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
           >
-            {filtered.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons
-                  name="chatbubble-outline"
-                  size={48}
-                  color={colors.border}
-                />
-                <Text
-                  style={[
-                    styles.emptyStateText,
-                    { color: colors.textSecondary },
-                  ]}
-                >
-                  No reviews found for this filter.
-                </Text>
-              </View>
-            ) : (
-              filtered.map((review) => (
-                <ReviewCard key={review.id} review={review} />
-              ))
-            )}
+            <Animated.View style={{ opacity: fadeAnim }}>
+              {filtered.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <View style={styles.emptyIconBg}>
+                    <Ionicons
+                      name="chatbubbles-outline"
+                      size={48}
+                      color={COLORS_THEME.grayText}
+                    />
+                  </View>
+                  <Text style={styles.emptyStateText}>No reviews found for this filter.</Text>
+                </View>
+              ) : (
+                filtered.map((review) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))
+              )}
+              <View style={{ height: 40 }} />
+            </Animated.View>
           </ScrollView>
-        </>
-      )}
+        )}
+      </View>
 
-      {/* MODAL */}
+      {/* REPLY MODAL */}
       <Modal
         visible={replyModalVisible}
         transparent
         animationType="fade"
         statusBarTranslucent
+        onRequestClose={() => setReplyModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalBox,
-              {
-                backgroundColor: colors.card,
-                shadowColor: colors.shadow || "#000",
-              },
-            ]}
-          >
+          <View style={styles.modalBox}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Wait! What’s the reply?
-              </Text>
-              <Text
-                style={[
-                  styles.modalSubtitle,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                Keep it professional and helpful.
-              </Text>
+              <Text style={styles.modalTitle}>Reply to Customer</Text>
+              <Text style={styles.modalSubtitle}>Keep it professional and helpful.</Text>
             </View>
 
             <TextInput
               ref={inputRef}
-              style={[
-                styles.replyInput,
-                {
-                  backgroundColor: isDark ? colors.background : "#F9FAFB",
-                  color: colors.text,
-                  borderColor: colors.border,
-                },
-              ]}
+              style={styles.replyInput}
               multiline
               numberOfLines={5}
               textAlignVertical="top"
               placeholder="Write your response here..."
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={COLORS_THEME.grayText}
               value={replyText}
               onChangeText={setReplyText}
             />
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[
-                  styles.cancelBtn,
-                  {
-                    backgroundColor: isDark ? colors.border : "#E5E7EB",
-                  },
-                ]}
+                style={styles.cancelBtn}
                 onPress={() => setReplyModalVisible(false)}
               >
-                <Text
-                  style={[styles.cancelText, { color: colors.text }]}
-                >
-                  Cancel
-                </Text>
+                <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.saveBtn,
-                  {
-                    backgroundColor: colors.primary,
-                    opacity: replyText.trim() ? 1 : 0.6,
-                  },
+                  { opacity: replyText.trim() ? 1 : 0.6 },
                 ]}
                 onPress={saveReply}
                 disabled={!replyText.trim()}
               >
-                <Text style={styles.saveBtnText}>Publish Response</Text>
+                <LinearGradient
+                  colors={[COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.saveBtnGradient}
+                >
+                  <Text style={styles.saveBtnText}>Publish Response</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // HEADER
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
+  container: { flex: 1, backgroundColor: COLORS_THEME.background },
+
+  // Header
+  headerContainer: {
+    height: 120,
+    width: '100%',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden',
+    zIndex: 10,
   },
-  headerBtn: {
+  headerGradient: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? 40 : 50,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
     width: 40,
     height: 40,
-    justifyContent: "center",
-    alignItems: "center",
     borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "800",
-    textAlign: "center",
+    fontWeight: '700',
+    color: '#FFF',
   },
   headerSubtitle: {
-    fontSize: 13,
-    textAlign: "center",
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
   },
 
-  // LOADING / EMPTY
-  loadingBox: {
+  contentContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    marginTop: 10,
   },
-  loadingText: { marginTop: 16, fontSize: 14, fontWeight: "500" },
-  emptyState: { alignItems: "center", paddingTop: 60 },
-  emptyStateText: { marginTop: 12, fontSize: 15 },
 
-  // FILTERS
+  // Filters
+  filterWrapper: {
+    paddingBottom: 10,
+  },
   filterContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   filterChip: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 30,
+    paddingVertical: 8,
+    borderRadius: 20,
     marginRight: 10,
   },
 
-  // REVIEW LIST
-  listContent: { padding: 16, paddingBottom: 40 },
-
-  // REVIEW CARD
-  reviewCard: {
-    padding: 20,
-    borderRadius: 24,
+  // Loading / Empty
+  loadingBox: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: { 
+    marginTop: 16, 
+    fontSize: 14, 
+    fontWeight: "500", 
+    color: COLORS_THEME.grayText 
+  },
+  emptyState: { 
+    alignItems: "center", 
+    paddingTop: 60 
+  },
+  emptyIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS_THEME.aeroBlueLight,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 16,
-    borderWidth: Platform.OS === "ios" ? 0 : 1,
-    ...Platform.select({
-      ios: {
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-      },
-      android: { elevation: 3 },
-    }),
+  },
+  emptyStateText: { 
+    marginTop: 12, 
+    fontSize: 15, 
+    color: COLORS_THEME.grayText 
+  },
+
+  // Review List
+  listContent: { 
+    paddingHorizontal: 20, 
+    paddingBottom: 40 
+  },
+
+  // Review Card
+  reviewCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+    backgroundColor: COLORS_THEME.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: COLORS_THEME.border,
   },
   cardHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 14,
+    marginRight: 12,
   },
   avatarText: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
   },
-  userName: { fontSize: 16, fontWeight: "700", marginBottom: 2 },
-  date: { fontSize: 12, fontWeight: "500" },
-  divider: { height: 16 },
-  comment: { fontSize: 15, lineHeight: 22, marginBottom: 16 },
+  userName: { 
+    fontSize: 15, 
+    fontWeight: "700", 
+    color: COLORS_THEME.darkNavy,
+    marginBottom: 2,
+  },
+  date: { 
+    fontSize: 11, 
+    fontWeight: "500", 
+    color: COLORS_THEME.grayText 
+  },
+  divider: { 
+    height: 1, 
+    backgroundColor: '#F3F4F6', 
+    marginVertical: 12 
+  },
+  comment: { 
+    fontSize: 14, 
+    lineHeight: 22, 
+    marginBottom: 16, 
+    color: COLORS_THEME.darkNavy 
+  },
 
-  // REPLY SECTION
+  // Reply Section
   existingReplyBox: {
-    padding: 14,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 12,
     marginBottom: 16,
+    backgroundColor: '#F3F4F6',
     borderLeftWidth: 3,
+    borderLeftColor: COLORS_THEME.steelBlue,
   },
   replyHeaderRow: {
     flexDirection: "row",
@@ -604,79 +610,103 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   replyLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
+    color: COLORS_THEME.steelBlue,
   },
-  replyText: { fontSize: 14, lineHeight: 20 },
+  replyText: { 
+    fontSize: 13, 
+    lineHeight: 18, 
+    color: COLORS_THEME.grayText 
+  },
 
-  // ACTION BUTTON
+  // Action Button
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
   actionButtonText: {
-    marginLeft: 8,
+    marginLeft: 6,
     fontWeight: "700",
-    fontSize: 14,
-    color: "#FFF",
+    fontSize: 13,
   },
 
-  // MODAL
+  // Modal
   modalOverlay: {
     flex: 1,
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.6)",
+    padding: 20,
   },
   modalBox: {
+    width: '100%',
     padding: 24,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingBottom: Platform.OS === "ios" ? 40 : 24,
-    ...Platform.select({
-      ios: {
-        shadowOffset: { width: 0, height: -5 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-      },
-      android: { elevation: 10 },
-    }),
+    borderRadius: 24,
+    backgroundColor: COLORS_THEME.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalHeader: { marginBottom: 20 },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "800",
-    marginBottom: 4,
+    marginBottom: 6,
+    color: COLORS_THEME.darkNavy,
   },
-  modalSubtitle: { fontSize: 14 },
-
+  modalSubtitle: { 
+    fontSize: 13, 
+    color: COLORS_THEME.grayText 
+  },
   replyInput: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderColor: COLORS_THEME.border,
+    borderRadius: 12,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 24,
     fontSize: 15,
     height: 120,
+    color: COLORS_THEME.darkNavy,
+    backgroundColor: COLORS_THEME.background,
   },
-
-  modalActions: { flexDirection: "row", gap: 12 },
+  modalActions: { 
+    flexDirection: "row", 
+    gap: 12,
+    justifyContent: 'flex-end'
+  },
   saveBtn: {
-    flex: 2,
-    paddingVertical: 14,
-    borderRadius: 14,
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  saveBtnGradient: {
+    paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  saveBtnText: { color: "#FFF", fontWeight: "700", fontSize: 15 },
-
+  saveBtnText: { 
+    color: "#FFF", 
+    fontWeight: "700", 
+    fontSize: 14 
+  },
   cancelBtn: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: COLORS_THEME.border,
   },
-  cancelText: { fontWeight: "700", fontSize: 15 },
+  cancelText: { 
+    fontWeight: "700", 
+    fontSize: 14, 
+    color: COLORS_THEME.grayText 
+  },
 });

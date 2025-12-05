@@ -1,10 +1,10 @@
-// navigation/ProfileStack.js
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import ProfileScreen from "../screens/ProfileScreen";
 import PersonalInfoScreen from "../screens/PersonalInfoScreen.js";
 import PaymentMethodsScreen from "../screens/PaymentMethodsScreen";
 import OrderHistoryScreen from "../screens/OrderHistoryScreen";
+import OrderDetailsScreen from "../screens/OrderDetailsScreen"; // Import the new screen
 import MyReviewsScreen from "../screens/MyReviewsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import HelpSupportScreen from "../screens/HelpSupportScreen";
@@ -41,6 +41,17 @@ export default function ProfileStack() {
         component={OrderHistoryScreen} 
         options={{ title: "Order History" ,headerShown:false,}} 
       />
+      
+      {/* ✅ Added OrderDetails Screen */}
+      <Stack.Screen 
+        name="OrderDetails" 
+        component={OrderDetailsScreen} 
+        options={{ 
+          headerShown: false,
+          presentation: 'card'
+        }} 
+      />
+
       <Stack.Screen 
         name="MyReviews" 
         component={MyReviewsScreen} 

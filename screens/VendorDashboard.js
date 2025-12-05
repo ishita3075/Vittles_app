@@ -11,7 +11,9 @@ import {
   UIManager,
   LayoutAnimation,
   ActivityIndicator,
-  Animated
+  Animated,
+  RefreshControl,
+  Alert
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -32,112 +34,109 @@ if (Platform.OS === 'android') {
   }
 }
 
-// --- Helper: Stat Pill ---
-const StatPill = ({ label, value, icon, color, colors }) => (
-  <View style={[styles.statPill, { backgroundColor: colors.card, shadowColor: color }]}>
-    <View style={[styles.statIconBox, { backgroundColor: color + '15' }]}>
-      <Ionicons name={icon} size={20} color={color} />
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS_THEME = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.08)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  success: "#10B981",
+  warning: "#F59E0B",
+  error: "#EF4444",
+};
+
+// --- Helper: Stat Item ---
+const StatItem = ({ label, value, icon, color }) => (
+  <View style={styles.statItemContainer}>
+    <View style={[styles.statIconCircle, { backgroundColor: color + '15' }]}>
+      <Ionicons name={icon} size={18} color={color} />
     </View>
-    <View>
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
-    </View>
+    <Text style={styles.statValue}>{value}</Text>
+    <Text style={styles.statLabel}>{label}</Text>
   </View>
 );
 
 // --- Helper: Order Card (Kitchen Ticket Style) ---
-const OrderTicket = ({ order, onUpdateStatus, colors }) => {
+const OrderTicket = ({ order, onUpdateStatus }) => {
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending': return '#FF6B00'; // Orange
-      case 'preparing': return '#3B82F6'; // Blue
-      case 'completed': return '#10B981'; // Green
-      default: return colors.textSecondary;
+      case 'pending': return COLORS_THEME.warning; 
+      case 'preparing': return COLORS_THEME.aeroBlue;
+      case 'completed': return COLORS_THEME.success; 
+      default: return COLORS_THEME.grayText;
     }
   };
 
   const statusColor = getStatusColor(order.status);
 
   return (
-    <View style={[styles.ticketCard, { backgroundColor: colors.card }]}>
-      {/* Left Status Bar */}
+    <View style={styles.ticketCard}>
       <View style={[styles.ticketStatusBar, { backgroundColor: statusColor }]} />
       
       <View style={styles.ticketContent}>
-        {/* Ticket Header */}
+        {/* Header */}
         <View style={styles.ticketHeader}>
-          <View style={styles.ticketIdContainer}>
-            <Text style={styles.ticketLabel}>TICKET</Text>
-            <Text style={[styles.ticketId, { color: colors.text }]}>#{String(order.id).slice(-4)}</Text>
+          <View>
+            <Text style={styles.ticketLabel}>ORDER #{String(order.id).slice(-4)}</Text>
+            <Text style={styles.customerName}>{order.customer}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor + '15', borderColor: statusColor + '30' }]}>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
             <Text style={[styles.statusText, { color: statusColor }]}>
               {order.status.toUpperCase()}
             </Text>
           </View>
         </View>
 
-        <View style={[styles.dashedDivider, { borderColor: colors.border }]} />
+        <View style={styles.divider} />
 
-        {/* Customer Info */}
-        <View style={styles.customerRow}>
-          <View style={styles.customerLeft}>
-            <Text style={[styles.customerName, { color: colors.text }]} numberOfLines={1}>{order.customer}</Text>
-            <View style={styles.addressRow}>
-              <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
-              <Text style={[styles.customerAddr, { color: colors.textSecondary }]} numberOfLines={1}>
-                {order.address}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.timeBox}>
-            <Text style={[styles.timeText, { color: colors.textSecondary }]}>{order.time}</Text>
-          </View>
-        </View>
-
-        {/* Order Items (Kitchen View) */}
-        <View style={[styles.itemsList, { backgroundColor: colors.background }]}>
+        {/* Items List */}
+        <View style={styles.itemsList}>
           {order.items.map((item, index) => (
             <View key={index} style={styles.itemRow}>
               <View style={[styles.bullet, { backgroundColor: statusColor }]} />
-              <Text style={[styles.itemText, { color: colors.text }]}>{item}</Text>
+              <Text style={styles.itemText}>{item}</Text>
             </View>
           ))}
         </View>
 
-        {/* Actions */}
-        <View style={styles.actionRow}>
+        {/* Footer & Actions */}
+        <View style={styles.ticketFooter}>
           <View>
-             <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Total</Text>
-             <Text style={[styles.priceText, { color: colors.text }]}>₹{order.price}</Text>
+             <Text style={styles.timeText}>Placed at {order.time}</Text>
+             <Text style={styles.priceText}>Total: ₹{order.price}</Text>
           </View>
           
           {order.status === 'pending' && (
             <TouchableOpacity 
-              style={[styles.actionBtn, { backgroundColor: '#FF6B00' }]}
+              style={[styles.actionBtn, { backgroundColor: COLORS_THEME.warning }]}
               onPress={() => onUpdateStatus(order.id, 'preparing')}
               activeOpacity={0.8}
             >
-              <Text style={styles.actionBtnText}>Start Cooking</Text>
-              <Ionicons name="flame" size={18} color="#FFF" />
+              <Text style={styles.actionBtnText}>Accept</Text>
+              <Ionicons name="flame" size={16} color="#FFF" />
             </TouchableOpacity>
           )}
 
           {order.status === 'preparing' && (
             <TouchableOpacity 
-              style={[styles.actionBtn, { backgroundColor: '#3B82F6' }]}
+              style={[styles.actionBtn, { backgroundColor: COLORS_THEME.steelBlue }]}
               onPress={() => onUpdateStatus(order.id, 'completed')}
               activeOpacity={0.8}
             >
-              <Text style={styles.actionBtnText}>Mark Ready</Text>
-              <Ionicons name="checkmark-circle" size={18} color="#FFF" />
+              <Text style={styles.actionBtnText}>Ready</Text>
+              <Ionicons name="checkmark-circle" size={16} color="#FFF" />
             </TouchableOpacity>
           )}
 
           {order.status === 'completed' && (
             <View style={styles.completedBadge}>
-               <Ionicons name="checkmark-done-circle" size={20} color="#10B981" />
-               <Text style={styles.completedText}>Completed</Text>
+               <Ionicons name="checkmark-done" size={18} color={COLORS_THEME.success} />
+               <Text style={[styles.completedText, { color: COLORS_THEME.success }]}>Done</Text>
             </View>
           )}
         </View>
@@ -152,10 +151,11 @@ export default function VendorDashboard() {
   const [dailyIncome, setDailyIncome] = useState(0);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const { user } = useAuth();
   const vendorId = user?.id;
-  const { colors } = useTheme();
+  const { colors } = useTheme(); 
 
   const incomeAnim = useRef(new Animated.Value(0)).current;
 
@@ -176,20 +176,14 @@ export default function VendorDashboard() {
 
     try {
       setLoading(true);
-
       const vendorOrders = await getOrdersByVendor(vendorId);
 
-      // --- NORMALIZER ---
       const normalizeStatus = (s) => {
         if (!s) return "pending";
         const st = s.toString().trim().toLowerCase();
-
         if (st.includes("pend")) return "pending";
-        if (st.includes("prep") || st.includes("cook") || st.includes("progress"))
-          return "preparing";
-        if (st.includes("complet") || st.includes("done") || st.includes("ready"))
-          return "completed";
-
+        if (st.includes("prep") || st.includes("cook") || st.includes("progress")) return "preparing";
+        if (st.includes("complet") || st.includes("done") || st.includes("ready")) return "completed";
         return "pending";
       };
 
@@ -210,22 +204,19 @@ export default function VendorDashboard() {
           grouped[orderId] = {
             id: orderId,
             customerId,
-            customer: order.customerName,
+            customer: order.customerName || "Guest",
             address: "Pickup",
-            status: status.toLowerCase(),       // already normalized lowercase
+            status: status.toLowerCase(),
             time: orderDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             price: 0,
             items: []
           };
         } else {
-          // If any item in order is pending/preparing → whole order is active
           if (grouped[orderId].status === "completed" && status !== "completed") {
               grouped[orderId].status = status.toLowerCase();
           }
         }
 
-
-        // --- MERGE ITEMS ---
         const exists = grouped[orderId].items.find(i => i.name === menuName);
         if (exists) exists.quantity += qty;
         else grouped[orderId].items.push({ name: menuName, quantity: qty });
@@ -242,25 +233,47 @@ export default function VendorDashboard() {
         .sort((a, b) => b.id - a.id);
 
       setOrders(finalData);
+      
+      const income = finalData.reduce((sum, order) => sum + order.price, 0);
+      setDailyIncome(income);
+
     } catch (err) {
       console.log("Error loading vendor orders:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchVendorOrders();
+  };
 
+  // Mock API for store status
+  const updateStoreStatus = async (status) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return true;
+  };
 
-
-
-
-
-
-
-  const toggleShop = () => {
+  const toggleShop = async () => {
+    const newStatus = !isOpen;
+    // Optimistic Update
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-    setIsOpen(!isOpen);
-    setIsHalted(false);
+    setIsOpen(newStatus);
+    if (!newStatus) setIsHalted(false); // Disable pause if closed
+
+    try {
+        await updateStoreStatus(newStatus);
+    } catch (e) {
+        setIsOpen(!newStatus); // Revert
+        Alert.alert("Error", "Failed to update store status");
+    }
+  };
+
+  const togglePause = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+    setIsHalted(!isHalted);
   };
 
   const updateOrderStatus = async (id, newStatus) => {
@@ -270,23 +283,22 @@ export default function VendorDashboard() {
       const order = orders.find(o => o.id === id);
       if (!order) return;
 
-      const customerId = order.customerId;
-
-      // 1️⃣ Update UI immediately (smooth animation)
       setOrders(prev =>
         prev.map(o =>
-          o.customerId === customerId && o.status !== "completed"
+          o.customerId === order.customerId && o.status !== "completed"
             ? { ...o, status: newStatus }
             : o
         )
       );
 
-      // 2️⃣ Call API to update all orders of that customer
-      await updateOrderStatusByCustomerAPI(customerId, newStatus);
+      await updateOrderStatusByCustomerAPI(order.customerId, newStatus);
 
-      // 3️⃣ Add revenue once order is completed
       if (newStatus === 'completed') {
-        setDailyIncome(prev => prev + order.price);
+        setTimeout(() => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setOrders(prev => prev.filter(o => o.id !== id));
+            setDailyIncome(prev => prev + order.price);
+        }, 500);
       }
 
     } catch (err) {
@@ -294,134 +306,140 @@ export default function VendorDashboard() {
     }
   };
 
-
-  const activeOrders = orders.filter(
-    o => o.status === "pending" || o.status === "preparing"
-  );
-  const completedOrders = orders.filter(
-    o => o.status === "completed"
-  );
+  const activeOrders = orders;
+  const pendingCount = activeOrders.filter(o => o.status === 'pending').length;
+  const preparingCount = activeOrders.filter(o => o.status === 'preparing').length;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
-
-      {/* 1. Header */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={["#8B3358", "#591A32"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.headerLabel}>TODAY'S REVENUE</Text>
-              <Animated.Text style={[styles.headerValue, { opacity: incomeAnim }]}>
-                ₹{dailyIncome.toLocaleString()}
-              </Animated.Text>
-            </View>
-            <View style={[styles.statusPill, { backgroundColor: isOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)' }]}>
-              <View style={[styles.statusDot, { backgroundColor: isOpen ? '#10B981' : '#EF4444' }]} />
-              <Text style={styles.statusPillText}>{isOpen ? 'ONLINE' : 'OFFLINE'}</Text>
-            </View>
-          </View>
-        </LinearGradient>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS_THEME.aeroBlue]}
+            tintColor={COLORS_THEME.aeroBlue}
+          />
+        }
       >
-        {/* 2. Control Center */}
-        <View style={[styles.controlCard, { backgroundColor: colors.card }]}>
-          <View style={styles.controlRow}>
-            <View>
-              <Text style={[styles.controlTitle, { color: colors.text }]}>Accepting Orders</Text>
-              <Text style={[styles.controlSub, { color: colors.textSecondary }]}>
-                {isOpen ? "Your store is visible to customers" : "Store is currently hidden"}
-              </Text>
+        {/* 1. Scrollable Header Block */}
+        <View style={styles.headerBlock}>
+          <LinearGradient
+            colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
+          >
+            <View style={styles.headerTopRow}>
+               <View>
+                 <Text style={styles.greetingText}>Hello, Chef!</Text>
+                 <Text style={styles.storeNameText}>{user?.name || "My Store"}</Text>
+               </View>
+               <View style={[
+                 styles.statusPill, 
+                 { 
+                   backgroundColor: isOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                   borderColor: isOpen ? COLORS_THEME.success : COLORS_THEME.error
+                 }
+               ]}>
+                 <View style={[styles.statusDot, { backgroundColor: isOpen ? COLORS_THEME.success : COLORS_THEME.error }]} />
+                 <Text style={styles.statusText}>{isOpen ? 'ONLINE' : 'OFFLINE'}</Text>
+               </View>
             </View>
-            <TouchableOpacity onPress={toggleShop} activeOpacity={0.8}>
-              <View style={[styles.switchTrack, { backgroundColor: isOpen ? '#10B981' : '#E5E7EB' }]}>
-                <View style={[styles.switchThumb, { transform: [{ translateX: isOpen ? 24 : 2 }] }]} />
-              </View>
-            </TouchableOpacity>
+
+            <View style={styles.revenueContainer}>
+               <Text style={styles.revenueLabel}>TODAY'S EARNINGS</Text>
+               <Animated.Text style={[styles.revenueValue, { opacity: incomeAnim }]}>
+                 ₹{dailyIncome.toLocaleString()}
+               </Animated.Text>
+            </View>
+          </LinearGradient>
+        </View>
+
+        {/* 2. Command Center Card */}
+        <View style={styles.commandCenter}>
+          {/* Online/Offline Toggle */}
+          <View style={styles.switchRow}>
+             <View>
+                <Text style={styles.controlTitle}>Accepting Orders</Text>
+                <Text style={styles.controlSub}>
+                    {isOpen ? "Store is live" : "Store is currently closed"}
+                </Text>
+             </View>
+             <TouchableOpacity onPress={toggleShop} activeOpacity={0.8}>
+                <View style={[styles.switchTrack, { backgroundColor: isOpen ? COLORS_THEME.success : '#E5E7EB' }]}>
+                  <View style={[styles.switchThumb, { transform: [{ translateX: isOpen ? 24 : 2 }] }]} />
+                </View>
+             </TouchableOpacity>
           </View>
 
           {isOpen && (
             <>
-              <View style={[styles.controlDivider, { backgroundColor: colors.border }]} />
-              <View style={styles.controlRow}>
-                <View>
-                  <Text style={[styles.controlTitle, { color: colors.text }]}>Pause Mode</Text>
-                  <Text style={[styles.controlSub, { color: colors.textSecondary }]}>Temporarily stop new orders</Text>
-                </View>
-                <TouchableOpacity onPress={() => setIsHalted(!isHalted)} activeOpacity={0.8}>
-                  <View style={[styles.switchTrack, { backgroundColor: isHalted ? '#F59E0B' : '#E5E7EB' }]}>
-                    <View style={[styles.switchThumb, { transform: [{ translateX: isHalted ? 24 : 2 }] }]} />
-                  </View>
-                </TouchableOpacity>
+              <View style={styles.controlDivider} />
+              {/* Pause Orders Toggle */}
+              <View style={styles.switchRow}>
+                 <View>
+                    <Text style={styles.controlTitle}>Pause Orders</Text>
+                    <Text style={styles.controlSub}>
+                        {isHalted ? "New orders are paused" : "Accepting new orders"}
+                    </Text>
+                 </View>
+                 <TouchableOpacity onPress={togglePause} activeOpacity={0.8}>
+                    <View style={[styles.switchTrack, { backgroundColor: isHalted ? COLORS_THEME.warning : '#E5E7EB' }]}>
+                      <View style={[styles.switchThumb, { transform: [{ translateX: isHalted ? 24 : 2 }] }]} />
+                    </View>
+                 </TouchableOpacity>
               </View>
             </>
           )}
-        </View>
+          
+          <View style={styles.controlDivider} />
 
-        {/* 3. Stats */}
-        <View style={styles.statsGrid}>
-          <StatPill
-            label="Pending"
-            value={activeOrders.filter(o => o.status === 'pending').length}
-            icon="notifications"
-            color="#FF6B00"
-            colors={colors}
-          />
-          <StatPill
-            label="Preparing"
-            value={activeOrders.filter(o => o.status === 'preparing').length}
-            icon="restaurant"
-            color="#3B82F6"
-            colors={colors}
-          />
-          <StatPill
-            label="Completed"
-            value={completedOrders.length}
-            icon="checkmark-circle"
-            color="#10B981"
-            colors={colors}
-          />
-        </View>
-
-        {/* 4. Orders */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Live Orders</Text>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{activeOrders.length}</Text>
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+             <StatItem label="Pending" value={pendingCount} icon="notifications" color={COLORS_THEME.warning} />
+             <View style={styles.vertDivider} />
+             <StatItem label="Prep" value={preparingCount} icon="flame" color={COLORS_THEME.aeroBlue} />
+             <View style={styles.vertDivider} />
+             <StatItem label="Done" value="--" icon="checkmark-done-circle" color={COLORS_THEME.success} />
           </View>
         </View>
 
-        {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
-        ) : activeOrders.length > 0 ? (
-          activeOrders.map(order => (
-            <OrderTicket
-              key={order.id}
-              order={order}
-              onUpdateStatus={updateOrderStatus}
-              colors={colors}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <View style={[styles.emptyIconBg, { backgroundColor: colors.border + '40' }]}>
-              <MaterialCommunityIcons name="store-off" size={32} color={colors.textSecondary} />
+        {/* 3. Live Orders Section */}
+        <View style={styles.ordersSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitleDark}>Active Tickets</Text>
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{activeOrders.length}</Text>
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Active Orders</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              {isOpen ? "Waiting for new orders to arrive..." : "Open your shop to start selling."}
-            </Text>
           </View>
-        )}
+
+          {loading ? (
+            <ActivityIndicator size="large" color={COLORS_THEME.steelBlue} style={{ marginTop: 40 }} />
+          ) : activeOrders.length > 0 ? (
+            activeOrders.map(order => (
+              <OrderTicket
+                key={order.id}
+                order={order}
+                onUpdateStatus={updateOrderStatus}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconBg}>
+                <MaterialCommunityIcons name="clipboard-text-outline" size={32} color={COLORS_THEME.grayText} />
+              </View>
+              <Text style={styles.emptyTitle}>All Caught Up!</Text>
+              <Text style={styles.emptyText}>
+                {isOpen && !isHalted ? "Waiting for new orders..." : "Go online to start receiving orders."}
+              </Text>
+            </View>
+          )}
+        </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -430,93 +448,107 @@ export default function VendorDashboard() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: COLORS_THEME.background },
 
-  // Header
-  headerContainer: {
-    height: 150, // Increased height to fix overlap
+  // Scroll Content
+  scrollContent: {
+    paddingBottom: 20,
+  },
+
+  // 1. Header Block
+  headerBlock: {
+    marginBottom: -30, // Pull content up
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     overflow: 'hidden',
-    elevation: 4,
-    zIndex: 10,
   },
   headerGradient: {
-    flex: 1,
     paddingTop: Platform.OS === 'android' ? 50 : 60,
     paddingHorizontal: 24,
+    paddingBottom: 50, // Extra padding for overlap
   },
-  headerContent: {
+  headerTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  greetingText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  storeNameText: {
+    color: '#FFF',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+    borderWidth: 1,
+    // borderColor set inline based on status
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  revenueContainer: {
     alignItems: 'center',
   },
-  headerLabel: {
+  revenueLabel: {
     color: 'rgba(255,255,255,0.7)',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.5,
     marginBottom: 4,
   },
-  headerValue: {
+  revenueValue: {
     color: '#FFF',
-    fontSize: 40,
+    fontSize: 42,
     fontWeight: '800',
     letterSpacing: -1,
   },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusPillText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
 
-  // Scroll
-  scrollContent: {
-    paddingHorizontal: 20,
-    marginTop: -50, // Pull up
-    paddingBottom: 20,
-  },
-
-  // Control Card
-  controlCard: {
-    marginTop:60,
-    borderRadius: 20,
-    padding: 24,
+  // 2. Command Center Card
+  commandCenter: {
+    marginHorizontal: 20,
+    borderRadius: 24,
+    backgroundColor: '#FFF',
+    padding: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
-    elevation: 4,
+    elevation: 6,
     marginBottom: 24,
   },
-  controlRow: {
+  switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 4,
   },
   controlTitle: {
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 4,
+    color: COLORS_THEME.darkNavy,
   },
   controlSub: {
     fontSize: 13,
+    color: COLORS_THEME.grayText,
   },
   switchTrack: {
     width: 52,
@@ -539,62 +571,64 @@ const styles = StyleSheet.create({
   controlDivider: {
     height: 1,
     marginVertical: 16,
-    opacity: 0.5,
+    backgroundColor: '#F3F4F6',
   },
 
-  // Stats Grid
-  statsGrid: {
+  // Stats
+  statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 32,
-    gap: 12,
-  },
-  statPill: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 14,
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
+    paddingTop: 8, // Reduced padding
   },
-  statIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+  vertDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#F3F4F6',
+  },
+  statItemContainer: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 6,
   },
   statValue: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS_THEME.darkNavy,
   },
   statLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    color: COLORS_THEME.grayText,
+    fontWeight: '500',
   },
 
-  // Section Header
+  // 3. Orders Section
+  ordersSection: {
+    paddingHorizontal: 20,
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-    gap: 12,
+    gap: 10,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  sectionTitleDark: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS_THEME.darkNavy,
   },
   countBadge: {
-    backgroundColor: '#EF4444',
+    backgroundColor: COLORS_THEME.error,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   countText: {
     color: '#FFF',
@@ -607,12 +641,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderRadius: 16,
     marginBottom: 16,
+    backgroundColor: '#FFF',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
     elevation: 2,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   ticketStatusBar: {
     width: 6,
@@ -625,79 +662,37 @@ const styles = StyleSheet.create({
   ticketHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 12,
-  },
-  ticketIdContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
   },
   ticketLabel: {
     fontSize: 11,
     fontWeight: '700',
     color: '#9CA3AF',
-    letterSpacing: 1,
-  },
-  ticketId: {
-    fontSize: 18,
-    fontWeight: '800',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', // Ticket font
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  dashedDivider: {
-    height: 1,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: '#E5E7EB', // Ensure this overrides if needed
-    marginBottom: 16,
-    opacity: 0.5,
-  },
-  customerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  customerLeft: {
-    flex: 1,
-    marginRight: 16,
-  },
-  customerName: {
-    fontSize: 15,
-    fontWeight: '700',
+    letterSpacing: 0.5,
     marginBottom: 2,
   },
-  addressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  customerName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS_THEME.darkNavy,
   },
-  customerAddr: {
-    fontSize: 13,
-  },
-  timeBox: {
-    backgroundColor: '#F3F4F6',
+  statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  timeText: {
-    fontSize: 12,
-    fontWeight: '600',
+  statusText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginBottom: 12,
   },
   itemsList: {
-    padding: 12,
-    borderRadius: 8,
     marginBottom: 16,
   },
   itemRow: {
@@ -714,33 +709,31 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 15,
     fontWeight: '500',
+    color: COLORS_THEME.darkNavy,
   },
-  actionRow: {
+  ticketFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 4,
   },
-  priceLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+  timeText: {
+    fontSize: 12,
+    color: COLORS_THEME.grayText,
+    marginBottom: 2,
   },
   priceText: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS_THEME.darkNavy,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 10,
     gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   actionBtnText: {
     color: '#FFF',
@@ -750,40 +743,41 @@ const styles = StyleSheet.create({
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     backgroundColor: '#ECFDF5',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   completedText: {
-    color: '#10B981',
-    fontWeight: '700',
     fontSize: 13,
+    fontWeight: '700',
   },
 
   // Empty State
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 40,
-    gap: 16,
     padding: 40,
+    marginTop: 20,
   },
   emptyIconBg: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: COLORS_THEME.aeroBlueLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
+    color: COLORS_THEME.darkNavy,
   },
   emptyText: {
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+    color: COLORS_THEME.grayText,
   },
 });

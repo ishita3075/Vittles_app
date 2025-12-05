@@ -1,4 +1,3 @@
-// screens/VendorSettings.js
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -12,23 +11,74 @@ import {
   ActivityIndicator,
   Animated,
   Platform,
+  LayoutAnimation,
+  UIManager,
+  Dimensions,
+  Switch
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 
-/**
- * VendorSettings
- * - Full editable settings form for vendor details
- * - Fields: Restaurant Name, Phone, Address, Cuisine, Delivery Fee, IsOpen toggle
- * - Image/avatar placeholder (no native image-picker hooked)
- * - Uses local mock API functions (replace with fetch/axios)
- * - Basic validation and save/cancel UX
- */
+const { width } = Dimensions.get('window');
+
+// Enable LayoutAnimation
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS_THEME = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.08)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  success: "#10B981",
+  warning: "#F59E0B",
+  error: "#EF4444",
+  inputBg: "#F3F4F6"
+};
+
+// --- Helper: Modern Input ---
+const SettingsInput = ({ label, value, onChangeText, placeholder, keyboardType, multiline, icon }) => (
+  <View style={[styles.inputGroup, multiline && { height: 'auto' }]}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <View style={[
+      styles.inputContainer, 
+      multiline && { height: 100, alignItems: 'flex-start' }
+    ]}>
+      <Ionicons 
+        name={icon} 
+        size={20} 
+        color={COLORS_THEME.steelBlue} 
+        style={{ marginRight: 12, marginTop: multiline ? 14 : 0 }} 
+      />
+      <TextInput
+        style={[
+          styles.input, 
+          multiline && { height: '100%', textAlignVertical: 'top', paddingTop: 12 }
+        ]}
+        placeholder={placeholder}
+        placeholderTextColor={COLORS_THEME.grayText}
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        multiline={multiline}
+        numberOfLines={multiline ? 3 : 1}
+      />
+    </View>
+  </View>
+);
 
 export default function VendorSettings({ navigation }) {
-  const { colors } = useTheme();
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -47,7 +97,11 @@ export default function VendorSettings({ navigation }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.spring(fadeAnim, { toValue: 1, friction: 6, useNativeDriver: true }).start();
+    Animated.timing(fadeAnim, { 
+      toValue: 1, 
+      duration: 600, 
+      useNativeDriver: true 
+    }).start();
   }, []);
 
   useEffect(() => {
@@ -55,7 +109,7 @@ export default function VendorSettings({ navigation }) {
     async function load() {
       setLoading(true);
       try {
-        const settings = await fetchVendorSettings(user?.id ?? user?.uid ?? user?.email);
+        const settings = await fetchVendorSettings(user?.id);
         if (!mounted) return;
         setRestaurantName(settings.restaurantName || "");
         setPhone(settings.phone || "");
@@ -75,24 +129,22 @@ export default function VendorSettings({ navigation }) {
     return () => { mounted = false; };
   }, [user]);
 
-  // Mock API - replace with your backend calls
+  // Mock API
   async function fetchVendorSettings(identifier) {
     await new Promise((r) => setTimeout(r, 300));
     return {
       restaurantName: user?.restaurantName || "My Restaurant",
       phone: "9876543210",
       address: "Block A, Food Court, City",
-      cuisine: "North Indian",
-      deliveryFee: 30,
+      cuisine: "North Indian, Chinese",
+      deliveryFee: 40,
       isOpen: true,
       avatarUri: null,
     };
   }
 
   async function saveVendorSettingsApi(payload) {
-    // replace with fetch/axios. Simulate latency.
-    await new Promise((r) => setTimeout(r, 600));
-    // simulate success
+    await new Promise((r) => setTimeout(r, 800));
     return { ok: true, data: payload };
   }
 
@@ -128,7 +180,6 @@ export default function VendorSettings({ navigation }) {
       const res = await saveVendorSettingsApi(payload);
       if (!res || res.ok === false) throw new Error("save failed");
       Alert.alert("Saved", "Settings updated successfully.");
-      // Optionally go back or refresh parent screen
       navigation.goBack();
     } catch (err) {
       console.error("saveVendorSettingsApi error", err);
@@ -138,161 +189,361 @@ export default function VendorSettings({ navigation }) {
     }
   };
 
-  const handleCancel = () => {
-    // simply go back
-    navigation.goBack();
-  };
-
   const handlePickAvatar = () => {
-    // Placeholder — integrate expo-image-picker or react-native-image-picker
-    Alert.alert("Image Upload", "Integrate image picker here (expo-image-picker).");
+    Alert.alert("Image Upload", "This would open the image picker.");
   };
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor: colors.background, opacity: fadeAnim }]}>
-      <StatusBar barStyle={colors.isDark ? "light-content" : "dark-content"} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={[styles.header, { backgroundColor: colors.card }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Restaurant Settings</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Update your restaurant profile and preferences</Text>
-        </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-        {loading ? (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : (
-          <View style={styles.form}>
-            {/* Avatar */}
-            <TouchableOpacity style={[styles.avatarBox, { backgroundColor: colors.card }]} onPress={handlePickAvatar} activeOpacity={0.8}>
-              {avatarUri ? (
-                <Text style={[styles.avatarText, { color: colors.text }]}>Change Image</Text>
-              ) : (
-                <>
-                  <Ionicons name="camera" size={22} color={colors.primary} />
-                  <Text style={[styles.avatarHint, { color: colors.textSecondary }]}>Add restaurant image</Text>
-                </>
-              )}
+      {/* 1. Header */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
             </TouchableOpacity>
-
-            {/* Restaurant Name */}
-            <Text style={[styles.label, { color: colors.text }]}>Restaurant Name</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
-              placeholder="e.g. The Tasty Corner"
-              placeholderTextColor={colors.textSecondary}
-              value={restaurantName}
-              onChangeText={setRestaurantName}
-              returnKeyType="done"
-            />
-
-            {/* Phone */}
-            <Text style={[styles.label, { color: colors.text }]}>Phone</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
-              placeholder="Phone number"
-              placeholderTextColor={colors.textSecondary}
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              returnKeyType="done"
-            />
-
-            {/* Address */}
-            <Text style={[styles.label, { color: colors.text }]}>Address</Text>
-            <TextInput
-              style={[styles.textarea, { backgroundColor: colors.card, color: colors.text }]}
-              placeholder="Street, city, area details"
-              placeholderTextColor={colors.textSecondary}
-              value={address}
-              onChangeText={setAddress}
-              multiline
-              numberOfLines={3}
-            />
-
-            {/* Cuisine */}
-            <Text style={[styles.label, { color: colors.text }]}>Cuisine</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
-              placeholder="e.g. Italian, Chinese, Multi-cuisine"
-              placeholderTextColor={colors.textSecondary}
-              value={cuisine}
-              onChangeText={setCuisine}
-              returnKeyType="done"
-            />
-
-            {/* Delivery Fee */}
-            <Text style={[styles.label, { color: colors.text }]}>Delivery Fee (₹)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
-              placeholder="e.g. 30"
-              placeholderTextColor={colors.textSecondary}
-              value={deliveryFee}
-              onChangeText={setDeliveryFee}
-              keyboardType="numeric"
-              returnKeyType="done"
-            />
-
-            {/* Is Open Toggle */}
-            <View style={styles.row}>
-              <View>
-                <Text style={[styles.label, { color: colors.text }]}>Accepting Orders</Text>
-                <Text style={[styles.smallText, { color: colors.textSecondary }]}>Toggle whether the restaurant is open for orders</Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.toggleBtn, isOpen ? styles.toggleOn : styles.toggleOff]}
-                onPress={() => setIsOpen((v) => !v)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name={isOpen ? "checkmark" : "close"} size={18} color="#FFF" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Buttons */}
-            <View style={styles.actions}>
-              <TouchableOpacity style={[styles.saveBtn, { opacity: saving ? 0.8 : 1 }]} onPress={handleSave} disabled={saving}>
-                {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveText}>Save Changes</Text>}
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.headerTitle}>Settings</Text>
+            <View style={{ width: 40 }} />
           </View>
-        )}
+        </LinearGradient>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Animated.View style={{ opacity: fadeAnim }}>
+          
+          {/* 2. Profile Image */}
+          <View style={styles.avatarSection}>
+            <TouchableOpacity 
+              style={styles.avatarContainer} 
+              onPress={handlePickAvatar}
+              activeOpacity={0.8}
+            >
+              {avatarUri ? (
+                // <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                <View style={styles.placeholderAvatar}>
+                   <Ionicons name="restaurant" size={40} color={COLORS_THEME.steelBlue} />
+                </View>
+              ) : (
+                <View style={styles.placeholderAvatar}>
+                  <Ionicons name="camera" size={32} color={COLORS_THEME.steelBlue} />
+                  <Text style={styles.addPhotoText}>Add Logo</Text>
+                </View>
+              )}
+              <View style={styles.editBadge}>
+                <Ionicons name="pencil" size={12} color="#FFF" />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {loading ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="large" color={COLORS_THEME.steelBlue} />
+            </View>
+          ) : (
+            <View style={styles.formContainer}>
+              {/* General Info */}
+              <Text style={styles.sectionHeader}>GENERAL INFORMATION</Text>
+              <View style={styles.card}>
+                <SettingsInput
+                  label="Restaurant Name"
+                  icon="business-outline"
+                  placeholder="e.g. The Tasty Corner"
+                  value={restaurantName}
+                  onChangeText={setRestaurantName}
+                />
+                <SettingsInput
+                  label="Phone Number"
+                  icon="call-outline"
+                  placeholder="e.g. 9876543210"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                />
+                <SettingsInput
+                  label="Address"
+                  icon="location-outline"
+                  placeholder="Street, city, area details"
+                  value={address}
+                  onChangeText={setAddress}
+                  multiline
+                />
+              </View>
+
+              {/* Operations */}
+              <Text style={styles.sectionHeader}>OPERATIONS</Text>
+              <View style={styles.card}>
+                <SettingsInput
+                  label="Cuisine Type"
+                  icon="restaurant-outline"
+                  placeholder="e.g. Italian, Chinese"
+                  value={cuisine}
+                  onChangeText={setCuisine}
+                />
+                <SettingsInput
+                  label="Delivery Fee (₹)"
+                  icon="bicycle-outline"
+                  placeholder="e.g. 30"
+                  value={deliveryFee}
+                  onChangeText={setDeliveryFee}
+                  keyboardType="numeric"
+                />
+                
+                <View style={styles.switchRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.switchLabel}>Accepting Orders</Text>
+                    <Text style={styles.switchSub}>Toggle store visibility</Text>
+                  </View>
+                  <Switch
+                    value={isOpen}
+                    onValueChange={(val) => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      setIsOpen(val);
+                    }}
+                    trackColor={{ false: '#E5E7EB', true: COLORS_THEME.success }}
+                    thumbColor={Platform.OS === 'android' ? '#FFF' : undefined}
+                  />
+                </View>
+              </View>
+
+              {/* Actions */}
+              <View style={styles.actionRow}>
+                <TouchableOpacity 
+                  style={styles.cancelBtn} 
+                  onPress={() => navigation.goBack()}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.saveBtn, { opacity: saving ? 0.7 : 1 }]} 
+                  onPress={handleSave}
+                  disabled={saving}
+                >
+                  <LinearGradient
+                    colors={[COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.saveGradient}
+                  >
+                    {saving ? (
+                      <ActivityIndicator color="#FFF" size="small" />
+                    ) : (
+                      <Text style={styles.saveText}>Save Changes</Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </Animated.View>
+        <View style={{ height: 40 }} />
       </ScrollView>
-    </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { paddingBottom: 40 },
-  header: { paddingTop: 18, paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: "#EEE" },
-  headerTitle: { fontSize: 20, fontWeight: "800", marginBottom: 4 },
-  headerSubtitle: { fontSize: 13 },
+  container: { flex: 1, backgroundColor: COLORS_THEME.background },
+  
+  // Header
+  headerContainer: {
+    height: 110,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden',
+    zIndex: 10,
+  },
+  headerGradient: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? 40 : 50,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFF',
+  },
 
-  loadingBox: { padding: 40, alignItems: "center" },
+  // Content
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  loadingBox: {
+    marginTop: 40,
+    alignItems: 'center',
+  },
 
-  form: { paddingHorizontal: 20, paddingTop: 18 },
-  avatarBox: { height: 100, borderRadius: 12, justifyContent: "center", alignItems: "center", marginBottom: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: "#EEE" },
-  avatarText: { fontSize: 14, fontWeight: "700" },
-  avatarHint: { marginTop: 6, fontSize: 12 },
+  // Avatar
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatarContainer: {
+    position: 'relative',
+    shadowColor: COLORS_THEME.aeroBlue,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  placeholderAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS_THEME.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: COLORS_THEME.white,
+  },
+  addPhotoText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS_THEME.steelBlue,
+    marginTop: 4,
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: COLORS_THEME.steelBlue,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS_THEME.white,
+  },
 
-  label: { marginBottom: 8, marginTop: 6, fontSize: 13, fontWeight: "700" },
-  input: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: Platform.OS === "ios" ? 12 : 10, fontSize: 14, marginBottom: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: "#EEE" },
-  textarea: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: 14, marginBottom: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: "#EEE", minHeight: 80 },
+  // Form
+  formContainer: {
+    gap: 20,
+  },
+  sectionHeader: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS_THEME.grayText,
+    marginBottom: 8,
+    marginLeft: 4,
+    letterSpacing: 0.5,
+  },
+  card: {
+    backgroundColor: COLORS_THEME.white,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 8,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+    color: COLORS_THEME.darkNavy,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS_THEME.border,
+    backgroundColor: COLORS_THEME.inputBg,
+    paddingHorizontal: 12,
+    height: 50,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS_THEME.darkNavy,
+    paddingVertical: 0,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS_THEME.border,
+  },
+  switchLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS_THEME.darkNavy,
+  },
+  switchSub: {
+    fontSize: 12,
+    color: COLORS_THEME.grayText,
+  },
 
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8, marginBottom: 8 },
-  smallText: { fontSize: 12, marginTop: 4 },
-
-  toggleBtn: { width: 46, height: 30, borderRadius: 18, justifyContent: "center", alignItems: "center" },
-  toggleOn: { backgroundColor: "#10B981" },
-  toggleOff: { backgroundColor: "#9CA3AF" },
-
-  actions: { marginTop: 22 },
-  saveBtn: { backgroundColor: "#8B3358", paddingVertical: 14, borderRadius: 12, alignItems: "center", marginBottom: 12 },
-  saveText: { color: "#FFF", fontWeight: "800" },
-  cancelBtn: { alignItems: "center", paddingVertical: 10 },
-  cancelText: { fontWeight: "700" },
+  // Buttons
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS_THEME.border,
+    backgroundColor: COLORS_THEME.white,
+  },
+  cancelText: {
+    fontWeight: '700',
+    fontSize: 14,
+    color: COLORS_THEME.grayText,
+  },
+  saveBtn: {
+    flex: 2,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: COLORS_THEME.aeroBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveGradient: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
 });

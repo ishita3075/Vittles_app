@@ -14,13 +14,16 @@ import {
   Animated,
   LayoutAnimation,
   Platform,
-  UIManager
+  UIManager,
+  Dimensions
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { getVendorMenu, addMenuItem, updateMenuItemAvailability, deleteMenuItem } from "../api";
+
+const { width } = Dimensions.get('window');
 
 // Enable LayoutAnimation
 if (Platform.OS === 'android') {
@@ -29,70 +32,87 @@ if (Platform.OS === 'android') {
   }
 }
 
+// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+const COLORS_THEME = {
+  aeroBlue: "#7CB9E8",
+  steelBlue: "#5A94C4",
+  darkNavy: "#0A2342",
+  white: "#FFFFFF",
+  grayText: "#6B7280",
+  background: "#F9FAFB",
+  border: "rgba(0,0,0,0.08)",
+  card: "#FFFFFF",
+  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  success: "#10B981",
+  warning: "#F59E0B",
+  error: "#EF4444",
+  inputBg: "#F3F4F6"
+};
+
 // --- Helper: Inventory Stat Pill ---
-const InventoryStat = ({ label, value, icon, color, colors }) => (
-  <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+const InventoryStat = ({ label, value, icon, color }) => (
+  <View style={styles.statCard}>
     <View style={[styles.statIcon, { backgroundColor: color + '15' }]}>
       <Ionicons name={icon} size={18} color={color} />
     </View>
     <View>
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   </View>
 );
 
 // --- Helper: Menu Item Card ---
-const MenuItemCard = ({ item, colors, onToggle, onDelete }) => {
+const MenuItemCard = ({ item, onToggle, onDelete }) => {
   return (
     <View style={[
       styles.menuCard, 
-      { 
-        backgroundColor: colors.card,
-        borderLeftColor: item.available ? '#10B981' : '#EF4444' 
-      }
+      { borderLeftColor: item.available ? COLORS_THEME.success : COLORS_THEME.error }
     ]}>
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>{item.name}</Text>
+          <View style={{ flex: 1, marginRight: 12 }}>
+            <Text style={styles.cardTitle}>{item.name}</Text>
             <View style={styles.categoryPill}>
               <Text style={styles.categoryText}>{item.category}</Text>
             </View>
           </View>
-          <Text style={[styles.cardPrice, { color: colors.primary }]}>₹{item.price}</Text>
+          <Text style={styles.cardPrice}>₹{item.price}</Text>
         </View>
         
-        <Text style={[styles.cardDesc, { color: colors.textSecondary }]} numberOfLines={2}>
+        <Text style={styles.cardDesc} numberOfLines={2}>
           {item.description}
         </Text>
 
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <View style={styles.divider} />
 
         <View style={styles.cardFooter}>
-          <View style={styles.statusContainer}>
-            <View style={[styles.statusDot, { backgroundColor: item.available ? '#10B981' : '#EF4444' }]} />
-            <Text style={[styles.statusText, { color: item.available ? '#10B981' : '#EF4444' }]}>
+          <View style={[
+            styles.statusBadge, 
+            { backgroundColor: item.available ? '#ECFDF5' : '#FEF2F2' }
+          ]}>
+            <View style={[styles.statusDot, { backgroundColor: item.available ? COLORS_THEME.success : COLORS_THEME.error }]} />
+            <Text style={[styles.statusText, { color: item.available ? COLORS_THEME.success : COLORS_THEME.error }]}>
               {item.available ? 'In Stock' : 'Unavailable'}
             </Text>
           </View>
 
           <View style={styles.actions}>
             <TouchableOpacity 
-              style={[styles.iconButton, { backgroundColor: colors.background }]}
+              style={styles.iconButton}
               onPress={() => onToggle(item.id)}
             >
               <Ionicons 
                 name={item.available ? "eye-off-outline" : "eye-outline"} 
-                size={20} 
-                color={colors.text} 
+                size={18} 
+                color={COLORS_THEME.darkNavy} 
               />
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.iconButton, { backgroundColor: '#FEF2F2' }]}
+              style={[styles.iconButton, { backgroundColor: '#FEF2F2', borderColor: 'transparent' }]}
               onPress={() => onDelete(item.id)}
             >
-              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+              <Ionicons name="trash-outline" size={18} color={COLORS_THEME.error} />
             </TouchableOpacity>
           </View>
         </View>
@@ -101,25 +121,37 @@ const MenuItemCard = ({ item, colors, onToggle, onDelete }) => {
   );
 };
 
+// --- Helper: Modern Input ---
+const FormInput = ({ label, value, onChangeText, placeholder, keyboardType, multiline }) => (
+  <View style={[styles.inputGroup, multiline && { height: 'auto' }]}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <TextInput
+      style={[
+        styles.input, 
+        multiline && { height: 80, textAlignVertical: 'top', paddingTop: 12 }
+      ]}
+      placeholder={placeholder}
+      placeholderTextColor={COLORS_THEME.grayText}
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+      multiline={multiline}
+      numberOfLines={multiline ? 3 : 1}
+    />
+  </View>
+);
+
 export default function VendorMenu() {
   const [menu, setMenu] = useState([]);
   const [newItem, setNewItem] = useState({ name: "", price: "", category: "", description: "" });
   const [activeCategory, setActiveCategory] = useState("All");
   const [categories, setCategories] = useState(["All"]);
-  const { colors } = useTheme();
+  
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
-  const [isFormVisible, setIsFormVisible] = useState(false); // Collapsible form
+  const [isFormVisible, setIsFormVisible] = useState(false);
   const vendorId = user?.id;
-
-  // Animation
-  const formAnim = useRef(new Animated.Value(0)).current;
-
-  const toggleForm = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsFormVisible(!isFormVisible);
-  };
 
   // --- Fetch Menu ---
   useEffect(() => {
@@ -155,6 +187,11 @@ export default function VendorMenu() {
   };
 
   // --- Actions ---
+  const toggleForm = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsFormVisible(!isFormVisible);
+  };
+
   const addItem = async () => {
     if (!newItem.name.trim() || !newItem.price.trim()) {
       Alert.alert("Missing Info", "Please enter item name and price");
@@ -192,7 +229,6 @@ export default function VendorMenu() {
 
       setNewItem({ name: "", price: "", category: "", description: "" });
       setIsFormVisible(false);
-
       Alert.alert("Success", "Item added to menu");
 
     } catch (error) {
@@ -203,20 +239,18 @@ export default function VendorMenu() {
     }
   };
 
-
-
   const toggleAvailability = async (id) => {
     const item = menu.find(i => i.id === id);
     if (!item) return;
 
-    // Optimistic update
     const newStatus = !item.available;
+    // Optimistic update
     setMenu(menu.map(i => i.id === id ? { ...i, available: newStatus } : i));
 
     try {
       await updateMenuItemAvailability(vendorId, id, newStatus);
     } catch (error) {
-      // Revert on error
+      // Revert
       setMenu(menu.map(i => i.id === id ? { ...i, available: !newStatus } : i));
       Alert.alert("Error", "Failed to update status");
     }
@@ -232,6 +266,7 @@ export default function VendorMenu() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            // Optimistic delete
             setMenu(prev => prev.filter(i => i.id !== id));
             try {
               await deleteMenuItem(vendorId, id);
@@ -249,13 +284,13 @@ export default function VendorMenu() {
     : menu.filter(item => item.category === activeCategory);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* 1. Header */}
       <View style={styles.headerContainer}>
         <LinearGradient
-          colors={["#8B3358", "#591A32"]}
+          colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
@@ -270,7 +305,7 @@ export default function VendorMenu() {
               onPress={toggleForm}
               activeOpacity={0.8}
             >
-              <Ionicons name={isFormVisible ? "close" : "add"} size={24} color="#8B3358" />
+              <Ionicons name={isFormVisible ? "close" : "add"} size={24} color={COLORS_THEME.darkNavy} />
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -284,47 +319,40 @@ export default function VendorMenu() {
             label="Total Items" 
             value={menu.length} 
             icon="restaurant" 
-            color="#3B82F6" 
-            colors={colors} 
+            color={COLORS_THEME.steelBlue} 
           />
           <InventoryStat 
             label="Active" 
             value={menu.filter(i => i.available).length} 
             icon="checkmark-circle" 
-            color="#10B981" 
-            colors={colors} 
+            color={COLORS_THEME.success} 
           />
           <InventoryStat 
             label="Categories" 
             value={categories.length - 1} 
             icon="list" 
-            color="#F59E0B" 
-            colors={colors} 
+            color={COLORS_THEME.warning} 
           />
         </View>
 
         {/* 3. Add Item Form (Collapsible) */}
         {isFormVisible && (
-          <View style={[styles.formCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.formTitle, { color: colors.text }]}>Add New Item</Text>
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Add New Item</Text>
             
             <View style={styles.formRow}>
-              <View style={[styles.inputWrapper, { flex: 2, marginRight: 10 }]}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>Name</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+              <View style={{ flex: 2, marginRight: 12 }}>
+                <FormInput 
+                  label="Item Name"
                   placeholder="E.g. Butter Chicken"
-                  placeholderTextColor={colors.textSecondary + '80'}
                   value={newItem.name}
                   onChangeText={(t) => setNewItem({...newItem, name: t})}
                 />
               </View>
-              <View style={[styles.inputWrapper, { flex: 1 }]}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>Price</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                  placeholder="₹0"
-                  placeholderTextColor={colors.textSecondary + '80'}
+              <View style={{ flex: 1 }}>
+                <FormInput 
+                  label="Price (₹)"
+                  placeholder="0"
                   keyboardType="numeric"
                   value={newItem.price}
                   onChangeText={(t) => setNewItem({...newItem, price: t})}
@@ -332,35 +360,42 @@ export default function VendorMenu() {
               </View>
             </View>
 
-            <View style={styles.inputWrapper}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Category</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                placeholder="E.g. Main Course"
-                placeholderTextColor={colors.textSecondary + '80'}
-                value={newItem.category}
-                onChangeText={(t) => setNewItem({...newItem, category: t})}
-              />
-            </View>
+            <FormInput 
+              label="Category"
+              placeholder="E.g. Main Course"
+              value={newItem.category}
+              onChangeText={(t) => setNewItem({...newItem, category: t})}
+            />
 
-            <View style={styles.inputWrapper}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Description</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, height: 80, textAlignVertical: 'top' }]}
-                placeholder="Describe the dish..."
-                placeholderTextColor={colors.textSecondary + '80'}
-                multiline
-                value={newItem.description}
-                onChangeText={(t) => setNewItem({...newItem, description: t})}
-              />
-            </View>
+            <FormInput 
+              label="Description"
+              placeholder="Brief description of the dish..."
+              multiline
+              value={newItem.description}
+              onChangeText={(t) => setNewItem({...newItem, description: t})}
+            />
 
             <TouchableOpacity 
-              style={[styles.submitBtn, { backgroundColor: colors.primary, opacity: isAdding ? 0.7 : 1 }]}
+              style={styles.submitBtn}
               onPress={addItem}
               disabled={isAdding}
+              activeOpacity={0.9}
             >
-              {isAdding ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Save Item</Text>}
+              <LinearGradient
+                colors={[COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.submitGradient}
+              >
+                {isAdding ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <>
+                    <Text style={styles.submitBtnText}>Save Item</Text>
+                    <Ionicons name="checkmark-circle" size={18} color="#FFF" />
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         )}
@@ -374,15 +409,15 @@ export default function VendorMenu() {
                 style={[
                   styles.catChip, 
                   { 
-                    backgroundColor: activeCategory === cat ? colors.primary : colors.card,
-                    borderColor: activeCategory === cat ? colors.primary : colors.border
+                    backgroundColor: activeCategory === cat ? COLORS_THEME.aeroBlue : COLORS_THEME.white,
+                    borderColor: activeCategory === cat ? COLORS_THEME.aeroBlue : COLORS_THEME.border
                   }
                 ]}
                 onPress={() => setActiveCategory(cat)}
               >
                 <Text style={[
                   styles.catText, 
-                  { color: activeCategory === cat ? '#FFF' : colors.textSecondary }
+                  { color: activeCategory === cat ? '#FFF' : COLORS_THEME.grayText }
                 ]}>{cat}</Text>
               </TouchableOpacity>
             ))}
@@ -391,11 +426,11 @@ export default function VendorMenu() {
 
         {/* 5. Menu List */}
         {isLoading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color={COLORS_THEME.steelBlue} style={{ marginTop: 40 }} />
         ) : filteredMenu.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="food-off" size={48} color={colors.border} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No items found</Text>
+            <MaterialCommunityIcons name="food-off" size={48} color={COLORS_THEME.border} />
+            <Text style={styles.emptyText}>No items found in this category.</Text>
           </View>
         ) : (
           <View style={styles.menuList}>
@@ -403,7 +438,6 @@ export default function VendorMenu() {
               <MenuItemCard 
                 key={item.id}
                 item={item}
-                colors={colors}
                 onToggle={toggleAvailability}
                 onDelete={deleteItem}
               />
@@ -418,7 +452,7 @@ export default function VendorMenu() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: COLORS_THEME.background },
   
   // Header
   headerContainer: {
@@ -428,6 +462,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     zIndex: 10,
     elevation: 5,
+    position: 'absolute', // Keep header fixed
+    top: 0,
+    width: '100%',
   },
   headerGradient: {
     flex: 1,
@@ -443,11 +480,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     color: '#FFF',
+    marginBottom: 2,
   },
   headerSubtitle: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
   },
   addButtonHeader: {
     width: 44,
@@ -466,13 +503,12 @@ const styles = StyleSheet.create({
   // Scroll Content
   scrollContent: {
     paddingHorizontal: 20,
-    marginTop: -40, // Pull up overlap
+    paddingTop: 160, // Push content down to clear the header (140px + 20px gap)
     paddingBottom: 20,
   },
 
   // Stats
   statsRow: {
-    marginTop:50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
@@ -482,9 +518,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     borderRadius: 16,
-    flexDirection: 'row', // Icon left, text right for compactness
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    backgroundColor: COLORS_THEME.white,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -501,10 +538,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 16,
     fontWeight: '800',
+    color: COLORS_THEME.darkNavy,
   },
   statLabel: {
     fontSize: 10,
     fontWeight: '600',
+    color: COLORS_THEME.grayText,
   },
 
   // Form
@@ -512,6 +551,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     marginBottom: 24,
+    backgroundColor: COLORS_THEME.white,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -522,29 +562,46 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 16,
+    color: COLORS_THEME.darkNavy,
   },
   formRow: {
     flexDirection: 'row',
   },
-  inputWrapper: {
+  inputGroup: {
     marginBottom: 16,
   },
-  label: {
+  inputLabel: {
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 6,
+    color: COLORS_THEME.darkNavy,
+    marginLeft: 4,
   },
   input: {
     borderWidth: 1,
+    borderColor: COLORS_THEME.border,
     borderRadius: 12,
     padding: 12,
     fontSize: 15,
+    backgroundColor: COLORS_THEME.inputBg,
+    color: COLORS_THEME.darkNavy,
   },
   submitBtn: {
-    padding: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    overflow: 'hidden',
     marginTop: 8,
+    shadowColor: COLORS_THEME.aeroBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitGradient: {
+    flexDirection: 'row',
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   submitBtnText: {
     color: '#FFF',
@@ -565,7 +622,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    marginRight: 8,
   },
   catText: {
     fontSize: 13,
@@ -579,6 +635,7 @@ const styles = StyleSheet.create({
   menuCard: {
     borderRadius: 16,
     borderLeftWidth: 4,
+    backgroundColor: COLORS_THEME.white,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -598,6 +655,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 4,
+    color: COLORS_THEME.darkNavy,
   },
   categoryPill: {
     backgroundColor: '#F3F4F6',
@@ -608,32 +666,37 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 10,
-    color: '#6B7280',
+    color: COLORS_THEME.grayText,
     fontWeight: '600',
     textTransform: 'uppercase',
   },
   cardPrice: {
     fontSize: 16,
     fontWeight: '700',
+    color: COLORS_THEME.steelBlue,
   },
   cardDesc: {
     fontSize: 13,
     lineHeight: 18,
+    color: COLORS_THEME.grayText,
     marginBottom: 12,
   },
   divider: {
     height: 1,
+    backgroundColor: '#F3F4F6',
     marginBottom: 12,
-    opacity: 0.5,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  statusContainer: {
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
     gap: 6,
   },
   statusDot: {
@@ -642,8 +705,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
   },
   actions: {
     flexDirection: 'row',
@@ -653,8 +716,11 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS_THEME.border,
   },
 
   // Empty State
@@ -667,5 +733,6 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 10,
     fontSize: 14,
+    color: COLORS_THEME.grayText,
   },
 });

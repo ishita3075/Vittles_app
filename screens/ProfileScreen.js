@@ -177,6 +177,13 @@ export default function ProfileScreen({ navigation }) {
   // --- Data ---
   const accountItems = [
     { icon: "receipt-outline", title: "Order History", onPress: () => navigation.navigate("Account", { screen: "OrderHistory" }), color: "#F59E0B" },
+    { 
+    icon: "star-outline", 
+    title: "Reviews", 
+    onPress: () => navigation.navigate("MyReviews", { restaurantName: "Recent Order" }), 
+    color: "#7CB9E8" 
+  },
+    
   ];
 
   const appItems = [

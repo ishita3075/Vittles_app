@@ -155,7 +155,7 @@ const OrderCard = ({ order, navigation, index }) => {
           </View>
           <View>
             <Text style={styles.restaurantName}>{order.restaurant}</Text>
-            <Text style={styles.orderDate}>{order.date}</Text>
+            <Text style={styles.orderDate}>{formatDate(order.date)}</Text>
           </View>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: getStatusBg(order.status) }]}>
@@ -179,7 +179,10 @@ const OrderCard = ({ order, navigation, index }) => {
       <View style={styles.actionRow}>
         <TouchableOpacity
           style={styles.outlineBtn}
-          onPress={() => navigation.navigate('OrderDetails', { orderId: order.id })}
+          onPress={() => navigation.navigate('OrderDetails', { order: {
+             ...order,
+             date: formatDate(order.date)
+          }})}
         >
           <Text style={styles.outlineBtnText}>Details</Text>
         </TouchableOpacity>
@@ -215,7 +218,9 @@ export default function OrderHistoryScreen({ navigation }) {
   // --- Data Fetching ---
   const fetchOrders = async () => {
     try {
+      setIsLoading(true);
       const customerId = user?.id || user?.userId || user?._id;
+      
       if (!customerId) {
         console.log("No customer ID found");
         setIsLoading(false);
@@ -228,24 +233,26 @@ export default function OrderHistoryScreen({ navigation }) {
       const formatted = response.map(row => {
         // Calculate item count safely
         let itemCount = 0;
-        if (Array.isArray(row.items)) {
+        if (Array.isArray(row.itemsList)) {
+          itemCount = row.itemsList.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        } else if (Array.isArray(row.items)) {
           itemCount = row.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
         } else {
-          itemCount = row.quantity || 1;
+          itemCount = row.quantity || row.items || 1;
         }
 
         return {
-          id: row._id || row.id, // Handle MongoDB _id or SQL id
-          restaurant: row.vendorName || "Unknown Restaurant",
-          date: formatDate(row.createdAt || new Date()),
+          id: row._id || row.id,
+          restaurant: row.restaurant || row.vendorName || "Unknown Restaurant",
+          date: row.date || row.createdAt || new Date().toISOString(),
           status: formatStatus(row.status),
           items: itemCount,
-          total: `₹${row.grandTotal || row.totalPrice || 0}`,
-          type: "Delivery",
+          total: row.total || `₹${row.grandTotal || row.totalPrice || 0}`,
+          type: row.type || "Delivery",
+          itemsList: row.itemsList || row.items || [] 
         };
       });
 
-      // Sort by date descending (newest first) if date exists
       formatted.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       setAllOrders(formatted);
@@ -281,7 +288,6 @@ export default function OrderHistoryScreen({ navigation }) {
     setFilteredOrders(filtered);
   }, [searchQuery, activeFilter, allOrders]);
 
-  // --- Back Handler ---
   useEffect(() => {
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
       navigation.navigate("Profile");
@@ -290,7 +296,7 @@ export default function OrderHistoryScreen({ navigation }) {
     return () => backHandler.remove();
   }, [navigation]);
 
-  // --- Render Header Component (Stats + Search) ---
+  // --- Render Header Component ---
   const renderHeader = () => (
     <View style={styles.contentHeader}>
       {/* Stats Card */}
@@ -370,7 +376,6 @@ export default function OrderHistoryScreen({ navigation }) {
           </View>
           <Text style={styles.headerSubtitle}>Past meals & yummy deals</Text>
           
-          {/* Decor Circles */}
           <View style={styles.decorCircle} />
         </LinearGradient>
       </View>
@@ -422,7 +427,7 @@ export default function OrderHistoryScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS_THEME.background },
 
-  // Header
+  // Header Styles (Non-sticky now)
   headerBackground: {
     height: 180,
     width: '100%',
@@ -435,13 +440,15 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? 40 : 50,
+    paddingTop: Platform.OS === 'android' ? 50 : 60,
     paddingHorizontal: 20,
+    alignItems: 'center',
   },
   navBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
   },
   backButton: {
     width: 40,
@@ -475,7 +482,6 @@ const styles = StyleSheet.create({
   // List Wrapper
   listContainerWrapper: {
     flex: 1,
-    marginTop: 0, // FlatList handles overlap via padding
   },
   flatListContent: {
     paddingTop: 140, // Pushes content down to start below header visually
@@ -499,6 +505,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 8,
+    marginTop: -40, // Pull up to overlap the header gradient
     marginBottom: 20,
   },
   statItem: {
@@ -651,7 +658,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: COLORS_THEME.border,
+    borderColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
