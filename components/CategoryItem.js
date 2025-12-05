@@ -27,22 +27,26 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginRight: 10,
     minWidth: 80,
-    elevation: 1,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  categoryItemSelected: { 
-    backgroundColor: "#FF6B6B" 
+  categoryItemSelected: {
+    backgroundColor: "#7CB9E8", // Aero Blue
   },
-  categoryIcon: { 
-    fontSize: 24, 
-    marginBottom: 5 
+  categoryIcon: {
+    fontSize: 24,
+    marginBottom: 5
   },
-  categoryName: { 
-    fontSize: 12, 
-    fontWeight: "600", 
-    color: "#666" 
+  categoryName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6B7280" // Gray Text
   },
-  categoryNameSelected: { 
-    color: "#fff" 
+  categoryNameSelected: {
+    color: "#fff"
   },
 });
 

@@ -19,19 +19,23 @@ const CategoriesList = ({ categories, selectedCategory, onCategorySelect }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{ marginTop: 10 }}
+        contentContainerStyle={{
+          paddingHorizontal: 5,
+          paddingBottom: 10 // Prevent shadow clipping
+        }}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  categoriesSection: { 
-    paddingHorizontal: 15, 
-    marginBottom: 20 
+  categoriesSection: {
+    paddingHorizontal: 15,
+    marginBottom: 20
   },
-  sectionTitle: { 
-    fontSize: 20, 
-    fontWeight: "bold" 
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold"
   },
 });
 

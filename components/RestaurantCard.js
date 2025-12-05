@@ -17,8 +17,8 @@ const PALETTE = {
   aeroBlue: "#7CB9E8",
   steelBlue: "#5A94C4",
   darkNavy: "#0A2342",
-  success: "#10B981", 
-  warning: "#F59E0B", 
+  success: "#10B981",
+  warning: "#F59E0B",
   white: "#FFFFFF",
   grayText: "#6B7280",
   overlay: 'rgba(0, 0, 0, 0.4)'
@@ -64,28 +64,25 @@ const RestaurantCard = ({ restaurant }) => {
       {/* --- Top Section: Immersive Image --- */}
       <View style={styles.imageContainer}>
         {renderImage()}
-        
+
         {/* Gradient for text contrast on image */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.7)']}
           style={styles.gradientOverlay}
         />
 
-        {/* Top Left: Discount Tag */}
-        
-
         {/* Top Right: Favorite Icon Placeholder */}
         <View style={styles.favoriteButton}>
-           <Ionicons name="heart-outline" size={20} color="#FFF" />
+          <Ionicons name="heart-outline" size={20} color="#FFF" />
         </View>
 
         {/* Bottom Right of Image: Info Chips */}
         <View style={styles.imageInfoRow}>
           <View style={styles.glassChip}>
-            <Ionicons name="time" size={12} color="#FFF" style={{marginRight: 4}} />
+            <Ionicons name="time" size={12} color="#FFF" style={{ marginRight: 4 }} />
             <Text style={styles.glassText}>{restaurant.time || '25 min'}</Text>
           </View>
-          
+
         </View>
       </View>
 
@@ -96,18 +93,12 @@ const RestaurantCard = ({ restaurant }) => {
           <Text style={styles.name} numberOfLines={1}>
             {restaurant.name}
           </Text>
-          
+
           <View style={[styles.ratingPill, { backgroundColor: getRatingColor(restaurant.rating) }]}>
             <Text style={styles.ratingText}>{restaurant.rating}</Text>
             <Ionicons name="star" size={10} color="#FFF" style={{ marginLeft: 2 }} />
           </View>
         </View>
-
-        {/* Cuisine Subtitle */}
-        
-
-        {/* Divider */}
-        <View style={styles.divider} />
 
         {/* Footer: Prominent Call to Action or Status */}
         <View style={styles.footerRow}>
@@ -115,7 +106,7 @@ const RestaurantCard = ({ restaurant }) => {
             <Ionicons name="bag-check" size={14} color={PALETTE.steelBlue} />
             <Text style={styles.footerText}>Self Pickup</Text>
           </View>
-          
+
           {/* Optional Price indicator */}
         </View>
       </View>
@@ -125,22 +116,28 @@ const RestaurantCard = ({ restaurant }) => {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
-    marginBottom: 20,
-    width: '100%',
-    backgroundColor: '#FFF',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 4,
+    borderRadius: 20, // Increased radius
+    marginBottom: 24, // More spacing
+    overflow: 'visible', // Allow shadows to spill out
+    // Premium Shadow
+    shadowColor: "#0A2342",
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
-    overflow: 'hidden',
+    borderColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: '#FFF',
   },
   imageContainer: {
-    height: 180,
+    height: 200, // Taller image
     width: '100%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
     position: 'relative',
     backgroundColor: '#E5E7EB',
   },
@@ -150,81 +147,62 @@ const styles = StyleSheet.create({
   },
   gradientOverlay: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
-    height: 80, // Fade only at bottom
-  },
-  
-  // Overlays
-  discountTag: {
-    position: 'absolute',
-    top: 12,
-    left: 0,
-    backgroundColor: PALETTE.steelBlue,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  discountText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    bottom: 0,
+    height: '60%', // Higher gradient
   },
   favoriteButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 16,
+    right: 16,
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.25)', // Glassy
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   imageInfoRow: {
     position: 'absolute',
-    bottom: 12,
-    right: 12,
+    bottom: 16,
+    right: 16,
     flexDirection: 'row',
     gap: 8,
   },
   glassChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)', // Glassmorphism effect
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   glassText: {
     color: '#FFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
-
-  // Info Section
   infoContainer: {
-    padding: 14,
+    padding: 16,
+    paddingTop: 14,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
+    alignItems: 'flex-start',
+    marginBottom: 6,
   },
   name: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: PALETTE.darkNavy,
+    fontSize: 20, // Larger font
+    fontWeight: '800', // Extra bold
+    color: '#111827',
     flex: 1,
     marginRight: 8,
     letterSpacing: -0.5,
@@ -232,30 +210,22 @@ const styles = StyleSheet.create({
   ratingPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   ratingText: {
     color: '#FFF',
     fontSize: 12,
-    fontWeight: '800',
-  },
-  cuisine: {
-    fontSize: 13,
-    color: PALETTE.grayText,
-    marginBottom: 12,
-    fontWeight: '500',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginBottom: 10,
+    fontWeight: '700',
   },
   footerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
   footerTag: {
     flexDirection: 'row',
@@ -263,14 +233,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   footerText: {
-    fontSize: 12,
-    color: PALETTE.steelBlue,
+    fontSize: 13,
+    color: '#374151',
     fontWeight: '600',
-  },
-  priceText: {
-    fontSize: 12,
-    color: PALETTE.grayText,
-    fontWeight: '500',
   },
 });
 

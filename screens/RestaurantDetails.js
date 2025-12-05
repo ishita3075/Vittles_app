@@ -45,6 +45,15 @@ const COLORS_THEME = {
   card: "#FFFFFF",
   aeroBlueLight: "rgba(124, 185, 232, 0.15)",
   error: "#EF4444",
+  success: "#10B981",
+  warning: "#F59E0B",
+};
+
+const getRatingColor = (rating) => {
+  const score = parseFloat(rating);
+  if (score >= 4.0) return COLORS_THEME.success;
+  if (score >= 3.0) return COLORS_THEME.warning;
+  return COLORS_THEME.error;
 };
 
 // --- Menu Item Skeleton ---
@@ -322,7 +331,7 @@ export default function RestaurantDetails() {
             <View style={styles.nameRow}>
               <Text style={[styles.resName, { color: colors.text }]}>{restaurant.name}</Text>
               {/* Rating Pill */}
-              <View style={styles.ratingBox}>
+              <View style={[styles.ratingBox, { backgroundColor: getRatingColor(restaurant.rating) }]}>
                 <Text style={styles.ratingText}>{restaurant.rating}</Text>
                 <Ionicons name="star" size={10} color="#FFF" style={{ marginLeft: 2 }} />
               </View>
@@ -454,7 +463,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.05)',
-    shadowColor: "#000",
+    shadowColor: "#0A2342",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -477,7 +486,7 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     paddingHorizontal: 16,
     minHeight: height,
-    shadowColor: "#000",
+    shadowColor: "#0A2342",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -672,7 +681,7 @@ const styles = StyleSheet.create({
   addBtnWrapper: {
     width: '100%',
     height: '100%',
-    shadowColor: "#000",
+    shadowColor: "#0A2342",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 5,
@@ -712,7 +721,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderWidth: 1,
     borderColor: COLORS_THEME.steelBlue,
-    shadowColor: COLORS_THEME.steelBlue,
+    shadowColor: "#0A2342",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -763,7 +772,7 @@ const styles = StyleSheet.create({
   cartButton: {
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: COLORS_THEME.steelBlue,
+    shadowColor: "#0A2342",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
     shadowRadius: 20,

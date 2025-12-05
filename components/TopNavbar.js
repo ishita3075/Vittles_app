@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   },
   avatarWrapper: {
     marginRight: 14,
-    shadowColor: "#000",
+    shadowColor: "#0A2342",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   },
   searchSection: {
     color: 'rgba(0,0,0,0)',
-    shadowColor: "#000",
+    shadowColor: "#0A2342",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     height: 15,
     marginTop: -15,
     backgroundColor: 'transparent',
-    shadowColor: '#000',
+    shadowColor: '#0A2342',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 8,

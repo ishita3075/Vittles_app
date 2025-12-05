@@ -19,7 +19,7 @@ import TopNavbar from "../components/TopNavbar";
 import CategoriesList from "../components/CategoriesList";
 import NearbyRestaurants from "../components/NearbyRestaurants";
 import { useTheme } from "../contexts/ThemeContext";
-import { getAllVendors } from '../api';
+import { getAllVendors, getVendorMenu } from '../api';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android') {
@@ -38,7 +38,19 @@ const COLORS = {
   card: "#FFFFFF",
   white: "#FFFFFF",
   grayText: "#6B7280",
+  background: "#F9FAFB", // Cool Gray 50
 };
+
+// --- CATEGORIES DATA ---
+const CATEGORIES = [
+  { id: "all", name: "All", icon: "🍽️" },
+  { id: "burger", name: "Burger", icon: "🍔" },
+  { id: "pizza", name: "Pizza", icon: "🍕" },
+  { id: "chai", name: "Chai", icon: "☕" },
+  { id: "dessert", name: "Dessert", icon: "🍰" },
+  { id: "icecream", name: "Ice cream", icon: "🍦" },
+  { id: "drinks", name: "Drinks", icon: "🥤" },
+];
 
 // --- Responsive Utilities ---
 const { width, height } = Dimensions.get('window');
@@ -79,7 +91,10 @@ const RestaurantSkeleton = () => (
 // --- Data Transformation ---
 const transformVendorToRestaurant = (vendor) => {
   // Enhanced fallback logic
-  const cuisineTypes = ["North Indian", "South Indian", "Chinese", "Italian", "Mexican", "Thai", "Healthy", "Bakery"];
+  const cuisineTypes = [
+    "North Indian", "South Indian", "Chinese", "Italian", "Mexican", "Thai", "Ice cream", "Bakery",
+    "Burger", "Pizza", "Chai", "Dessert", "Drinks"
+  ];
   const defaultCuisine = cuisineTypes[Math.floor(Math.random() * cuisineTypes.length)];
 
   return {
@@ -93,6 +108,7 @@ const transformVendorToRestaurant = (vendor) => {
     discount: vendor.discount || (Math.random() > 0.6 ? "20% OFF" : null),
     isPureVeg: vendor.isPureVeg || Math.random() > 0.8,
     image: vendor.image || vendor.image_url || null, // Let NearbyRestaurants handle fallback
+    menu: vendor.menu || [], // Pass menu data through
     vendorData: vendor
   };
 };
@@ -112,12 +128,27 @@ export default function HomeScreen({ navigation }) {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      // Simulate network delay for skeleton showcase if needed
-      // await new Promise(r => setTimeout(r, 1500)); 
 
       const vendorsData = await getAllVendors();
       const rawData = Array.isArray(vendorsData) ? vendorsData : (vendorsData ? [vendorsData] : []);
-      const restaurants = rawData.map(transformVendorToRestaurant);
+
+      // Fetch menus for all vendors in parallel to enable deep filtering
+      const vendorsWithMenus = await Promise.all(
+        rawData.map(async (vendor) => {
+          try {
+            const vendorId = vendor.id || vendor.vendor_id;
+            if (!vendorId) return { ...vendor, menu: [] };
+
+            const menu = await getVendorMenu(vendorId);
+            return { ...vendor, menu: Array.isArray(menu) ? menu : [] };
+          } catch (e) {
+            console.log(`Failed to fetch menu for vendor ${vendor.id}`, e);
+            return { ...vendor, menu: [] };
+          }
+        })
+      );
+
+      const restaurants = vendorsWithMenus.map(transformVendorToRestaurant);
 
       setVendors(restaurants);
       setFilteredRestaurants(restaurants);
@@ -154,9 +185,19 @@ export default function HomeScreen({ navigation }) {
 
     // 2. Category
     if (selectedCategory && selectedCategory !== "all") {
-      result = result.filter(r =>
-        r.cuisine.toLowerCase().includes(selectedCategory.toLowerCase())
-      );
+      result = result.filter(r => {
+        const category = selectedCategory.toLowerCase();
+        // Check cuisine
+        const cuisineMatch = r.cuisine.toLowerCase().includes(category);
+        // Check menu items
+        const menuMatch = r.menu.some(item =>
+          (item.itemName || item.name || "").toLowerCase().includes(category) ||
+          (item.category || "").toLowerCase().includes(category) ||
+          (item.description || "").toLowerCase().includes(category)
+        );
+
+        return cuisineMatch || menuMatch;
+      });
     }
 
     setFilteredRestaurants(result);
@@ -174,7 +215,7 @@ export default function HomeScreen({ navigation }) {
   }, [navigation]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
       {/* TopNavbar stays fixed at the top. 
         It handles its own SafeAreaView logic internally.
       */}
@@ -199,12 +240,20 @@ export default function HomeScreen({ navigation }) {
       >
         {/* 1. Promo Carousel */}
         <View style={styles.carouselSection}>
+          <View style={[styles.sectionHeader, { paddingHorizontal: responsive.spacing.lg, marginBottom: responsive.spacing.sm }]}>
+            <Text style={[styles.sectionTitle, { color: COLORS.darkNavy }]}>
+              Recommended for you
+            </Text>
+          </View>
           <PromoCarousel />
         </View>
 
         {/* 2. Categories List (Horizontal) */}
-        {/* We assume CategoriesList handles its own UI and callbacks */}
-
+        <CategoriesList
+          categories={CATEGORIES}
+          selectedCategory={selectedCategory}
+          onCategorySelect={setSelectedCategory}
+        />
 
         {/* 4. Main Restaurant List */}
         <View style={styles.listSection}>
@@ -233,19 +282,6 @@ export default function HomeScreen({ navigation }) {
               onRestaurantPress={handleRestaurantPress}
             />
           )}
-
-          {/* Empty State */}
-          {!loading && filteredRestaurants.length === 0 && (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconBg}>
-                <Ionicons name="search" size={32} color={COLORS.grayText} />
-              </View>
-              <Text style={[styles.emptyTitle, { color: COLORS.darkNavy }]}>No restaurants found</Text>
-              <Text style={[styles.emptyDesc, { color: COLORS.grayText }]}>
-                We couldn't find anything matching "{searchQuery}". Try different keywords.
-              </Text>
-            </View>
-          )}
         </View>
 
         {/* Bottom Padding for TabBar */}
@@ -269,10 +305,10 @@ const styles = StyleSheet.create({
   categoriesSection: {
     marginBottom: responsive.spacing.md,
   },
-
   // List Section
   listSection: {
     paddingHorizontal: responsive.spacing.lg,
+    paddingBottom: 40,
   },
   sectionHeader: {
     flexDirection: 'row',
