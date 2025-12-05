@@ -181,8 +181,10 @@ const OrderCard = ({ order, navigation, index }) => {
           style={styles.outlineBtn}
           onPress={() => navigation.navigate('OrderDetails', { order: {
              ...order,
-             date: formatDate(order.date)
+             date: formatDate(order.date),
+             itemsList: order._itemsList || []   // ADD THIS
           }})}
+
         >
           <Text style={styles.outlineBtnText}>Details</Text>
         </TouchableOpacity>
@@ -219,8 +221,9 @@ export default function OrderHistoryScreen({ navigation }) {
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
+
       const customerId = user?.id || user?.userId || user?._id;
-      
+
       if (!customerId) {
         console.log("No customer ID found");
         setIsLoading(false);
@@ -228,35 +231,64 @@ export default function OrderHistoryScreen({ navigation }) {
         return;
       }
 
-      const response = await getOrdersByCustomer(customerId);
-      
-      const formatted = response.map(row => {
-        // Calculate item count safely
-        let itemCount = 0;
-        if (Array.isArray(row.itemsList)) {
-          itemCount = row.itemsList.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        } else if (Array.isArray(row.items)) {
-          itemCount = row.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        } else {
-          itemCount = row.quantity || row.items || 1;
+      // 1️⃣ Fetch raw orders from backend
+      const raw = await getOrdersByCustomer(customerId);
+      console.log("RAW ORDERS >>>", raw);
+
+      // 2️⃣ Group by orderId
+      const grouped = {};
+
+      raw.forEach(order => {
+        const oid = order.orderId;
+        if (!oid) return;
+
+        if (!grouped[oid]) {
+          grouped[oid] = {
+            id: oid,
+            restaurant: order.vendorName,
+            items: 0,
+            total: 0,
+            status: order.status,
+            date: order.createdAt || order.date || new Date().toISOString(),
+            type: "Delivery",
+            _itemsList: []   // ADD THIS
+          };
         }
 
-        return {
-          id: row._id || row.id,
-          restaurant: row.restaurant || row.vendorName || "Unknown Restaurant",
-          date: row.date || row.createdAt || new Date().toISOString(),
-          status: formatStatus(row.status),
-          items: itemCount,
-          total: row.total || `₹${row.grandTotal || row.totalPrice || 0}`,
-          type: row.type || "Delivery",
-          itemsList: row.itemsList || row.items || [] 
-        };
+        // Add item details
+        grouped[oid]._itemsList.push({
+          menuName: order.menuName,
+          quantity: Number(order.quantity || 1),
+          price: Number(order.totalPrice || 0)
+        });
+
+
+        // Add item count
+        grouped[oid].items += Number(order.quantity ?? 1);
+
+        // Add price
+        grouped[oid].total += Number(order.totalPrice ?? 0);
+
+        // Update status priority
+        const normalize = formatStatus(order.status);
+        grouped[oid].status = normalize;
       });
 
+      // 3️⃣ Convert object → array
+      const formatted = Object.values(grouped).map(o => ({
+        ...o,
+        total: `₹${o.total}`,
+      }));
+
+      // 4️⃣ Sort by date
       formatted.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+      console.log("FINAL ORDER HISTORY >>>", formatted);
+
+      // 5️⃣ Assign to UI lists
       setAllOrders(formatted);
       setFilteredOrders(formatted);
+
     } catch (err) {
       console.log("Error loading order history:", err);
     } finally {
@@ -264,6 +296,7 @@ export default function OrderHistoryScreen({ navigation }) {
       setRefreshing(false);
     }
   };
+
 
   useEffect(() => {
     fetchOrders();

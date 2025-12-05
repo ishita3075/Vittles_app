@@ -175,7 +175,7 @@ export const updateVendor = async (vendorId, vendorData) => {
   }
 };
 
-export const getOrdersByVendor = async (vendorId) => {
+    export const getOrdersByVendor = async (vendorId) => {
   try {
     const response = await vendorApi.get(`/orders/vendor/${vendorId}`);
     return response.data;
@@ -184,6 +184,18 @@ export const getOrdersByVendor = async (vendorId) => {
     throw error;
   }
 };
+
+export const getOrdersByCustomer = async (customerId) => {
+  try {
+    const response = await vendorApi.get(`/orders/customer/${customerId}`);
+    return response.data; // ALWAYS return axios data
+  } catch (error) {
+    console.error("getOrdersByCustomer ERROR:", error.response?.data || error);
+    throw error;
+  }
+};
+
+
 
 export const placeOrder = async (orderData) => {
   try {
