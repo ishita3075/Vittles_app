@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
+  ScrollView,
   StyleSheet,
   Alert,
-  Keyboard,
-  ScrollView,
   StatusBar,
   ActivityIndicator,
-  Animated,
   LayoutAnimation,
   Platform,
   UIManager,
@@ -19,11 +16,8 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { getVendorMenu, addMenuItem, updateMenuItemAvailability, deleteMenuItem } from "../api";
-
-const { width } = Dimensions.get('window');
 
 // Enable LayoutAnimation
 if (Platform.OS === 'android') {
@@ -32,7 +26,7 @@ if (Platform.OS === 'android') {
   }
 }
 
-// --- PALETTE CONSTANTS (Aero Blue Theme) ---
+// --- PALETTE CONSTANTS ---
 const COLORS_THEME = {
   aeroBlue: "#7CB9E8",
   steelBlue: "#5A94C4",
@@ -42,12 +36,35 @@ const COLORS_THEME = {
   background: "#F9FAFB",
   border: "rgba(0,0,0,0.08)",
   card: "#FFFFFF",
-  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
-  success: "#10B981",
-  warning: "#F59E0B",
-  error: "#EF4444",
-  inputBg: "#F3F4F6"
+  inputBg: "#F3F4F6",
+  success: "#10B981", 
+  error: "#EF4444",   
+  veg: "#16A34A",     
+  nonVeg: "#DC2626",  
 };
+
+// --- Helper: Veg/Non-Veg Icon (SMALLER SIZE) ---
+const VegIndicator = ({ isVeg, size = 12 }) => (
+  <View style={[
+    styles.vegIconBorder, 
+    { 
+      width: size, 
+      height: size, 
+      borderRadius: 2, // Slightly rounded square
+      borderColor: isVeg ? COLORS_THEME.veg : COLORS_THEME.nonVeg 
+    }
+  ]}>
+    <View style={[
+      styles.vegIconDot, 
+      { 
+        backgroundColor: isVeg ? COLORS_THEME.veg : COLORS_THEME.nonVeg,
+        width: size * 0.5, // Dot is half the size of box
+        height: size * 0.5,
+        borderRadius: size * 0.5
+      }
+    ]} />
+  </View>
+);
 
 // --- Helper: Inventory Stat Pill ---
 const InventoryStat = ({ label, value, icon, color }) => (
@@ -72,7 +89,11 @@ const MenuItemCard = ({ item, onToggle, onDelete }) => {
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
           <View style={{ flex: 1, marginRight: 12 }}>
-            <Text style={styles.cardTitle}>{item.name}</Text>
+            <View style={styles.titleRow}>
+              {/* Small Veg Indicator (12px) */}
+              <VegIndicator isVeg={item.isVeg} size={12} />
+              <Text style={styles.cardTitle}>{item.name}</Text>
+            </View>
             <View style={styles.categoryPill}>
               <Text style={styles.categoryText}>{item.category}</Text>
             </View>
@@ -143,7 +164,7 @@ const FormInput = ({ label, value, onChangeText, placeholder, keyboardType, mult
 
 export default function VendorMenu() {
   const [menu, setMenu] = useState([]);
-  const [newItem, setNewItem] = useState({ name: "", price: "", category: "", description: "" });
+  const [newItem, setNewItem] = useState({ name: "", price: "", category: "", description: "", isVeg: true });
   const [activeCategory, setActiveCategory] = useState("All");
   const [categories, setCategories] = useState(["All"]);
   
@@ -169,7 +190,8 @@ export default function VendorMenu() {
           price: item.price?.toString() || "0",
           available: item.available === 1 || item.available === true,
           category: item.category || "Uncategorized",
-          description: item.description || "No description available"
+          description: item.description || "No description available",
+          isVeg: item.isVeg !== undefined ? item.isVeg : true 
         }));
         setMenu(transformedMenu);
         updateCategoriesList(transformedMenu);
@@ -207,7 +229,8 @@ export default function VendorMenu() {
         price: parseFloat(newItem.price),
         category: itemCategory,
         description: newItem.description || "",
-        available: true
+        available: true,
+        isVeg: newItem.isVeg 
       };
 
       const response = await addMenuItem(vendorId, payload);
@@ -218,7 +241,8 @@ export default function VendorMenu() {
         price: response.price,
         category: response.category,
         description: response.description,
-        available: response.available
+        available: response.available,
+        isVeg: response.isVeg
       };
 
       setMenu(prev => [...prev, newLocalItem]);
@@ -227,7 +251,7 @@ export default function VendorMenu() {
         setCategories(prev => [...prev, response.category]);
       }
 
-      setNewItem({ name: "", price: "", category: "", description: "" });
+      setNewItem({ name: "", price: "", category: "", description: "", isVeg: true });
       setIsFormVisible(false);
       Alert.alert("Success", "Item added to menu");
 
@@ -244,13 +268,11 @@ export default function VendorMenu() {
     if (!item) return;
 
     const newStatus = !item.available;
-    // Optimistic update
     setMenu(menu.map(i => i.id === id ? { ...i, available: newStatus } : i));
 
     try {
       await updateMenuItemAvailability(vendorId, id, newStatus);
     } catch (error) {
-      // Revert
       setMenu(menu.map(i => i.id === id ? { ...i, available: !newStatus } : i));
       Alert.alert("Error", "Failed to update status");
     }
@@ -266,7 +288,6 @@ export default function VendorMenu() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            // Optimistic delete
             setMenu(prev => prev.filter(i => i.id !== id));
             try {
               await deleteMenuItem(vendorId, id);
@@ -331,7 +352,7 @@ export default function VendorMenu() {
             label="Categories" 
             value={categories.length - 1} 
             icon="list" 
-            color={COLORS_THEME.warning} 
+            color={COLORS_THEME.aeroBlue} 
           />
         </View>
 
@@ -366,6 +387,42 @@ export default function VendorMenu() {
               value={newItem.category}
               onChangeText={(t) => setNewItem({...newItem, category: t})}
             />
+
+            {/* --- VEG / NON-VEG TOGGLE --- */}
+            <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Dietary Type</Text>
+                <View style={styles.vegToggleContainer}>
+                    <TouchableOpacity 
+                        style={[
+                            styles.vegOption, 
+                            newItem.isVeg && { backgroundColor: '#ECFDF5', borderColor: COLORS_THEME.veg }
+                        ]}
+                        onPress={() => setNewItem({...newItem, isVeg: true})}
+                        activeOpacity={0.7}
+                    >
+                        <VegIndicator isVeg={true} size={16} />
+                        <Text style={[
+                            styles.vegOptionText, 
+                            newItem.isVeg && { color: COLORS_THEME.veg, fontWeight: '700' }
+                        ]}>Veg</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={[
+                            styles.vegOption, 
+                            !newItem.isVeg && { backgroundColor: '#FEF2F2', borderColor: COLORS_THEME.nonVeg }
+                        ]}
+                        onPress={() => setNewItem({...newItem, isVeg: false})}
+                        activeOpacity={0.7}
+                    >
+                        <VegIndicator isVeg={false} size={16} />
+                        <Text style={[
+                            styles.vegOptionText, 
+                            !newItem.isVeg && { color: COLORS_THEME.nonVeg, fontWeight: '700' }
+                        ]}>Non-Veg</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
 
             <FormInput 
               label="Description"
@@ -454,6 +511,16 @@ export default function VendorMenu() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS_THEME.background },
   
+  // Veg Icon Styles
+  vegIconBorder: {
+      borderWidth: 1, // Kept thin for small size
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  vegIconDot: {
+      // styles handled inline for dynamic sizing
+  },
+  
   // Header
   headerContainer: {
     height: 140,
@@ -462,7 +529,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     zIndex: 10,
     elevation: 5,
-    position: 'absolute', // Keep header fixed
+    position: 'absolute',
     top: 0,
     width: '100%',
   },
@@ -503,7 +570,7 @@ const styles = StyleSheet.create({
   // Scroll Content
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 160, // Push content down to clear the header (140px + 20px gap)
+    paddingTop: 160,
     paddingBottom: 20,
   },
 
@@ -586,6 +653,30 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS_THEME.inputBg,
     color: COLORS_THEME.darkNavy,
   },
+  
+  // Veg Toggle Styles
+  vegToggleContainer: {
+      flexDirection: 'row',
+      gap: 12,
+  },
+  vegOption: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: COLORS_THEME.border,
+      borderRadius: 12,
+      gap: 8,
+      backgroundColor: COLORS_THEME.inputBg
+  },
+  vegOptionText: {
+      fontSize: 14,
+      color: COLORS_THEME.grayText,
+      fontWeight: '500'
+  },
+
   submitBtn: {
     borderRadius: 12,
     overflow: 'hidden',
@@ -651,11 +742,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
+  titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 4,
+      flex: 1, 
+  },
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 4,
     color: COLORS_THEME.darkNavy,
+    flexShrink: 1, // Ensures text wraps if too long
   },
   categoryPill: {
     backgroundColor: '#F3F4F6',

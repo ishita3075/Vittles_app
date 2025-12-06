@@ -10,8 +10,8 @@ import {
   Platform,
   UIManager,
   TouchableOpacity,
-  ActivityIndicator,
-  Animated
+  Modal,
+  FlatList
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import PromoCarousel from '../components/PromoCarousel';
@@ -30,15 +30,16 @@ if (Platform.OS === 'android') {
 
 // --- PALETTE CONSTANTS (Aero Blue Theme) ---
 const COLORS = {
-  aeroBlue: "#7CB9E8",          // Primary Light Blue
-  steelBlue: "#5A94C4",         // Mid Blue (Accents)
-  darkNavy: "#0A2342",          // Deep Blue (Text/Dark Mode)
+  aeroBlue: "#7CB9E8",          
+  steelBlue: "#5A94C4",         
+  darkNavy: "#0A2342",          
   aeroBlueLight: "rgba(124, 185, 232, 0.1)",
   border: "rgba(0,0,0,0.05)",
   card: "#FFFFFF",
   white: "#FFFFFF",
   grayText: "#6B7280",
-  background: "#F9FAFB", // Cool Gray 50
+  background: "#F9FAFB",
+  success: "#059669", 
 };
 
 // --- CATEGORIES DATA ---
@@ -53,15 +54,11 @@ const CATEGORIES = [
 ];
 
 // --- Responsive Utilities ---
-const { width, height } = Dimensions.get('window');
-const GUIDELINE_WIDTH = 375;
-const scale = (size) => (width / GUIDELINE_WIDTH) * size;
-const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
+const { width } = Dimensions.get('window');
+const moderateScale = (size, factor = 0.5) => size + ((width / 375) * size - size) * factor;
 
 const responsive = {
-  spacing: {
-    xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32
-  },
+  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 },
   font: {
     sm: moderateScale(12),
     md: moderateScale(14),
@@ -72,25 +69,17 @@ const responsive = {
 };
 
 // --- Helper Components ---
-
-// 2. Skeleton Loader Component (Premium Feel)
 const RestaurantSkeleton = () => (
   <View style={styles.skeletonCard}>
     <View style={styles.skeletonImage} />
     <View style={styles.skeletonContent}>
       <View style={[styles.skeletonLine, { width: '60%', height: 16, marginBottom: 8 }]} />
       <View style={[styles.skeletonLine, { width: '40%', height: 12, marginBottom: 8 }]} />
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View style={[styles.skeletonLine, { width: 40, height: 12 }]} />
-        <View style={[styles.skeletonLine, { width: 40, height: 12 }]} />
-      </View>
     </View>
   </View>
 );
 
-// --- Data Transformation ---
 const transformVendorToRestaurant = (vendor) => {
-  // Enhanced fallback logic
   const cuisineTypes = [
     "North Indian", "South Indian", "Chinese", "Italian", "Mexican", "Thai", "Ice cream", "Bakery",
     "Burger", "Pizza", "Chai", "Dessert", "Drinks"
@@ -107,8 +96,8 @@ const transformVendorToRestaurant = (vendor) => {
     price: vendor.price || "₹200 for one",
     discount: vendor.discount || (Math.random() > 0.6 ? "20% OFF" : null),
     isPureVeg: vendor.isPureVeg || Math.random() > 0.8,
-    image: vendor.image || vendor.image_url || null, // Let NearbyRestaurants handle fallback
-    menu: vendor.menu || [], // Pass menu data through
+    image: vendor.image || vendor.image_url || null,
+    menu: vendor.menu || [],
     vendorData: vendor
   };
 };
@@ -124,32 +113,32 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // --- POPUP MODAL STATE ---
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupData, setPopupData] = useState([]);
+  const [currentCategoryObj, setCurrentCategoryObj] = useState(null);
+
   // Fetch Logic
   const fetchVendors = async () => {
     try {
       setLoading(true);
-
       const vendorsData = await getAllVendors();
       const rawData = Array.isArray(vendorsData) ? vendorsData : (vendorsData ? [vendorsData] : []);
 
-      // Fetch menus for all vendors in parallel to enable deep filtering
       const vendorsWithMenus = await Promise.all(
         rawData.map(async (vendor) => {
           try {
             const vendorId = vendor.id || vendor.vendor_id;
             if (!vendorId) return { ...vendor, menu: [] };
-
             const menu = await getVendorMenu(vendorId);
             return { ...vendor, menu: Array.isArray(menu) ? menu : [] };
           } catch (e) {
-            console.log(`Failed to fetch menu for vendor ${vendor.id}`, e);
             return { ...vendor, menu: [] };
           }
         })
       );
 
       const restaurants = vendorsWithMenus.map(transformVendorToRestaurant);
-
       setVendors(restaurants);
       setFilteredRestaurants(restaurants);
     } catch (error) {
@@ -165,49 +154,91 @@ export default function HomeScreen({ navigation }) {
     fetchVendors();
   }, []);
 
-  // Filtering Logic
-  useEffect(() => {
-    // Configure layout animation for smooth transitions
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  // --- LOGIC: Only Popup, No Background Filter ---
+  const handleCategoryPress = (categoryInput) => {
+    let categoryId = '';
+    let categoryObj = null;
 
-    if (!vendors.length) return;
-
-    let result = [...vendors];
-
-    // 1. Search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(r =>
-        r.name.toLowerCase().includes(query) ||
-        r.cuisine.toLowerCase().includes(query)
-      );
+    if (typeof categoryInput === 'object' && categoryInput !== null) {
+        categoryId = categoryInput.id;
+        categoryObj = categoryInput;
+    } else {
+        categoryId = categoryInput;
+        categoryObj = CATEGORIES.find(c => c.id === categoryInput);
     }
 
-    // 2. Category
-    if (selectedCategory && selectedCategory !== "all") {
-      result = result.filter(r => {
-        const category = selectedCategory.toLowerCase();
-        // Check cuisine
-        const cuisineMatch = r.cuisine.toLowerCase().includes(category);
-        // Check menu items
-        const menuMatch = r.menu.some(item =>
-          (item.itemName || item.name || "").toLowerCase().includes(category) ||
-          (item.category || "").toLowerCase().includes(category) ||
-          (item.description || "").toLowerCase().includes(category)
+    if (!categoryId) return;
+
+    setSelectedCategory(categoryId);
+    setCurrentCategoryObj(categoryObj);
+
+    // If "All" is selected, just close modal. Background is already showing everything.
+    if (categoryId === 'all') {
+      setModalVisible(false);
+      return;
+    }
+
+    // Prepare Data for POPUP (Specific items with prices)
+    const popupResults = [];
+    
+    vendors.forEach(restaurant => {
+        const catKey = categoryId.toLowerCase();
+        
+        // Find specific items in the menu that match the category
+        const matchingItems = restaurant.menu.filter(item => {
+             const name = (item.itemName || item.name || "").toLowerCase();
+             const cat = (item.category || "").toLowerCase();
+             return name.includes(catKey) || cat.includes(catKey);
+        });
+
+        if (matchingItems.length > 0) {
+            popupResults.push({
+                restaurantObj: restaurant, 
+                items: matchingItems
+            });
+        }
+    });
+
+    setPopupData(popupResults);
+    
+    // CHANGE: Open modal ALWAYS, even if results are empty
+    setModalVisible(true);
+  };
+
+  // --- UPDATED SEARCH LOGIC (SEARCHES CATEGORIES & MENU ITEMS) ---
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!searchQuery) {
+        setFilteredRestaurants(vendors);
+        return;
+    }
+    const query = searchQuery.toLowerCase();
+    
+    const result = vendors.filter(r => {
+        // 1. Search Name
+        const nameMatch = r.name.toLowerCase().includes(query);
+        
+        // 2. Search Main Cuisine
+        const cuisineMatch = r.cuisine.toLowerCase().includes(query);
+        
+        // 3. Search Deep Inside Menu (Items & Categories)
+        const menuMatch = r.menu && r.menu.some(item => 
+           (item.itemName || item.name || "").toLowerCase().includes(query) || 
+           (item.category || "").toLowerCase().includes(query)
         );
 
-        return cuisineMatch || menuMatch;
-      });
-    }
+        return nameMatch || cuisineMatch || menuMatch;
+    });
 
     setFilteredRestaurants(result);
-  }, [searchQuery, selectedCategory, vendors]);
+  }, [searchQuery, vendors]);
 
-  // Handlers
   const handleClearSearch = () => setSearchQuery("");
   const onRefresh = () => { setRefreshing(true); fetchVendors(); };
 
+  // Navigation Handler
   const handleRestaurantPress = useCallback((restaurant) => {
+    setModalVisible(false); // Close modal
     navigation.navigate("RestaurantDetails", {
       restaurant,
       vendor: restaurant.vendorData
@@ -216,9 +247,6 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-      {/* TopNavbar stays fixed at the top. 
-        It handles its own SafeAreaView logic internally.
-      */}
       <TopNavbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -232,13 +260,12 @@ export default function HomeScreen({ navigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[COLORS.aeroBlue]} // Updated Refresh Color
+            colors={[COLORS.aeroBlue]}
             tintColor={COLORS.aeroBlue}
             progressViewOffset={20}
           />
         }
       >
-        {/* 1. Promo Carousel */}
         <View style={styles.carouselSection}>
           <View style={[styles.sectionHeader, { paddingHorizontal: responsive.spacing.lg, marginBottom: responsive.spacing.sm }]}>
             <Text style={[styles.sectionTitle, { color: COLORS.darkNavy }]}>
@@ -248,14 +275,12 @@ export default function HomeScreen({ navigation }) {
           <PromoCarousel />
         </View>
 
-        {/* 2. Categories List (Horizontal) */}
         <CategoriesList
           categories={CATEGORIES}
           selectedCategory={selectedCategory}
-          onCategorySelect={setSelectedCategory}
+          onCategorySelect={handleCategoryPress} 
         />
 
-        {/* 4. Main Restaurant List */}
         <View style={styles.listSection}>
           <View style={styles.sectionHeader}>
             <View>
@@ -269,7 +294,6 @@ export default function HomeScreen({ navigation }) {
           </View>
 
           {loading ? (
-            // Render 3 Skeletons
             <View style={{ gap: 16 }}>
               <RestaurantSkeleton />
               <RestaurantSkeleton />
@@ -278,15 +302,91 @@ export default function HomeScreen({ navigation }) {
           ) : (
             <NearbyRestaurants
               restaurants={filteredRestaurants}
-              loading={false} // We handle loading state above
+              loading={false}
               onRestaurantPress={handleRestaurantPress}
             />
           )}
         </View>
 
-        {/* Bottom Padding for TabBar */}
         <View style={{ height: 80 }} />
       </ScrollView>
+
+      {/* --- THE POPUP MODAL --- */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+            <TouchableOpacity 
+                style={styles.modalBackdrop} 
+                activeOpacity={1} 
+                onPress={() => setModalVisible(false)} 
+            />
+            
+            <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                    <View style={styles.modalHeaderLeft}>
+                        <Text style={styles.modalIcon}>{currentCategoryObj?.icon}</Text>
+                        <View>
+                            <Text style={styles.modalTitle}>{currentCategoryObj?.name} Places</Text>
+                            <Text style={styles.modalSubtitle}>Found {popupData.length} places</Text>
+                        </View>
+                    </View>
+                    <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
+                        <Ionicons name="close" size={24} color={COLORS.grayText} />
+                    </TouchableOpacity>
+                </View>
+
+                <FlatList 
+                    data={popupData}
+                    keyExtractor={(item, index) => index.toString()}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+                    // --- NOTHING FOUND SCREEN ---
+                    ListEmptyComponent={
+                        <View style={styles.emptyStateContainer}>
+                            <View style={styles.emptyStateIconContainer}>
+                                <Ionicons name="search-outline" size={40} color="#9CA3AF" />
+                            </View>
+                            <Text style={styles.emptyStateTitle}>No {currentCategoryObj?.name} found</Text>
+                            <Text style={styles.emptyStateSub}>
+                                We couldn't find any restaurants serving {currentCategoryObj?.name?.toLowerCase()} nearby.
+                            </Text>
+                        </View>
+                    }
+                    renderItem={({ item }) => (
+                        <TouchableOpacity 
+                            style={styles.popupCard}
+                            onPress={() => handleRestaurantPress(item.restaurantObj)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.popupCardHeader}>
+                                <Text style={styles.popupResName}>{item.restaurantObj.name}</Text>
+                                <View style={styles.popupResMeta}>
+                                    <Ionicons name="star" size={12} color="#F59E0B" />
+                                    <Text style={styles.popupResRating}>{item.restaurantObj.rating}</Text>
+                                    <Text style={styles.popupResDot}>•</Text>
+                                    <Text style={styles.popupResDist}>{item.restaurantObj.distance}</Text>
+                                </View>
+                            </View>
+                            {item.items.map((food, idx) => (
+                                <View key={idx} style={styles.popupMenuRow}>
+                                    <View style={{flex: 1}}>
+                                        <Text style={styles.popupFoodName} numberOfLines={1}>{food.itemName || food.name}</Text>
+                                    </View>
+                                    <Text style={styles.popupFoodPrice}>
+                                        ₹{food.price ? parseFloat(food.price).toFixed(0) : 'NA'}
+                                    </Text>
+                                </View>
+                            ))}
+                        </TouchableOpacity>
+                    )}
+                />
+            </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -298,14 +398,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: responsive.spacing.lg,
   },
-  // Sections
   carouselSection: {
     marginBottom: responsive.spacing.lg,
   },
   categoriesSection: {
     marginBottom: responsive.spacing.md,
   },
-  // List Section
   listSection: {
     paddingHorizontal: responsive.spacing.lg,
     paddingBottom: 40,
@@ -318,7 +416,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: responsive.font.xl,
-    fontWeight: '800', // Extra bold for premium feel
+    fontWeight: '800',
     letterSpacing: -0.5,
     marginBottom: 4,
   },
@@ -326,23 +424,6 @@ const styles = StyleSheet.create({
     fontSize: responsive.font.sm,
     fontWeight: '500',
   },
-  sortButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 4,
-  },
-  sortText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-
-  // Skeleton
   skeletonCard: {
     backgroundColor: '#FFF',
     borderRadius: 16,
@@ -363,31 +444,139 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     borderRadius: 4,
   },
-
-  // Empty State
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  emptyIconBg: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    backgroundColor: COLORS.aeroBlueLight, // Updated Background
+  modalBackdrop: {
+      flex: 1,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    height: '75%', 
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 20,
   },
-  emptyDesc: {
-    textAlign: 'center',
-    lineHeight: 20,
-    fontSize: 14,
+  modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: '#F3F4F6',
+      paddingBottom: 15,
   },
+  modalHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+  },
+  modalIcon: {
+      fontSize: 28,
+      marginRight: 10,
+  },
+  modalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: COLORS.darkNavy,
+  },
+  modalSubtitle: {
+      fontSize: 12,
+      color: COLORS.grayText,
+  },
+  closeBtn: {
+      padding: 5,
+      backgroundColor: '#F3F4F6',
+      borderRadius: 20,
+  },
+  popupCard: {
+      backgroundColor: '#F9FAFB',
+      borderRadius: 16,
+      padding: 15,
+      marginBottom: 15,
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+  },
+  popupCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  popupResName: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: COLORS.darkNavy,
+  },
+  popupResMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+  },
+  popupResRating: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: COLORS.grayText,
+      marginLeft: 3,
+  },
+  popupResDot: {
+      marginHorizontal: 4,
+      color: '#D1D5DB',
+  },
+  popupResDist: {
+      fontSize: 12,
+      color: COLORS.grayText,
+  },
+  popupMenuRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
+  },
+  popupFoodName: {
+      fontSize: 14,
+      color: '#4B5563',
+      fontWeight: '500',
+  },
+  popupFoodPrice: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: COLORS.success,
+  },
+  // --- EMPTY STATE STYLES ---
+  emptyStateContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 40,
+      paddingHorizontal: 20,
+  },
+  emptyStateIconContainer: {
+      width: 80,
+      height: 80,
+      backgroundColor: '#F3F4F6',
+      borderRadius: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+  },
+  emptyStateTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: COLORS.darkNavy,
+      marginBottom: 8,
+  },
+  emptyStateSub: {
+      textAlign: 'center',
+      color: COLORS.grayText,
+      lineHeight: 20,
+      fontSize: 14,
+  }
 });

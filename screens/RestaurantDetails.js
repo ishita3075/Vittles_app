@@ -317,22 +317,7 @@ export default function RestaurantDetails() {
             <Text style={styles.resCuisine}>{restaurant.cuisine || "North Indian • Chinese • Fast Food"}</Text>
             
             {/* Stats */}
-            <View style={styles.statsRow}>
-               <View style={styles.statItem}>
-                  <Ionicons name="time-outline" size={16} color={COLORS_THEME.grayText} />
-                  <Text style={styles.statText}>{restaurant.time || '30 mins'}</Text>
-               </View>
-               <View style={styles.dotSeparator} />
-               <View style={styles.statItem}>
-                  <Ionicons name="location-outline" size={16} color={COLORS_THEME.grayText} />
-                  <Text style={styles.statText}>{restaurant.distance || '2.5 km'}</Text>
-               </View>
-               <View style={styles.dotSeparator} />
-               <View style={styles.statItem}>
-                  <Ionicons name="pricetag-outline" size={16} color={COLORS_THEME.grayText} />
-                  <Text style={styles.statText}>{restaurant.price || '₹200 for two'}</Text>
-               </View>
-            </View>
+           
           </View>
 
           {/* Menu List */}

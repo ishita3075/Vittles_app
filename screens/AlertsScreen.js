@@ -318,11 +318,11 @@ function formatTimeAgo(dateString) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6', // Light gray background for contrast
+    backgroundColor: '#F3F4F6',
   },
   header: {
     paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingBottom: 24,
+    paddingBottom: 30, // Increased slightly for better proportions
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
-    zIndex: 10,
+    zIndex: 10, // Keeps header on top of the list
   },
   headerContent: {
     flexDirection: "row",
@@ -376,24 +376,27 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFF",
   },
-  
+
+  // --- FIX IS HERE ---
   contentContainer: {
     flex: 1,
-    marginTop: -20, // Overlap effect
+    marginTop: -24, // Pulls the container up (The Overlap Effect)
   },
   listContainer: {
     paddingHorizontal: 16,
-    paddingTop: 10,
+    // We pulled the container up by 24px. 
+    // We need to push the content down by 24px + extra spacing (16px) = 40px
+    paddingTop: 40, 
     paddingBottom: 100,
   },
   loadingState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: 60, // Ensure loading text isn't hidden behind header
   },
+  // -------------------
 
-  // Alert Card
   alertCard: {
     borderRadius: 16,
     marginBottom: 12,
@@ -447,14 +450,12 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: 8,
   },
-
-  // Empty State
   emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 40,
-    paddingTop: 100,
+    paddingTop: 60, // Added padding here too
   },
   emptyIconContainer: {
     marginBottom: 16,
@@ -471,11 +472,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-
-  // FAB
   fab: {
     position: "absolute",
-    bottom: 90, // Above TabBar
+    bottom: 90,
     right: 20,
     borderRadius: 28,
     shadowColor: COLORS.error,

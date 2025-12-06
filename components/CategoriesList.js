@@ -1,3 +1,4 @@
+// CategoriesList.js
 import React from "react";
 import { View, Text, FlatList, StyleSheet } from "react-native";
 import CategoryItem from "./CategoryItem";
@@ -11,8 +12,10 @@ const CategoriesList = ({ categories, selectedCategory, onCategorySelect }) => {
         renderItem={({ item }) => (
           <CategoryItem
             category={item}
-            isSelected={selectedCategory === item.id}
-            onPress={() => onCategorySelect(item.id)}
+            // Check if the current item is the selected one
+            isSelected={selectedCategory?.id === item.id}
+            // PASS THE WHOLE ITEM HERE
+            onPress={() => onCategorySelect(item)} 
           />
         )}
         keyExtractor={item => item.id}
@@ -21,7 +24,7 @@ const CategoriesList = ({ categories, selectedCategory, onCategorySelect }) => {
         style={{ marginTop: 10 }}
         contentContainerStyle={{
           paddingHorizontal: 5,
-          paddingBottom: 10 // Prevent shadow clipping
+          paddingBottom: 10 
         }}
       />
     </View>
