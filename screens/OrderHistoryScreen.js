@@ -15,7 +15,9 @@ import {
   UIManager,
   FlatList,
   RefreshControl,
-  ScrollView
+  ScrollView,
+  Modal,
+  Alert
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -60,14 +62,8 @@ const formatStatus = (status) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return "Just now";
-
-  // Convert backend UTC → Date object
   const utcDate = new Date(dateString);
-
-  // Convert to IST (UTC + 5:30)
   const istDate = new Date(utcDate.getTime() + 5.5 * 60 * 60 * 1000);
-
-  // Format in 12-hour clock & Indian style
   return istDate.toLocaleString("en-IN", {
     month: "short",
     day: "numeric",
@@ -76,7 +72,6 @@ const formatDate = (dateString) => {
     hour12: true
   });
 };
-
 
 // --- Helper Components ---
 
@@ -115,7 +110,57 @@ const FilterChip = ({ label, active, onPress }) => (
   </TouchableOpacity>
 );
 
-const OrderCard = ({ order, navigation, index }) => {
+// --- NEW: Review Modal Component ---
+const ReviewModal = ({ visible, onClose, onSubmit, restaurantName }) => {
+  const [rating, setRating] = useState(0);
+
+  useEffect(() => {
+    if (visible) setRating(0); // Reset on open
+  }, [visible]);
+
+  const handleSubmit = () => {
+    if (rating === 0) {
+      Alert.alert("Rate Order", "Please select a star rating.");
+      return;
+    }
+    onSubmit(rating);
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <TouchableOpacity style={styles.closeModalBtn} onPress={onClose}>
+            <Ionicons name="close" size={20} color={COLORS_THEME.grayText} />
+          </TouchableOpacity>
+          
+          <Text style={styles.modalTitle}>Rate your food</Text>
+          <Text style={styles.modalSubtitle}>How was {restaurantName}?</Text>
+
+          <View style={styles.starsContainer}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                <Ionicons
+                  name={star <= rating ? "star" : "star-outline"}
+                  size={36}
+                  color={COLORS_THEME.warning}
+                  style={{ marginHorizontal: 4 }}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity style={styles.submitReviewBtn} onPress={handleSubmit}>
+            <Text style={styles.submitReviewText}>Submit Review</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// --- Updated OrderCard ---
+const OrderCard = ({ order, navigation, index, onReviewPress }) => {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -191,12 +236,22 @@ const OrderCard = ({ order, navigation, index }) => {
           onPress={() => navigation.navigate('OrderDetails', { order: {
              ...order,
              date: formatDate(order.date),
-             itemsList: order._itemsList || []   // ADD THIS
+             itemsList: order._itemsList || []
           }})}
-
         >
           <Text style={styles.outlineBtnText}>Details</Text>
         </TouchableOpacity>
+
+        {/* REVIEW BUTTON (Only if Delivered) */}
+        {order.status === 'Delivered' && (
+           <TouchableOpacity 
+             style={styles.reviewBtn} 
+             onPress={() => onReviewPress(order)}
+           >
+             <Ionicons name="star-outline" size={16} color={COLORS_THEME.steelBlue} />
+             <Text style={styles.reviewBtnText}>Review</Text>
+           </TouchableOpacity>
+        )}
 
         {order.status === 'Delivered' && (
           <TouchableOpacity style={styles.fillBtn}>
@@ -226,6 +281,10 @@ export default function OrderHistoryScreen({ navigation }) {
   const [allOrders, setAllOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
 
+  // Review State
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [selectedOrderForReview, setSelectedOrderForReview] = useState(null);
+
   // --- Data Fetching ---
   const fetchOrders = async () => {
     try {
@@ -234,17 +293,12 @@ export default function OrderHistoryScreen({ navigation }) {
       const customerId = user?.id || user?.userId || user?._id;
 
       if (!customerId) {
-        console.log("No customer ID found");
         setIsLoading(false);
         setRefreshing(false);
         return;
       }
 
-      // 1️⃣ Fetch raw orders from backend
       const raw = await getOrdersByCustomer(customerId);
-      console.log("RAW ORDERS >>>", raw);
-
-      // 2️⃣ Group by orderId
       const grouped = {};
 
       raw.forEach(order => {
@@ -264,7 +318,6 @@ export default function OrderHistoryScreen({ navigation }) {
           };
         }
 
-        // Treat each row as one order item
         const qty = Number(order.quantity || 1);
         const lineTotal = Number(order.totalPrice || 0);
         const unitPrice = qty > 0 ? (lineTotal / qty) : lineTotal;
@@ -277,26 +330,16 @@ export default function OrderHistoryScreen({ navigation }) {
 
         grouped[oid].items += qty;
         grouped[oid].total += lineTotal;
-
         grouped[oid].status = formatStatus(order.status);
       });
 
-
-
-
-
-      // 3️⃣ Convert object → array
       const formatted = Object.values(grouped).map(o => ({
         ...o,
         total: `₹${o.total}`,
       }));
 
-      // 4️⃣ Sort by date
       formatted.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      console.log("FINAL ORDER HISTORY >>>", formatted);
-
-      // 5️⃣ Assign to UI lists
       setAllOrders(formatted);
       setFilteredOrders(formatted);
 
@@ -308,7 +351,6 @@ export default function OrderHistoryScreen({ navigation }) {
     }
   };
 
-
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -316,6 +358,19 @@ export default function OrderHistoryScreen({ navigation }) {
   const onRefresh = () => {
     setRefreshing(true);
     fetchOrders();
+  };
+
+  // --- Review Handlers ---
+  const openReviewModal = (order) => {
+    setSelectedOrderForReview(order);
+    setReviewModalVisible(true);
+  };
+
+  const handleReviewSubmit = async (rating) => {
+    // API Call to save review would go here
+    console.log(`Submitted ${rating} star review for Order ${selectedOrderForReview?.id}`);
+    setReviewModalVisible(false);
+    Alert.alert("Thank You", "Your review has been submitted successfully!");
   };
 
   // --- Filtering ---
@@ -343,7 +398,6 @@ export default function OrderHistoryScreen({ navigation }) {
   // --- Render Header Component ---
   const renderHeader = () => (
     <View style={styles.contentHeader}>
-      {/* Stats Card */}
       <View style={styles.statsCard}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{allOrders.length}</Text>
@@ -365,7 +419,6 @@ export default function OrderHistoryScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color={COLORS_THEME.grayText} />
         <TextInput
@@ -382,7 +435,6 @@ export default function OrderHistoryScreen({ navigation }) {
         )}
       </View>
 
-      {/* Filters */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
         {['All', 'Processing', 'Delivered', 'Cancelled'].map(filter => (
           <FilterChip 
@@ -399,6 +451,14 @@ export default function OrderHistoryScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+      {/* Review Modal */}
+      <ReviewModal 
+        visible={reviewModalVisible}
+        onClose={() => setReviewModalVisible(false)}
+        onSubmit={handleReviewSubmit}
+        restaurantName={selectedOrderForReview?.restaurant}
+      />
 
       {/* Header Background */}
       <View style={styles.headerBackground}>
@@ -419,7 +479,6 @@ export default function OrderHistoryScreen({ navigation }) {
             <View style={{width: 40}} />
           </View>
           <Text style={styles.headerSubtitle}>Past meals & yummy deals</Text>
-          
           <View style={styles.decorCircle} />
         </LinearGradient>
       </View>
@@ -430,7 +489,12 @@ export default function OrderHistoryScreen({ navigation }) {
           data={filteredOrders}
           keyExtractor={item => item.id.toString()}
           renderItem={({ item, index }) => (
-            <OrderCard order={item} index={index} navigation={navigation} />
+            <OrderCard 
+              order={item} 
+              index={index} 
+              navigation={navigation}
+              onReviewPress={openReviewModal} 
+            />
           )}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={styles.flatListContent}
@@ -471,7 +535,7 @@ export default function OrderHistoryScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS_THEME.background },
 
-  // Header Styles (Non-sticky now)
+  // Header Styles
   headerBackground: {
     height: 180,
     width: '100%',
@@ -528,7 +592,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   flatListContent: {
-    paddingTop: 140, // Pushes content down to start below header visually
+    paddingTop: 140, 
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
@@ -549,7 +613,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 8,
-    marginTop: -40, // Pull up to overlap the header gradient
+    marginTop: -40, 
     marginBottom: 20,
   },
   statItem: {
@@ -693,9 +757,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS_THEME.darkNavy,
   },
+  
+  // Action Buttons
   actionRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   outlineBtn: {
     flex: 1,
@@ -711,8 +777,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS_THEME.darkNavy,
   },
-  fillBtn: {
+  reviewBtn: {
     flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS_THEME.steelBlue,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 4
+  },
+  reviewBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS_THEME.steelBlue,
+  },
+  fillBtn: {
+    flex: 1.2, // Slightly wider for main action
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -726,6 +808,63 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 13,
     fontWeight: '600',
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  closeModalBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    padding: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS_THEME.darkNavy,
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: COLORS_THEME.grayText,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    marginBottom: 30,
+  },
+  submitReviewBtn: {
+    backgroundColor: COLORS_THEME.steelBlue,
+    paddingVertical: 14,
+    width: '100%',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  submitReviewText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 15,
   },
 
   // Skeleton Helpers

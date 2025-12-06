@@ -11,10 +11,8 @@ import {
   ActivityIndicator,
   Animated,
   Platform,
-  LayoutAnimation,
   UIManager,
-  Dimensions,
-  Switch
+  Dimensions
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -89,8 +87,7 @@ export default function VendorSettings({ navigation }) {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [cuisine, setCuisine] = useState("");
-  const [deliveryFee, setDeliveryFee] = useState("");
-  const [isOpen, setIsOpen] = useState(true);
+  // REMOVED: deliveryFee and isOpen state variables
   const [avatarUri, setAvatarUri] = useState(null);
 
   // subtle entrance animation
@@ -115,8 +112,7 @@ export default function VendorSettings({ navigation }) {
         setPhone(settings.phone || "");
         setAddress(settings.address || "");
         setCuisine(settings.cuisine || "");
-        setDeliveryFee(settings.deliveryFee != null ? String(settings.deliveryFee) : "");
-        setIsOpen(settings.isOpen ?? true);
+        // REMOVED: deliveryFee and isOpen setters
         setAvatarUri(settings.avatarUri || null);
       } catch (err) {
         console.warn("Failed to load vendor settings", err);
@@ -137,8 +133,6 @@ export default function VendorSettings({ navigation }) {
       phone: "9876543210",
       address: "Block A, Food Court, City",
       cuisine: "North Indian, Chinese",
-      deliveryFee: 40,
-      isOpen: true,
       avatarUri: null,
     };
   }
@@ -157,10 +151,7 @@ export default function VendorSettings({ navigation }) {
       Alert.alert("Validation", "Phone must be digits (7-15 chars).");
       return false;
     }
-    if (deliveryFee && isNaN(Number(deliveryFee))) {
-      Alert.alert("Validation", "Delivery fee must be a number.");
-      return false;
-    }
+    // REMOVED: deliveryFee validation
     return true;
   };
 
@@ -172,8 +163,7 @@ export default function VendorSettings({ navigation }) {
       phone: phone.trim(),
       address: address.trim(),
       cuisine: cuisine.trim(),
-      deliveryFee: deliveryFee === "" ? null : Number(deliveryFee),
-      isOpen,
+      // REMOVED: deliveryFee and isOpen from payload
       avatarUri,
     };
     try {
@@ -286,30 +276,8 @@ export default function VendorSettings({ navigation }) {
                   value={cuisine}
                   onChangeText={setCuisine}
                 />
-                <SettingsInput
-                  label="Delivery Fee (₹)"
-                  icon="bicycle-outline"
-                  placeholder="e.g. 30"
-                  value={deliveryFee}
-                  onChangeText={setDeliveryFee}
-                  keyboardType="numeric"
-                />
-                
-                <View style={styles.switchRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.switchLabel}>Accepting Orders</Text>
-                    <Text style={styles.switchSub}>Toggle store visibility</Text>
-                  </View>
-                  <Switch
-                    value={isOpen}
-                    onValueChange={(val) => {
-                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                      setIsOpen(val);
-                    }}
-                    trackColor={{ false: '#E5E7EB', true: COLORS_THEME.success }}
-                    thumbColor={Platform.OS === 'android' ? '#FFF' : undefined}
-                  />
-                </View>
+                {/* REMOVED: Delivery Fee Input */}
+                {/* REMOVED: Store Visibility Switch */}
               </View>
 
               {/* Actions */}
@@ -486,24 +454,7 @@ const styles = StyleSheet.create({
     color: COLORS_THEME.darkNavy,
     paddingVertical: 0,
   },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: COLORS_THEME.border,
-  },
-  switchLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS_THEME.darkNavy,
-  },
-  switchSub: {
-    fontSize: 12,
-    color: COLORS_THEME.grayText,
-  },
+  // REMOVED: switchRow, switchLabel, switchSub styles
 
   // Buttons
   actionRow: {

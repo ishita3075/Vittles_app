@@ -45,28 +45,6 @@ const COLORS_THEME = {
   error: "#EF4444",
 };
 
-// Helper to get initials and a consistent color based on name
-const getAvatarDetails = (name = "") => {
-  const clean = name.trim();
-  const initials = clean
-    .split(/\s+/)
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .substring(0, 2);
-
-  // Simple hash for color mapping
-  let hash = 0;
-  for (let i = 0; i < clean.length; i++) {
-    hash = clean.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hues = [210, 150, 30, 280, 340];
-  const hue = hues[Math.abs(hash) % hues.length];
-  const color = `hsl(${hue}, 65%, 45%)`;
-
-  return { initials, color };
-};
-
 export default function VendorReviews({ navigation }) {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -106,7 +84,7 @@ export default function VendorReviews({ navigation }) {
     return [
       {
         id: "R001",
-        user: "Rahul Sharma",
+        user: "Rahul Sharma", // This will be ignored in UI
         rating: 5,
         comment:
           "Absolutely amazing food! The flavors were authentic and delivery was super fast. Will order again for sure.",
@@ -121,7 +99,7 @@ export default function VendorReviews({ navigation }) {
           "The food quality is great, but the delivery took about 15 mins longer than estimated.",
         date: "Yesterday",
         reply:
-          "Hi Priya, thank you for the feedback on the food! We apologize for the delay and are optimizing our delivery routes.",
+          "Hi, thank you for the feedback on the food! We apologize for the delay and are optimizing our delivery routes.",
       },
       {
         id: "R003",
@@ -137,7 +115,7 @@ export default function VendorReviews({ navigation }) {
         rating: 5,
         comment: "Best biryani in town! Highly recommended.",
         date: "Oct 22",
-        reply: "Thanks Sneha! Glad you loved it.",
+        reply: "Thanks! Glad you loved it.",
       },
     ];
   }
@@ -210,19 +188,20 @@ export default function VendorReviews({ navigation }) {
 
   // Review Card Component
   const ReviewCard = ({ review }) => {
-    const { initials, color: avatarColor } = getAvatarDetails(review.user);
     const hasReply = !!review.reply;
 
     return (
       <View style={styles.reviewCard}>
         {/* Card Header */}
         <View style={styles.cardHeaderRow}>
-          <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
-            <Text style={styles.avatarText}>{initials}</Text>
+          {/* Generic Avatar */}
+          <View style={styles.avatar}>
+            <Ionicons name="person" size={20} color={COLORS_THEME.grayText} />
           </View>
 
           <View style={{ flex: 1 }}>
-            <Text style={styles.userName}>{review.user}</Text>
+            {/* Anonymized Name */}
+            <Text style={styles.userName}>Anonymous</Text>
             {renderStars(review.rating)}
           </View>
 
@@ -566,11 +545,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
-  },
-  avatarText: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "700",
+    backgroundColor: '#F3F4F6', // Neutral background
   },
   userName: { 
     fontSize: 15, 
