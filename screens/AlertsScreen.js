@@ -16,6 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../contexts/ThemeContext";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ NEW
 
 // 👇 import notification APIs from api.js (root)
 import {
@@ -50,33 +51,49 @@ export default function AlertsScreen({ navigation }) {
   const [alerts, setAlerts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);       // ✅ NEW: dynamic userId
   const { colors } = useTheme();
 
-  // TODO: replace with real userId
-  const userId = "123";
+  // ✅ Load userId from AsyncStorage (no hard-coding)
+  useEffect(() => {
+    const loadUserId = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("userId");
+        if (stored) {
+          setUserId(Number(stored)); // or keep as string if your backend expects string
+        } else {
+          console.log("No userId found in AsyncStorage");
+        }
+      } catch (e) {
+        console.log("Error loading userId:", e);
+      }
+    };
+
+    loadUserId();
+  }, []);
 
   const unreadCount = alerts.filter((alert) => !alert.read).length;
 
   const loadNotifications = useCallback(async () => {
+    if (!userId) {
+      // userId not ready yet, don't call API
+      return;
+    }
+
     try {
       const data = await getNotifications(userId);
+
       const mapped = data.map((n) => ({
         id: n.id?.toString(),
         title: n.title || n.message || "Notification",
-        message: n.message || n.description || "", // Added message support if available
+        message: n.message || n.description || "",
         time: formatTimeAgo(n.createdAt),
         read: n.read ?? false,
       }));
       setAlerts(mapped);
     } catch (error) {
       console.log("Error loading notifications:", error);
-      // Fallback data for demo if API fails
-      if (alerts.length === 0) {
-         setAlerts([
-            { id: '1', title: 'Order Delivered', time: '2m ago', read: false },
-            { id: '2', title: '50% Off Lunch!', time: '1h ago', read: true },
-         ]);
-      }
+      // ❌ remove fake demo data – we only want real backend data
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -119,13 +136,15 @@ export default function AlertsScreen({ navigation }) {
       "Are you sure you want to delete all notifications?",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Clear", 
+        {
+          text: "Clear",
           style: "destructive",
           onPress: async () => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
             try {
-              await clearAllNotifications(userId);
+              if (userId) {
+                await clearAllNotifications(userId);
+              }
               setAlerts([]);
             } catch (error) {
               console.log("Error clearing alerts:", error);
@@ -170,10 +189,10 @@ export default function AlertsScreen({ navigation }) {
 
         {/* Icon */}
         <View style={[styles.iconContainer, { backgroundColor: item.read ? '#F3F4F6' : COLORS.aeroBlueLight }]}>
-          <Ionicons 
-            name={item.read ? "notifications-outline" : "notifications"} 
-            size={22} 
-            color={item.read ? COLORS.grayText : COLORS.steelBlue} 
+          <Ionicons
+            name={item.read ? "notifications-outline" : "notifications"}
+            size={22}
+            color={item.read ? COLORS.grayText : COLORS.steelBlue}
           />
         </View>
 
@@ -239,9 +258,9 @@ export default function AlertsScreen({ navigation }) {
               </Text>
             </View>
           </View>
-          
+
           {unreadCount > 0 && (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={markAllAsRead}
               style={styles.markReadBtn}
             >
@@ -322,7 +341,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingBottom: 30, // Increased slightly for better proportions
+    paddingBottom: 30,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -331,7 +350,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
-    zIndex: 10, // Keeps header on top of the list
+    zIndex: 10,
   },
   headerContent: {
     flexDirection: "row",
@@ -377,25 +396,21 @@ const styles = StyleSheet.create({
     color: "#FFF",
   },
 
-  // --- FIX IS HERE ---
   contentContainer: {
     flex: 1,
-    marginTop: -24, // Pulls the container up (The Overlap Effect)
+    marginTop: -24,
   },
   listContainer: {
     paddingHorizontal: 16,
-    // We pulled the container up by 24px. 
-    // We need to push the content down by 24px + extra spacing (16px) = 40px
-    paddingTop: 40, 
+    paddingTop: 40,
     paddingBottom: 100,
   },
   loadingState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 60, // Ensure loading text isn't hidden behind header
+    paddingTop: 60,
   },
-  // -------------------
 
   alertCard: {
     borderRadius: 16,
@@ -455,7 +470,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 40,
-    paddingTop: 60, // Added padding here too
+    paddingTop: 60,
   },
   emptyIconContainer: {
     marginBottom: 16,

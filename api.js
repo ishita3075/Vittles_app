@@ -175,7 +175,7 @@ export const updateVendor = async (vendorId, vendorData) => {
   }
 };
 
-    export const getOrdersByVendor = async (vendorId) => {
+export const getOrdersByVendor = async (vendorId) => {
   try {
     const response = await vendorApi.get(`/orders/vendor/${vendorId}`);
     return response.data;
@@ -194,8 +194,6 @@ export const getOrdersByCustomer = async (customerId) => {
     throw error;
   }
 };
-
-
 
 export const placeOrder = async (orderData) => {
   try {
@@ -227,10 +225,6 @@ export const placeOrder = async (orderData) => {
   }
 };
 
-
-
-
-
 // PATCH all orders of a customerId (vendor updating order status)
 export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
   try {
@@ -249,7 +243,7 @@ export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
    ========================================================================= */
 
 const paymentApi = axios.create({
-  baseURL: 'http://192.168.0.108:8089', // your Spring Boot IP
+  baseURL: 'http://10.10.137.192:8089', // your Spring Boot IP
   headers: {
     'Content-Type': 'application/json',
   },
@@ -277,7 +271,8 @@ export const createRazorpayOrder = async (amountInPaise) => {
    NOTIFICATION API (Render)
    ========================================================================= */
 
-const NOTIFICATION_BASE_URL = 'https://notification-api-brl8.onrender.com';
+// 👉 Use your real notification service URL
+const NOTIFICATION_BASE_URL = 'https://vittles-notification-api.onrender.com';
 
 const notificationApi = axios.create({
   baseURL: NOTIFICATION_BASE_URL,
@@ -312,31 +307,64 @@ notificationApi.interceptors.response.use(
 
 // 🔔 Get all notifications for a user
 export const getNotifications = async (userId) => {
-  // TODO: change this to match your Spring Boot notification route
-  // Example: GET /notifications/user/{userId}
-  const res = await notificationApi.get(`/notifications/${userId}`);
-  return res.data; // expecting array
+  // backend route: GET /api/notifications/user/{userId}
+  const res = await notificationApi.get(`/api/notifications/user/${userId}`);
+  return res.data; // [{ id, orderId, message, type, createdAt }, ...]
 };
 
 // 🔔 Mark one notification as read
+// (these will 404 until you add endpoints in backend; they are wired
+// to the "future" routes you might create)
 export const markNotificationRead = async (notificationId) => {
-  // Example: PATCH /notifications/{id}/read
-  const res = await notificationApi.patch(`/notifications/${notificationId}/read`);
+  // expected backend route (when you add it): PATCH /api/notifications/{id}/read
+  const res = await notificationApi.patch(`/api/notifications/${notificationId}/read`);
   return res.data;
 };
 
 // 🔔 Delete a single notification
 export const deleteNotificationApi = async (notificationId) => {
-  // Example: DELETE /notifications/{id}
-  const res = await notificationApi.delete(`/notifications/${notificationId}`);
+  // expected backend route: DELETE /api/notifications/{id}
+  const res = await notificationApi.delete(`/api/notifications/${notificationId}`);
   return res.data;
 };
 
 // 🔔 Clear all notifications for a user
 export const clearAllNotifications = async (userId) => {
-  // Example: DELETE /notifications/user/{userId}/all
-  const res = await notificationApi.delete(`/notifications/user/${userId}/all`);
+  // expected backend route: DELETE /api/notifications/user/{userId}/all
+  const res = await notificationApi.delete(`/api/notifications/user/${userId}/all`);
   return res.data;
+};
+
+/* =========================================================================
+   AUTH API (for /api/user/me)
+   ========================================================================= */
+
+const AUTH_BASE_URL = 'https://vittles-app-login-api.onrender.com';
+
+const authApi = axios.create({
+  baseURL: AUTH_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+authApi.interceptors.request.use(
+  async config => {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+/**
+ * Fetch current user using JWT and return { id, name, email }
+ */
+export const fetchCurrentUser = async () => {
+  const res = await authApi.get('/api/user/me');
+  return res.data; // { id, name, email }
 };
 
 /* =========================================================================

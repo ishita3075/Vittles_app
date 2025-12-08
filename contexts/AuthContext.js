@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ✅ NEW: Vendor list state
+  // ✅ Vendor list state
   const [vendorList, setVendorList] = useState([]);
 
   useEffect(() => {
@@ -29,28 +29,25 @@ export const AuthProvider = ({ children }) => {
     loadVendors(); // <-- load vendor data once
   }, []);
 
-  // ✅ NEW: Fetch all vendors from vendor backend
+  // ✅ Fetch all vendors from vendor backend
   const loadVendors = async () => {
     try {
-      const res = await fetch("https://ineat-vendor.onrender.com/vendors");
+      const res = await fetch('https://ineat-vendor.onrender.com/vendors');
       const data = await res.json();
       setVendorList(data);
     } catch (err) {
-      console.log("Vendor fetch error:", err);
+      console.log('Vendor fetch error:', err);
     }
   };
 
-  // Computed vendor check (email OR phone match)
-  const isVendor = user
-    ? vendorList.some(v => v.id === user.id)
-    : false;
-
+  // Computed vendor check (id match)
+  const isVendor = user ? vendorList.some(v => v.id === user.id) : false;
 
   const checkStoredUser = async () => {
     try {
       const [storedToken, storedUser] = await Promise.all([
         AsyncStorage.getItem('token'),
-        AsyncStorage.getItem('user')
+        AsyncStorage.getItem('user'),
       ]);
 
       if (storedToken && storedUser) {
@@ -70,7 +67,8 @@ export const AuthProvider = ({ children }) => {
     try {
       setToken(null);
       setUser(null);
-      await AsyncStorage.multiRemove(['token', 'user']);
+      // 🔴 Also clear userId here
+      await AsyncStorage.multiRemove(['token', 'user', 'userId']);
       delete axios.defaults.headers.common['Authorization'];
     } catch (error) {
       console.error('Error clearing storage:', error);
@@ -79,12 +77,22 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      // ⬅️ Back to your original gateway route
       const response = await axios.post('/auth/login', {
         email,
-        password
+        password,
       });
 
-      const { user, token } = response.data;
+      // Expecting backend to return: { user: {...}, token: "..." }
+      const { user, token } = response.data || {};
+
+      if (!token || !user) {
+        console.error('Login response missing user or token:', response.data);
+        return {
+          success: false,
+          error: 'Invalid login response from server',
+        };
+      }
 
       // Save to state and storage
       setUser(user);
@@ -94,30 +102,40 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('token', token);
       await AsyncStorage.setItem('user', JSON.stringify(user));
 
-      return { success: true, user, token };
+      // 🔴 NEW: save userId separately for AlertsScreen
+      if (user.id != null) {
+        await AsyncStorage.setItem('userId', String(user.id));
+        console.log('✅ Saved userId in AsyncStorage:', user.id);
+      } else {
+        console.log('⚠️ user.id is missing in login response, cannot store userId');
+      }
 
+      return { success: true, user, token };
     } catch (err) {
       console.error('Login error:', err.response?.data || err.message);
       return {
         success: false,
-        error: err.response?.data?.message || err.response?.data?.error || 'Login failed'
+        error:
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          'Login failed',
       };
     }
   };
 
   const register = async (name, email, password) => {
     try {
+      // ⬅️ Keep using your existing gateway route
       const response = await axios.post('/auth/register', {
         name,
         email,
-        password
+        password,
       });
 
       return {
         success: true,
-        message: response.data.message || 'Registration successful'
+        message: response.data.message || 'Registration successful',
       };
-
     } catch (err) {
       console.error('Registration error:', err.response?.data || err.message);
       return {
@@ -125,7 +143,7 @@ export const AuthProvider = ({ children }) => {
         error:
           err.response?.data?.message ||
           err.response?.data?.error ||
-          'Registration failed'
+          'Registration failed',
       };
     }
   };
@@ -151,7 +169,7 @@ export const AuthProvider = ({ children }) => {
       }
       return config;
     },
-    error => Promise.reject(error)
+    error => Promise.reject(error),
   );
 
   vendorApi.interceptors.response.use(
@@ -161,10 +179,10 @@ export const AuthProvider = ({ children }) => {
         console.log('Vendor API Error:', error.response.data);
       }
       return Promise.reject(error);
-    }
+    },
   );
 
-  const getVendorMenu = async (vendorId) => {
+  const getVendorMenu = async vendorId => {
     try {
       const response = await vendorApi.get(`/vendors/${vendorId}/menu`);
       return response.data;
@@ -181,7 +199,7 @@ export const AuthProvider = ({ children }) => {
         price: menuItem.price,
         category: menuItem.category,
         description: menuItem.description,
-        available: menuItem.available
+        available: menuItem.available,
       });
       return response.data;
     } catch (error) {
@@ -192,9 +210,12 @@ export const AuthProvider = ({ children }) => {
 
   const updateMenuItemAvailability = async (vendorId, itemId, available) => {
     try {
-      const response = await vendorApi.patch(`/vendors/${vendorId}/menu/${itemId}`, {
-        available: available ? 1 : 0
-      });
+      const response = await vendorApi.patch(
+        `/vendors/${vendorId}/menu/${itemId}`,
+        {
+          available: available ? 1 : 0,
+        },
+      );
       return response.data;
     } catch (error) {
       console.error('Error updating menu item:', error);
@@ -204,7 +225,9 @@ export const AuthProvider = ({ children }) => {
 
   const deleteMenuItem = async (vendorId, itemId) => {
     try {
-      const response = await vendorApi.delete(`/vendors/${vendorId}/menu/${itemId}`);
+      const response = await vendorApi.delete(
+        `/vendors/${vendorId}/menu/${itemId}`,
+      );
       return response.data;
     } catch (error) {
       console.error('Error deleting menu item:', error);
@@ -222,7 +245,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     isLoading,
 
-    // NEW
+    // Vendor
     vendorList,
     isVendor,
 
@@ -230,7 +253,7 @@ export const AuthProvider = ({ children }) => {
     getVendorMenu,
     addMenuItem,
     updateMenuItemAvailability,
-    deleteMenuItem
+    deleteMenuItem,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

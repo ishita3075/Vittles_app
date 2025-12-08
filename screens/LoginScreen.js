@@ -19,6 +19,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../contexts/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ NEW
+import { fetchCurrentUser } from "../api"; // ✅ NEW
 
 const { width, height } = Dimensions.get("window");
 
@@ -29,7 +31,7 @@ const COLORS = {
   steelBlue: "#5A94C4",         // Mid Blue (for gradients/text)
   darkNavy: "#0A2342",          // Deep background (matches Navbar)
   aeroBlueLight: "rgba(124, 185, 232, 0.1)", // Light background for icons
-  
+
   // Base Colors
   white: "#FFFFFF",
   grayText: "#6B7280",
@@ -55,7 +57,7 @@ export default function LoginScreen({ navigation }) {
 
   // Animations
   // Start the form completely off-screen (at the bottom)
-  const slideAnim = useRef(new Animated.Value(height)).current; 
+  const slideAnim = useRef(new Animated.Value(height)).current;
 
   // Keyboard & Header Animations
   const formTranslateY = useRef(new Animated.Value(0)).current;
@@ -79,10 +81,10 @@ export default function LoginScreen({ navigation }) {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         const keyboardHeight = e.endCoordinates.height;
         setKeyboardHeight(keyboardHeight);
-        
+
         // Calculate form movement - we want it to rise above keyboard
         const moveUpBy = keyboardHeight + 20;
-        
+
         // Animate form up
         Animated.parallel([
           Animated.timing(formTranslateY, {
@@ -110,7 +112,7 @@ export default function LoginScreen({ navigation }) {
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        
+
         // Animate everything back to original positions
         Animated.parallel([
           Animated.timing(formTranslateY, {
@@ -131,7 +133,7 @@ export default function LoginScreen({ navigation }) {
             useNativeDriver: true,
           })
         ]).start();
-        
+
         setTimeout(() => setKeyboardHeight(0), 300);
       }
     );
@@ -146,7 +148,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     Keyboard.dismiss();
-    
+
     setError("");
     if (!email || !password) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -160,7 +162,23 @@ export default function LoginScreen({ navigation }) {
     setIsLoading(true);
     try {
       const result = await login(email, password);
+
       if (result.success) {
+        // ✅ NEW: fetch /api/user/me and store userId in AsyncStorage
+        try {
+          const me = await fetchCurrentUser();
+          console.log("🔐 /api/user/me response:", me);
+
+          if (me && me.id != null) {
+            await AsyncStorage.setItem("userId", String(me.id));
+            console.log("💾 Saved userId to AsyncStorage:", me.id);
+          } else {
+            console.log("⚠️ /api/user/me did not return an id", me);
+          }
+        } catch (e) {
+          console.log("❌ Error fetching current user after login:", e);
+        }
+
         navigation.reset({ index: 0, routes: [{ name: "MainTabs" }] });
       } else {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -177,7 +195,7 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
+
       <ImageBackground
         source={{ uri: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop" }}
         style={styles.background}
@@ -194,7 +212,7 @@ export default function LoginScreen({ navigation }) {
 
         <Animated.View style={[
           styles.header,
-          { 
+          {
             opacity: headerOpacity,
             transform: [{ translateY: headerTranslateY }]
           }
@@ -211,7 +229,7 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.tagline}>Experience flavor in every bite</Text>
         </Animated.View>
 
-        <Animated.View 
+        <Animated.View
           style={[
             styles.formContainer,
             {
@@ -223,8 +241,8 @@ export default function LoginScreen({ navigation }) {
           ]}
         >
           <View style={styles.dragHandle} />
-          
-          <ScrollView 
+
+          <ScrollView
             style={styles.formScroll}
             contentContainerStyle={styles.formScrollContent}
             showsVerticalScrollIndicator={false}
@@ -282,7 +300,7 @@ export default function LoginScreen({ navigation }) {
                   returnKeyType="done"
                   onSubmitEditing={handleLogin}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setIsPasswordVisible(!isPasswordVisible)}
                   style={styles.eyeIcon}
                 >
@@ -291,7 +309,7 @@ export default function LoginScreen({ navigation }) {
               </View>
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.forgotButton}
               onPress={() => {
                 Keyboard.dismiss();
