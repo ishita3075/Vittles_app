@@ -243,7 +243,7 @@ export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
    ========================================================================= */
 
 const paymentApi = axios.create({
-  baseURL: 'http://10.10.137.192:8089', // your Spring Boot IP
+  baseURL: 'http://10.10.151.225:8089', // your Spring Boot IP
   headers: {
     'Content-Type': 'application/json',
   },

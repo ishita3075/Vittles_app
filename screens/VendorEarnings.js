@@ -16,6 +16,9 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { LinearGradient } from "expo-linear-gradient";
+import { getOrdersByVendor } from "../api";
+
+
 
 const { width } = Dimensions.get('window');
 
@@ -132,27 +135,122 @@ export default function VendorEarnings({ navigation }) {
   }, []);
 
   async function fetchVendorEarnings(vendorId) {
-    // Replace with your backend API
-    await new Promise((r) => setTimeout(r, 600));
+    // Fetch all orders for this vendor from backend
+    const orders = await getOrdersByVendor(vendorId);
+
+    const nowUTC = new Date();
+
+    // Convert now UTC → IST
+    const nowIST = new Date(nowUTC.getTime() + 5.5 * 60 * 60 * 1000);
+
+    // Start of today IST
+    const startToday = new Date(nowIST);
+    startToday.setHours(0, 0, 0, 0);
+
+    // Last 7 days range
+    const last7 = new Date(startToday);
+    last7.setDate(last7.getDate() - 7);
+
+    // Last 30 days range
+    const last30 = new Date(startToday);
+    last30.setDate(last30.getDate() - 30);
+
+    let today = 0,
+        week = 0,
+        month = 0;
+
+    // --- Revenue Calculation ---
+    orders.forEach(order => {
+      if (!order.createdAt) return;
+
+      const createdUTC = new Date(order.createdAt);
+
+      // Convert each order time to IST
+      const createdIST = new Date(createdUTC.getTime() + 5.5 * 60 * 60 * 1000);
+
+      const amount = Number(order.totalPrice) || 0;
+      const completed = order.status?.toLowerCase().includes("complet");
+
+      if (!completed) return;
+
+      // TODAY
+      if (createdIST >= startToday && createdIST <= nowIST) {
+        today += amount;
+      }
+
+      // WEEK
+      if (createdIST >= last7 && createdIST <= nowIST) {
+        week += amount;
+      }
+
+      // MONTH
+      if (createdIST >= last30 && createdIST <= nowIST) {
+        month += amount;
+      }
+    });
+
+    // --- Dedup orders for REVENUE LIST ---
+    const grouped = {};
+
+    orders.forEach(o => {
+      if (!grouped[o.orderId]) {
+        grouped[o.orderId] = o; // first entry only
+      }
+    });
+
+    const uniqueOrders = Object.values(grouped);
+
+    // Build recent revenue list
+    // --- RECENT REVENUE: TODAY ONLY ---
+    // --- RECENT REVENUE: GROUPED BY ORDER ID (TODAY ONLY) ---
+
+    // Group orders by orderId
+    const revenueGroup = {};
+
+    orders.forEach(o => {
+      if (!o.createdAt) return;
+
+      const createdIST = new Date(new Date(o.createdAt).getTime() + 5.5 * 60 * 60 * 1000);
+
+      // Only today's completed orders
+      if (
+        createdIST >= startToday &&
+        createdIST <= nowIST &&
+        o.status?.toLowerCase().includes("complet")
+      ) {
+        if (!revenueGroup[o.orderId]) {
+          revenueGroup[o.orderId] = {
+            id: o.orderId,
+            total: 0,
+            createdAt: createdIST
+          };
+        }
+        revenueGroup[o.orderId].total += Number(o.totalPrice);
+      }
+    });
+
+    const ordersRevenue = Object.values(revenueGroup)
+      .sort((a, b) => b.id - a.id)
+      .map(o => ({
+        id: o.id,
+        amount: o.total,
+        date: o.createdAt.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      }));
+
+
 
     return {
-      summary: {
-        today: 1240,
-        week: 8640,
-        month: 32100,
-      },
-      ordersRevenue: [
-        { id: "OID223", amount: 340, date: "Today, 2:30 PM" },
-        { id: "OID220", amount: 540, date: "Today, 11:15 AM" },
-        { id: "OID198", amount: 450, date: "Yesterday" },
-      ],
-      payouts: [
-        { id: "P001", amount: 8000, date: "Jan 18, 2025", status: "Completed" },
-        { id: "P002", amount: 7500, date: "Jan 10, 2025", status: "Completed" },
-        { id: "P003", amount: 6400, date: "Dec 28, 2024", status: "Processed" },
-      ],
+      summary: { today, week, month },
+      ordersRevenue,
+      payouts: [] // keep existing payouts blank
     };
   }
+
+
 
   async function loadEarnings() {
     setLoading(true);
@@ -257,8 +355,9 @@ export default function VendorEarnings({ navigation }) {
             {/* ------------------ RECENT REVENUE ------------------ */}
             <Text style={styles.sectionHeader}>RECENT REVENUE</Text>
             <View style={styles.listContainer}>
-              {ordersRevenue.map((item) => (
-                <View key={item.id} style={styles.listItem}>
+              {ordersRevenue.map((item, index) => (
+                <View key={`${item.id}-${index}`} style={styles.listItem}>
+
                   <View style={[styles.listIcon, { backgroundColor: COLORS_THEME.aeroBlueLight }]}>
                      <Ionicons name="receipt-outline" size={20} color={COLORS_THEME.steelBlue} />
                   </View>
