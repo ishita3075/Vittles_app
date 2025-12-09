@@ -174,7 +174,7 @@ export default function VendorProfileScreen({ navigation }) {
 
   // Menu items
   const operationItems = [
-    { icon: "star-outline", title: "Reviews & Ratings", color: "#8B5CF6", badge: "New", badgeColor: "#F59E0B", onPress: () => navigation.navigate("VendorReviews") },
+    // { icon: "star-outline", title: "Reviews & Ratings", color: "#8B5CF6", badge: "New", badgeColor: "#F59E0B", onPress: () => navigation.navigate("VendorReviews") },
   ];
 
   const businessItems = [
@@ -248,34 +248,7 @@ export default function VendorProfileScreen({ navigation }) {
             transform: [{ translateY: listAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }] 
           }}
         >
-          {/* Operations */}
-          <View style={styles.menuGroupContainer}>
-            <Text style={styles.menuGroupTitle}>Operations</Text>
-            <View style={styles.menuList}>
-              {operationItems.map((item, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.menuItem, idx === operationItems.length - 1 && styles.lastMenuItem]}
-                  activeOpacity={0.75}
-                  onPress={item.onPress}
-                >
-                  <View style={[styles.menuIconBox, { backgroundColor: item.color + "15" }]}>
-                    <Ionicons name={item.icon} size={20} color={item.color} />
-                  </View>
-
-                  <Text style={styles.menuText}>{item.title}</Text>
-
-                  {item.badge && (
-                    <View style={[styles.menuBadge, item.badgeColor && { backgroundColor: item.badgeColor }]}>
-                      <Text style={styles.menuBadgeText}>{item.badge}</Text>
-                    </View>
-                  )}
-
-                  <Ionicons name="chevron-forward" size={18} color={COLORS_THEME.grayText} />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+       
 
           {/* Business */}
           <View style={styles.menuGroupContainer}>

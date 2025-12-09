@@ -20,7 +20,7 @@ export const ThemeProvider = ({ children }) => {
   // Color schemes
   const lightColors = {
     // Primary colors
-    primary: '#8B3358',
+    primary: '#7494c2ff',
     primaryGradient: ['#8B3358', '#670D2F', '#3A081C'], // Burgundy gradient for navbars
     
     // Background colors

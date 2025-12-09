@@ -187,7 +187,7 @@ export default function ProfileScreen({ navigation }) {
   ];
 
   const appItems = [
-    { icon: "settings-outline", title: "Settings", onPress: () => navigation.navigate("Account", { screen: "Settings" }), color: COLORS.steelBlue },
+    
     { icon: "help-circle-outline", title: "Help & Support", onPress: () => navigation.navigate("Account", { screen: "HelpSupport" }), color: COLORS.aeroBlue },
     { icon: "shield-checkmark-outline", title: "Privacy Policy", onPress: () => navigation.navigate("Account", { screen: "PrivacyPolicy" }), color: COLORS.darkNavy },
   ];

@@ -370,27 +370,7 @@ export default function VendorEarnings({ navigation }) {
               ))}
             </View>
 
-            {/* ----------------------- PAYOUTS ----------------------- */}
-            <Text style={styles.sectionHeader}>PAYOUT HISTORY</Text>
-            <View style={styles.listContainer}>
-              {payouts.map((payout) => (
-                <View key={payout.id} style={styles.listItem}>
-                  <View style={[styles.listIcon, { backgroundColor: '#ECFDF5' }]}>
-                     <Ionicons name="wallet-outline" size={20} color={COLORS_THEME.success} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.itemTitle}>Payout Processed</Text>
-                    <Text style={styles.itemSub}>{payout.date}</Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.itemAmount}>₹{payout.amount}</Text>
-                    <Text style={[styles.statusText, { color: payout.status === 'Completed' ? COLORS_THEME.success : COLORS_THEME.warning }]}>
-                      {payout.status}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
+            
             
             <View style={{ height: 40 }} />
           </Animated.View>

@@ -247,11 +247,10 @@ export default function HelpSupportScreen() {
               />
               <FAQItem 
                 question="What payment methods do you accept?"
-                answer="We accept UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, and Net Banking."
+                answer="We accept UPI (GPay, PhonePe, Paytm)."
               />
             </View>
 
-            {/* 4. Message Form */}
             <Text style={[styles.sectionHeader, { color: COLORS.grayText, marginTop: 32 }]}>SEND A MESSAGE</Text>
             <View style={styles.formContainer}>
               <SupportInput 
