@@ -256,7 +256,7 @@ export default function RestaurantDetails() {
     category: item.category || "Recommended",
     bestseller: item.bestseller || Math.random() > 0.8,
     available: item.available !== undefined ? item.available : true,
-    isVeg: item.isVeg || Math.random() > 0.5,
+    isVeg: item.foodType === "Veg",
   });
 
   // --- FILTER LOGIC ---

@@ -190,7 +190,10 @@ export default function VendorMenu() {
           available: item.available === 1 || item.available === true,
           category: item.category || "Uncategorized",
           description: item.description || "No description available",
-          isVeg: item.isVeg !== undefined ? item.isVeg : true 
+          isVeg: item.foodType
+            ? item.foodType.toLowerCase() === "veg"
+            : (item.isVeg !== undefined ? item.isVeg : true)
+
         }));
         setMenu(transformedMenu);
         updateCategoriesList(transformedMenu);
@@ -229,7 +232,7 @@ export default function VendorMenu() {
         category: itemCategory,
         description: newItem.description || "",
         available: true,
-        isVeg: newItem.isVeg 
+        foodType: newItem.isVeg ? "Veg" : "Non-Veg"
       };
 
       const response = await addMenuItem(vendorId, payload);

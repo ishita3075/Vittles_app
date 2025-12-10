@@ -89,6 +89,7 @@ export const addMenuItem = async (vendorId, menuItem) => {
       price: menuItem.price,
       category: menuItem.category,
       description: menuItem.description,
+      foodType: menuItem.isVeg ? "Veg" : "Non-Veg",
       available: menuItem.available,
     });
     return response.data;
