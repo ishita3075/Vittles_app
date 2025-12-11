@@ -152,6 +152,8 @@ export default function VendorDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [doneCount, setDoneCount] = useState(0);
+
 
   const { user } = useAuth();
   const vendorId = user?.id;
@@ -177,6 +179,25 @@ export default function VendorDashboard() {
     try {
       setLoading(true);
       const vendorOrders = await getOrdersByVendor(vendorId);
+
+
+      // --- FILTER ONLY TODAY'S ORDERS (IST) ---
+      const nowUTC = new Date();
+      const nowIST = new Date(nowUTC.getTime() + 5.5 * 60 * 60 * 1000);
+
+      const startTodayIST = new Date(nowIST);
+      startTodayIST.setHours(0, 0, 0, 0);
+
+      const endTodayIST = new Date(nowIST);
+      endTodayIST.setHours(23, 59, 59, 999);
+
+      const todaysOrders = vendorOrders.filter(o => {
+        const createdUTC = new Date(o.createdAt);
+        const createdIST = new Date(createdUTC.getTime() + 5.5 * 60 * 60 * 1000);
+        return createdIST >= startTodayIST && createdIST <= endTodayIST;
+      });
+
+
 
       const normalizeStatus = (s) => {
         if (!s) return "pending";
@@ -227,15 +248,23 @@ export default function VendorDashboard() {
         grouped[orderId].price += price;
       });
 
-      const finalData = Object.values(grouped)
+      const allOrdersArr = Object.values(grouped).map(o => ({
+        ...o,
+        items: o.items.map(i => `${i.quantity}x ${i.name}`)
+      }));
+
+      // Active = pending + preparing (for UI)
+      const activeOrders = allOrdersArr
         .filter(o => o.status === "pending" || o.status === "preparing")
-        .map(o => ({
-          ...o,
-          items: o.items.map(i => `${i.quantity}x ${i.name}`)
-        }))
         .sort((a, b) => b.id - a.id);
 
-      setOrders(finalData);
+      // Completed = only completed
+      const completedOrders = allOrdersArr.filter(o => o.status === "completed");
+
+      // Update states
+      setOrders(activeOrders);
+      setDoneCount(completedOrders.length);
+
       
       // -----------------------------
       // FIXED: TODAY'S EARNINGS (IST)
@@ -431,7 +460,8 @@ export default function VendorDashboard() {
              <View style={styles.vertDivider} />
              <StatItem label="Prep" value={preparingCount} icon="flame" color={COLORS_THEME.aeroBlue} />
              <View style={styles.vertDivider} />
-             <StatItem label="Done" value="--" icon="checkmark-done-circle" color={COLORS_THEME.success} />
+             <StatItem label="Done" value={doneCount} icon="checkmark-done-circle" color={COLORS_THEME.success} />
+
           </View>
         </View>
 
