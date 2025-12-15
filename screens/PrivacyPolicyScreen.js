@@ -14,7 +14,8 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useTheme } from "../contexts/ThemeContext";
+import CustomHeader from "../components/CustomHeader";
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android') {
@@ -48,10 +49,10 @@ const PolicySection = ({ title, content, icon, index }) => {
   return (
     <TouchableOpacity
       style={[
-        styles.sectionCard, 
-        { 
-          backgroundColor: COLORS.card, 
-          borderColor: expanded ? COLORS.aeroBlue : COLORS.border 
+        styles.sectionCard,
+        {
+          backgroundColor: COLORS.card,
+          borderColor: expanded ? COLORS.aeroBlue : COLORS.border
         }
       ]}
       onPress={toggleExpand}
@@ -125,23 +126,7 @@ export default function PrivacyPolicyScreen() {
     <View style={[styles.container, { backgroundColor: COLORS.background }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* 1. Curved Header */}
-      <View style={styles.headerBackground}>
-        <LinearGradient
-          colors={[COLORS.aeroBlue, COLORS.darkNavy]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Privacy Policy</Text>
-            <View style={{ width: 40 }} />
-          </View>
-        </LinearGradient>
-      </View>
+      <CustomHeader title="Privacy Policy" />
 
       <ScrollView
         style={styles.scrollView}

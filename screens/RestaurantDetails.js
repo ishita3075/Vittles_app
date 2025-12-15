@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,71 +13,53 @@ import {
   UIManager,
   LayoutAnimation,
   Easing,
-  ActivityIndicator
+  TextInput,
+  Keyboard
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useCart } from "../contexts/CartContext";
 import { LinearGradient } from 'expo-linear-gradient';
 import { getVendorMenu } from '../api';
+import { useTheme } from '../contexts/ThemeContext';
+import { useWishlist } from '../contexts/WishlistContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
-const HEADER_HEIGHT = width / 1.5; // Balanced height
-const HEADER_MIN_HEIGHT = Platform.OS === 'ios' ? 90 : 80;
+
+// --- LAYOUT CONSTANTS ---
+// Image aspect ratio 2:1
+const HEADER_HEIGHT = width / 2;
+// FIX: Increased Sticky Header Height
+const HEADER_MIN_HEIGHT = Platform.OS === 'ios' ? 100 : 80;
 
 // Enable LayoutAnimation
-if (Platform.OS === 'android') {
-  if (UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-  }
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// --- PALETTE CONSTANTS (Aero Blue Theme) ---
-const COLORS_THEME = {
-  aeroBlue: "#7CB9E8",
-  steelBlue: "#5A94C4",
-  darkNavy: "#0A2342",
-  white: "#FFFFFF",
-  grayText: "#6B7280",
-  background: "#F9FAFB",
-  border: "rgba(0,0,0,0.08)",
-  card: "#FFFFFF",
-  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
-  success: "#10B981",
-  error: "#EF4444",
-  warning: "#F59E0B",
-};
-
-// --- Menu Item Skeleton ---
-const MenuSkeleton = () => (
-  <View style={styles.skeletonContainer}>
-    <View style={{ flex: 1, paddingRight: 16 }}>
-      <View style={[styles.skeletonBox, { width: 16, height: 16, borderRadius: 4, marginBottom: 8 }]} />
-      <View style={[styles.skeletonBox, { width: '70%', height: 20, marginBottom: 8 }]} />
-      <View style={[styles.skeletonBox, { width: '30%', height: 16, marginBottom: 12 }]} />
-      <View style={[styles.skeletonBox, { width: '90%', height: 14, marginBottom: 6 }]} />
-    </View>
-    <View style={[styles.skeletonBox, { width: 110, height: 110, borderRadius: 12 }]} />
-  </View>
-);
-
-// --- Menu Item Component ---
-const MenuItem = ({ item, quantity, onAdd, onIncrement, onDecrement, index }) => {
+// --- MENU ITEM COMPONENT ---
+const MenuItem = React.memo(({ item, quantity, onAdd, onIncrement, onDecrement, index }) => {
+  const { colors } = useTheme();
   const anim = useRef(new Animated.Value(0)).current;
+  const btnScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.timing(anim, {
       toValue: 1,
-      duration: 500,
-      delay: index * 50,
+      duration: 400,
+      delay: index < 10 ? index * 30 : 0,
       useNativeDriver: true,
       easing: Easing.out(Easing.cubic)
     }).start();
   }, []);
 
-  const handleAction = (action) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    action();
+  const animateButton = (callback) => {
+    Animated.sequence([
+      Animated.timing(btnScale, { toValue: 0.9, duration: 50, useNativeDriver: true }),
+      Animated.timing(btnScale, { toValue: 1, duration: 100, useNativeDriver: true })
+    ]).start();
+    callback();
   };
 
   return (
@@ -87,103 +69,107 @@ const MenuItem = ({ item, quantity, onAdd, onIncrement, onDecrement, index }) =>
         {
           opacity: anim,
           transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+          borderBottomColor: colors.border
         }
       ]}
     >
-      {/* Left Content */}
       <View style={styles.menuTextContainer}>
         <View style={styles.menuHeaderRow}>
-          {/* Veg/Non-Veg Indicator */}
-          <View style={[
-            styles.vegIcon,
-            { borderColor: item.isVeg ? COLORS_THEME.success : COLORS_THEME.error }
-          ]}>
-            <View style={[
-              styles.vegCircle,
-              { backgroundColor: item.isVeg ? COLORS_THEME.success : COLORS_THEME.error }
-            ]} />
+          <View style={[styles.vegIconBorder, { borderColor: item.isVeg ? colors.success : colors.error }]}>
+            <View style={[styles.vegIconDot, { backgroundColor: item.isVeg ? colors.success : colors.error }]} />
           </View>
-
           {item.bestseller && (
-            <View style={styles.bestsellerBadge}>
-              <Ionicons name="star" size={8} color={COLORS_THEME.warning} />
-              <Text style={styles.bestsellerText}>BESTSELLER</Text>
+            <View style={[styles.bestsellerBadge, { backgroundColor: colors.accent + '20' }]}>
+              <Ionicons name="star" size={10} color={colors.primary} />
+              <Text style={[styles.bestsellerText, { color: colors.primary }]}>BESTSELLER</Text>
             </View>
           )}
         </View>
-
-        <Text style={styles.menuName}>{item.name}</Text>
-        <Text style={styles.menuPrice}>{item.price}</Text>
-        <Text style={styles.menuDescription} numberOfLines={2}>
-          {item.description}
-        </Text>
+        <Text style={[styles.menuName, { color: colors.text }]}>{item.name}</Text>
+        <Text style={[styles.menuPrice, { color: colors.text }]}>{item.price}</Text>
+        <Text style={[styles.menuDescription, { color: colors.textSecondary }]} numberOfLines={2}>{item.description}</Text>
       </View>
 
-      {/* Right Content */}
       <View style={styles.menuImageWrapper}>
-        <View style={styles.imageContainer}>
+        <View style={[styles.imageContainer, { backgroundColor: colors.border }]}>
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.menuImage} />
           ) : (
             <View style={styles.placeholderImage}>
-              <Ionicons name="restaurant" size={28} color={COLORS_THEME.grayText} />
+              <MaterialCommunityIcons name="silverware-fork-knife" size={24} color={colors.textSecondary} opacity={0.5} />
             </View>
           )}
         </View>
 
-        {/* Add Button Logic */}
         <View style={styles.addButtonContainer}>
           {!item.available ? (
-            <View style={styles.unavailableBadge}>
-              <Text style={styles.unavailableText}>Sold Out</Text>
+            <View style={[styles.unavailableBadge, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <Text style={[styles.unavailableText, { color: colors.textSecondary }]}>Sold Out</Text>
             </View>
           ) : quantity > 0 ? (
-            <View style={styles.qtyContainer}>
-              <TouchableOpacity
-                onPress={() => handleAction(() => onDecrement(item.id))}
-                style={styles.qtyBtn}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="remove" size={18} color={COLORS_THEME.steelBlue} />
+            <Animated.View style={[styles.qtyContainer, { transform: [{ scale: btnScale }], borderColor: colors.primary, backgroundColor: colors.primary + '10' }]}>
+              <TouchableOpacity onPress={() => animateButton(() => onDecrement(item.id))} style={styles.qtyBtn} hitSlop={10}>
+                <Ionicons name="remove" size={18} color={colors.primary} />
               </TouchableOpacity>
-              <Text style={styles.qtyText}>{quantity}</Text>
-              <TouchableOpacity
-                onPress={() => handleAction(() => onIncrement(item.id))}
-                style={styles.qtyBtn}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="add" size={18} color={COLORS_THEME.steelBlue} />
+              <Text style={[styles.qtyText, { color: colors.primary }]}>{quantity}</Text>
+              <TouchableOpacity onPress={() => animateButton(() => onIncrement(item.id))} style={styles.qtyBtn} hitSlop={10}>
+                <Ionicons name="add" size={18} color={colors.primary} />
               </TouchableOpacity>
-            </View>
+            </Animated.View>
           ) : (
             <TouchableOpacity
-              onPress={() => handleAction(() => onAdd(item))}
+              onPress={() => animateButton(() => onAdd(item))}
               activeOpacity={0.9}
               style={styles.addBtnWrapper}
             >
-              <View style={styles.addBtn}>
-                <Text style={styles.addBtnText}>ADD</Text>
-                <Ionicons name="add" size={12} color={COLORS_THEME.steelBlue} style={styles.addBtnPlus} />
-              </View>
+              <Animated.View style={[styles.addBtn, { transform: [{ scale: btnScale }], borderColor: colors.border, backgroundColor: colors.card }]}>
+                <Text style={[styles.addBtnText, { color: colors.primary }]}>ADD</Text>
+                <Ionicons name="add" size={14} color={colors.primary} style={{ fontWeight: 'bold' }} />
+              </Animated.View>
             </TouchableOpacity>
           )}
         </View>
       </View>
     </Animated.View>
   );
-};
+}, (prevProps, nextProps) => {
+  return prevProps.quantity === nextProps.quantity && prevProps.item.id === nextProps.item.id;
+});
+
+// --- SKELETON ---
+const MenuSkeleton = () => (
+  <View style={styles.skeletonContainer}>
+    <View style={{ flex: 1, paddingRight: 16 }}>
+      <View style={[styles.skeletonBox, { width: 20, height: 20, marginBottom: 10, borderRadius: 4 }]} />
+      <View style={[styles.skeletonBox, { width: '80%', height: 20, marginBottom: 8 }]} />
+      <View style={[styles.skeletonBox, { width: '40%', height: 16, marginBottom: 12 }]} />
+      <View style={[styles.skeletonBox, { width: '95%', height: 30, borderRadius: 4 }]} />
+    </View>
+    <View style={[styles.skeletonBox, { width: 120, height: 120, borderRadius: 16 }]} />
+  </View>
+);
 
 export default function RestaurantDetails() {
   const route = useRoute();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const { restaurant } = route.params;
   const { addItem, removeItem, incrementItem, decrementItem, cart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const isFavorite = isInWishlist(restaurant.id);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Animations
+  // Search State
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchAnim = useRef(new Animated.Value(0)).current;
+  const searchInputRef = useRef(null);
+
+  // --- ANIMATIONS ---
   const headerTranslateY = scrollY.interpolate({
     inputRange: [0, HEADER_HEIGHT],
     outputRange: [0, -HEADER_HEIGHT / 2],
@@ -196,26 +182,54 @@ export default function RestaurantDetails() {
     extrapolate: 'clamp',
   });
 
+  // Controls Fade In of White Header
   const headerOpacity = scrollY.interpolate({
     inputRange: [HEADER_HEIGHT - 120, HEADER_HEIGHT - HEADER_MIN_HEIGHT],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
 
-  const contentTranslateY = scrollY.interpolate({
-    inputRange: [0, HEADER_HEIGHT],
-    outputRange: [0, 80], // Slightly reduced overlap movement
+  // Controls Fade Out of White Icons (initial state)
+  const navIconsOpacity = scrollY.interpolate({
+    inputRange: [HEADER_HEIGHT - 120, HEADER_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [1, 0],
     extrapolate: 'clamp',
   });
 
-  // Data Fetching
+  const searchBarTranslateY = searchAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-150, 0],
+  });
+
+  // --- SEARCH LOGIC ---
+  const openSearch = () => {
+    setIsSearching(true);
+    Animated.timing(searchAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.cubic),
+    }).start(() => searchInputRef.current?.focus());
+  };
+
+  const closeSearch = () => {
+    Keyboard.dismiss();
+    setSearchQuery("");
+    Animated.timing(searchAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+      easing: Easing.in(Easing.cubic),
+    }).start(() => setIsSearching(false));
+  };
+
+  // --- DATA FETCHING ---
   useEffect(() => {
     const fetchVendorMenu = async () => {
       try {
         setLoading(true);
         const vendorId = restaurant.id || restaurant.vendor_id;
         const menuData = await getVendorMenu(vendorId);
-
         if (menuData && Array.isArray(menuData)) {
           setMenuItems(menuData.map(transformMenuItem));
         }
@@ -237,43 +251,118 @@ export default function RestaurantDetails() {
     category: item.category || "Recommended",
     bestseller: item.bestseller || Math.random() > 0.8,
     available: item.available !== undefined ? item.available : true,
-    isVeg: item.isVeg || Math.random() > 0.5,
+    isVeg: item.foodType === "Veg",
   });
 
-  const groupedMenu = menuItems.reduce((acc, item) => {
-    if (!acc[item.category]) acc[item.category] = [];
-    acc[item.category].push(item);
-    return acc;
-  }, {});
+  // --- FILTER LOGIC ---
+  const filteredMenu = useMemo(() => {
+    if (!searchQuery.trim()) return menuItems;
+    const lowerQuery = searchQuery.toLowerCase();
+    return menuItems.filter(item =>
+      item.name.toLowerCase().includes(lowerQuery) ||
+      item.category.toLowerCase().includes(lowerQuery)
+    );
+  }, [menuItems, searchQuery]);
 
-  // Cart Logic
-  const restaurantCartItems = cart.filter(item => item.restaurantId === restaurant.id);
+  const groupedMenu = useMemo(() => {
+    return filteredMenu.reduce((acc, item) => {
+      if (!acc[item.category]) acc[item.category] = [];
+      acc[item.category].push(item);
+      return acc;
+    }, {});
+  }, [filteredMenu]);
+
+  const restaurantCartItems = useMemo(() => cart.filter(item => item.restaurantId === restaurant.id), [cart, restaurant.id]);
   const totalItems = restaurantCartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = restaurantCartItems.reduce((sum, item) => {
     const price = parseFloat(item.price.toString().replace(/[^0-9.]/g, '')) || 0;
     return sum + price * item.quantity;
   }, 0);
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+  const getRatingColor = (rating) => {
+    const score = parseFloat(rating);
+    if (score >= 4.0) return colors.success;
+    if (score >= 3.0) return colors.warning;
+    return colors.error;
+  };
 
-      {/* 1. Sticky Header (Fades in on scroll) */}
-      <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity }]}>
-        <View style={styles.stickyContent}>
-          <Text style={styles.stickyTitle} numberOfLines={1}>{restaurant.name}</Text>
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isSearching ? "dark-content" : "light-content"} translucent backgroundColor="transparent" />
+
+      {/* 1. INITIAL NAV (White Icons on Image) - Fades OUT on scroll */}
+      <Animated.View style={[styles.navContainer, { opacity: navIconsOpacity, zIndex: isSearching ? 0 : 100 }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+          <Ionicons name="arrow-back" size={24} color="#FFF" style={styles.shadowIcon} />
+        </TouchableOpacity>
+
+        <View style={{ flexDirection: 'row' }}>
+          <TouchableOpacity onPress={() => toggleWishlist(restaurant)} style={[styles.iconBtn, { marginRight: 8 }]}>
+            <Ionicons
+              name={isFavorite ? "heart" : "heart-outline"}
+              size={24}
+              color={isFavorite ? "#EF4444" : "#FFF"}
+              style={styles.shadowIcon}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={openSearch} style={styles.iconBtn}>
+            <Ionicons name="search" size={24} color="#FFF" style={styles.shadowIcon} />
+          </TouchableOpacity>
         </View>
       </Animated.View>
 
-      {/* Navigation Buttons */}
-      <View style={styles.navButtons}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconBtn}>
-          <Ionicons name="search" size={24} color="#FFF" />
-        </TouchableOpacity>
-      </View>
+      {/* 2. SLIDING SEARCH BAR (Absolute Top, Z-Index High) */}
+      <Animated.View style={[styles.slidingSearchBar, { transform: [{ translateY: searchBarTranslateY }], backgroundColor: colors.card }]}>
+        <View style={[styles.searchBarInner, { backgroundColor: colors.background }]}>
+          <TouchableOpacity onPress={closeSearch} style={styles.searchBackBtn}>
+            <Ionicons name="arrow-back" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          <TextInput
+            ref={searchInputRef}
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Search menu items..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearBtn}>
+              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </Animated.View>
+
+      {/* 3. STICKY HEADER (White Background + Dark Icons) - Fades IN on scroll */}
+      <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity, backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        {/* Row for Back, Title, Search in Sticky Mode */}
+        {!isSearching && (
+          <View style={styles.stickyRow}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.stickyIconBtn}>
+              <Ionicons name="arrow-back" size={24} color={colors.primary} />
+            </TouchableOpacity>
+
+            <Text style={[styles.stickyTitle, { color: colors.primary }]} numberOfLines={1}>{restaurant.name}</Text>
+
+            <View style={{ flexDirection: 'row' }}>
+              <TouchableOpacity onPress={() => toggleWishlist(restaurant)} style={styles.stickyIconBtn}>
+                <Ionicons
+                  name={isFavorite ? "heart" : "heart-outline"}
+                  size={24}
+                  color={isFavorite ? "#EF4444" : colors.primary}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={openSearch} style={styles.stickyIconBtn}>
+                <Ionicons name="search" size={24} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Ghost view for search bar placement if needed, but sliding bar handles it */}
+        <View />
+      </Animated.View>
 
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
@@ -282,10 +371,11 @@ export default function RestaurantDetails() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
         )}
-        // 🔴 FIX: Remove excessive padding bottom to prevent huge gap
         contentContainerStyle={{ paddingBottom: totalItems > 0 ? 120 : 40 }}
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={Keyboard.dismiss}
       >
-        {/* 2. Header Image */}
+        {/* 4. Parallax Header Image */}
         <View style={styles.headerContainer}>
           <Animated.Image
             source={{ uri: restaurant.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800" }}
@@ -294,37 +384,36 @@ export default function RestaurantDetails() {
             }]}
           />
           <LinearGradient
-            colors={['transparent', 'rgba(10, 35, 66, 0.5)', 'rgba(10, 35, 66, 0.9)']}
+            colors={['transparent', colors.primaryDark + '50', colors.primaryDark]}
             style={styles.gradientOverlay}
           />
         </View>
 
-        {/* 3. Content Sheet */}
-        <Animated.View style={[
-          styles.contentSheet,
-          { transform: [{ translateY: contentTranslateY }] }
-        ]}>
-          
-          {/* Info Section */}
+        {/* 5. Content Sheet */}
+        <Animated.View style={[styles.contentSheet, { backgroundColor: colors.background }]}>
+
+          {/* Restaurant Info */}
           <View style={styles.infoSection}>
             <View style={styles.nameRow}>
-              <Text style={styles.resName}>{restaurant.name}</Text>
-              <View style={styles.ratingBox}>
+              <Text style={[styles.resName, { color: colors.text }]}>{restaurant.name}</Text>
+              <View style={[styles.ratingBox, { backgroundColor: getRatingColor(restaurant.rating) }]}>
                 <Text style={styles.ratingText}>{restaurant.rating}</Text>
                 <Ionicons name="star" size={10} color="#FFF" style={{ marginLeft: 2 }} />
               </View>
             </View>
-            <Text style={styles.resCuisine}>{restaurant.cuisine || "North Indian • Chinese • Fast Food"}</Text>
-            
-            {/* Stats */}
-           
+            <View style={styles.metaInfoRow}>
+              <View style={styles.metaItem}>
+                <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.metaText, { color: colors.textSecondary }]}>30-40 min</Text>
+              </View>
+            </View>
           </View>
 
           {/* Menu List */}
           <View style={styles.menuContainer}>
             <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>MENU</Text>
-              <View style={styles.menuLine} />
+              <Text style={[styles.menuTitle, { color: colors.text }]}>MENU</Text>
+              <View style={[styles.menuLine, { backgroundColor: colors.border }]} />
             </View>
 
             {loading ? (
@@ -333,10 +422,18 @@ export default function RestaurantDetails() {
                 <MenuSkeleton />
                 <MenuSkeleton />
               </>
+            ) : Object.keys(groupedMenu).length === 0 ? (
+              <View style={styles.emptySearchContainer}>
+                <MaterialCommunityIcons name="food-off-outline" size={48} color={colors.textSecondary} />
+                <Text style={[styles.emptySearchText, { color: colors.textSecondary }]}>No items found matching "{searchQuery}"</Text>
+                <TouchableOpacity onPress={closeSearch} style={{ marginTop: 12 }}>
+                  <Text style={{ color: colors.primary, fontWeight: '700' }}>See Full Menu</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
               Object.keys(groupedMenu).map((category) => (
                 <View key={category} style={styles.categorySection}>
-                  <Text style={styles.categoryTitle}>{category}</Text>
+                  <Text style={[styles.categoryTitle, { color: colors.text }]}>{category} ({groupedMenu[category].length})</Text>
                   {groupedMenu[category].map((item, idx) => {
                     const cartItem = cart.find(c => c.id === item.id);
                     return (
@@ -358,16 +455,16 @@ export default function RestaurantDetails() {
         </Animated.View>
       </Animated.ScrollView>
 
-      {/* 4. Floating Cart */}
+      {/* 6. Floating Cart */}
       {totalItems > 0 && (
-        <View style={styles.floatingCartContainer}>
+        <View style={[styles.floatingCartContainer, { bottom: 24 + insets.bottom }]}>
           <TouchableOpacity
-            style={styles.cartButton}
+            style={[styles.cartButton, { shadowColor: colors.primaryDark }]}
             onPress={() => navigation.navigate("Cart")}
             activeOpacity={0.95}
           >
             <LinearGradient
-              colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
+              colors={colors.primaryGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.cartGradient}
@@ -389,431 +486,189 @@ export default function RestaurantDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS_THEME.white },
+  container: { flex: 1 },
 
-  // Header
+  // --- HEADER & NAV ---
   headerContainer: {
     height: HEADER_HEIGHT,
     width: '100%',
     position: 'absolute',
     top: 0,
     zIndex: 0,
+    overflow: 'hidden',
   },
   headerImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  gradientOverlay: { ...StyleSheet.absoluteFillObject },
 
-  // Navbar
-  navButtons: {
+  // Standard Nav (Initial State - White Icons)
+  navContainer: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 50 : 40,
     left: 20,
     right: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    zIndex: 100,
+    zIndex: 100, // Above everything when visible
   },
+  // FIX: Plain icon, no background circle
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  shadowIcon: {
+    // Add text shadow for visibility against image
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 
-  // Sticky Header
+  // --- SLIDING SEARCH BAR ---
+  slidingSearchBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    // Match height to the taller sticky header for consistency
+    height: Platform.OS === 'ios' ? 110 : 90,
+    zIndex: 110,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    justifyContent: 'center'
+  },
+  searchBarInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchBackBtn: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 16, height: '100%' },
+  clearBtn: { marginLeft: 10 },
+
+  // --- STICKY HEADER ---
   stickyHeader: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
+    // FIX: Taller height as requested
     height: HEADER_MIN_HEIGHT,
     zIndex: 90,
-    justifyContent: 'flex-end',
-    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS_THEME.border,
-    backgroundColor: COLORS_THEME.white,
+    justifyContent: 'flex-end',
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowRadius: 4,
     elevation: 4,
   },
-  stickyContent: {
+  stickyRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 60,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    height: 50, // Height of the content row within the header
+  },
+  stickyIconBtn: {
+    padding: 8,
   },
   stickyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    color: COLORS_THEME.darkNavy,
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 10,
   },
 
-  // Content Sheet
+  // --- CONTENT SHEET ---
   contentSheet: {
-    marginTop: HEADER_HEIGHT - 60,
+    marginTop: HEADER_HEIGHT - 40,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingTop: 32,
     paddingHorizontal: 16,
-    minHeight: height - (HEADER_HEIGHT - 60), // Ensures it fills remaining screen but no more
-    backgroundColor: COLORS_THEME.white,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
+    minHeight: height,
   },
 
   // Info Section
-  infoSection: {
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  resName: {
-    fontSize: 24,
-    fontWeight: '800',
-    flex: 1,
-    marginRight: 10,
-    lineHeight: 30,
-    color: COLORS_THEME.darkNavy,
-  },
-  ratingBox: {
-    backgroundColor: '#166534',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginTop: 4,
-  },
-  ratingText: {
-    color: '#FFF',
-    fontWeight: '800',
-    fontSize: 14,
-  },
-  resCuisine: {
-    fontSize: 15,
-    marginBottom: 16,
-    lineHeight: 20,
-    color: COLORS_THEME.grayText,
-    fontWeight: '500',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statText: {
-    fontSize: 13,
-    color: COLORS_THEME.grayText,
-    fontWeight: '500',
-  },
-  dotSeparator: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS_THEME.grayText,
-    marginHorizontal: 8,
-    opacity: 0.5,
-  },
+  infoSection: { marginBottom: 24 },
+  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
+  resName: { fontSize: 24, fontWeight: '800', flex: 1, marginRight: 10, lineHeight: 28 },
+  ratingBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 6 },
+  ratingText: { color: '#FFF', fontWeight: '800', fontSize: 12 },
+  resCuisine: { fontSize: 14, marginBottom: 8 },
+  metaInfoRow: { flexDirection: 'row', alignItems: 'center' },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { fontSize: 12, fontWeight: '600' },
+  metaDot: { marginHorizontal: 8 },
 
-  // Menu Section
-  menuContainer: {
-    paddingBottom: 10,
-  },
-  menuHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 10,
-    paddingHorizontal: 4,
-  },
-  menuTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginRight: 16,
-    color: COLORS_THEME.darkNavy,
-  },
-  menuLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS_THEME.border,
-  },
-  categorySection: {
-    marginBottom: 32,
-  },
-  categoryTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 16,
-    paddingHorizontal: 4,
-    color: COLORS_THEME.darkNavy,
-  },
+  // Menu List
+  menuHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 10 },
+  menuTitle: { fontSize: 13, fontWeight: '800', letterSpacing: 1.5, marginRight: 12 },
+  menuLine: { flex: 1, height: 1 },
+  categorySection: { marginBottom: 24 },
+  categoryTitle: { fontSize: 18, fontWeight: '800', marginBottom: 16 },
 
-  // Menu Item Card
-  menuItemContainer: {
-    flexDirection: 'row',
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  menuTextContainer: {
-    flex: 1,
-    paddingRight: 16,
-    justifyContent: 'flex-start',
-  },
-  menuHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  vegIcon: {
-    width: 16,
-    height: 16,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 4,
-    marginRight: 8,
-    marginTop: 2,
-  },
-  vegCircle: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  bestsellerBadge: {
-    backgroundColor: '#FFFBEB',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  bestsellerText: {
-    color: '#B45309',
-    fontSize: 10,
-    fontWeight: '700',
-    marginLeft: 4,
-  },
-  menuName: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 6,
-    lineHeight: 22,
-    color: COLORS_THEME.darkNavy,
-  },
-  menuPrice: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: COLORS_THEME.darkNavy,
-  },
-  menuDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: COLORS_THEME.grayText,
-  },
+  // --- MENU ITEM ---
+  menuItemContainer: { flexDirection: 'row', paddingVertical: 16, borderBottomWidth: 1 },
+  menuTextContainer: { flex: 1, paddingRight: 12 },
+  menuHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
 
-  // Image and Button Container
-  menuImageWrapper: {
-    width: 130,
-    alignItems: 'center',
-    position: 'relative',
-  },
-  imageContainer: {
-    width: 110,
-    height: 110,
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  menuImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  placeholderImage: {
-    width: 110,
-    height: 110,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-  },
+  vegIconBorder: { width: 14, height: 14, borderWidth: 1, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
+  vegIconDot: { width: 8, height: 8, borderRadius: 4 },
 
-  // ADD BUTTON STYLES
-  addButtonContainer: {
-    position: 'absolute',
-    bottom: -8,
-    width: 90,
-    height: 32,
-    zIndex: 10,
-    alignItems: 'center',
-  },
-  addBtnWrapper: {
-    width: '100%',
-    height: '100%',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 5,
-    backgroundColor: 'white',
-    borderRadius: 8,
-  },
-  addBtn: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: COLORS_THEME.aeroBlue,
-    backgroundColor: COLORS_THEME.white,
-  },
-  addBtnText: {
-    color: COLORS_THEME.steelBlue,
-    fontSize: 14,
-    fontWeight: '800',
-    marginRight: 4,
-  },
-  addBtnPlus: {
-    // removed absolute positioning for flow
-  },
+  bestsellerBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  bestsellerText: { fontSize: 9, fontWeight: '700', marginLeft: 3 },
 
-  // Quantity Styles
-  qtyContainer: {
-    width: '100%',
-    height: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    borderWidth: 1,
-    borderColor: COLORS_THEME.steelBlue,
-    backgroundColor: COLORS_THEME.white,
-    shadowColor: COLORS_THEME.steelBlue,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  qtyBtn: {
-    padding: 4,
-  },
-  qtyText: {
-    fontWeight: '800',
-    fontSize: 14,
-    color: COLORS_THEME.steelBlue,
-  },
-  unavailableBadge: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 90,
-    height: 32,
-    borderWidth: 1,
-    borderColor: COLORS_THEME.border,
-    backgroundColor: COLORS_THEME.background,
-  },
-  unavailableText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS_THEME.grayText,
-  },
+  menuName: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  menuPrice: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
+  menuDescription: { fontSize: 12, lineHeight: 18 },
 
-  // Skeleton
-  skeletonContainer: {
-    flexDirection: 'row',
-    paddingVertical: 24,
-    borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
-  },
-  skeletonBox: {
-    borderRadius: 4,
-    backgroundColor: '#E5E7EB',
-  },
+  menuImageWrapper: { width: 120, alignItems: 'center' },
+  imageContainer: { width: 110, height: 110, borderRadius: 12, overflow: 'hidden', marginBottom: 12 },
+  menuImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  placeholderImage: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+  // Buttons
+  addButtonContainer: { position: 'absolute', bottom: -6, width: 90, height: 32, alignItems: 'center' },
+  addBtnWrapper: { width: '100%', height: '100%', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 3, borderRadius: 8 },
+  addBtn: { flex: 1, borderRadius: 8, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', borderWidth: 1 },
+  addBtnText: { fontSize: 14, fontWeight: '800', marginRight: 2 },
+
+  qtyContainer: { width: '100%', height: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 8, paddingHorizontal: 6, borderWidth: 1 },
+  qtyBtn: { padding: 2 },
+  qtyText: { fontWeight: '800', fontSize: 14 },
+
+  unavailableBadge: { width: 90, height: 32, borderWidth: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  unavailableText: { fontSize: 11, fontWeight: '600' },
+
+  // Empty State
+  emptySearchContainer: { alignItems: 'center', paddingVertical: 40 },
+  emptySearchText: { marginTop: 12, fontSize: 14, fontStyle: 'italic' },
 
   // Floating Cart
-  floatingCartContainer: {
-    position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 16,
-    zIndex: 50,
-  },
-  cartButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: COLORS_THEME.steelBlue,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 12,
-  },
-  cartGradient: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-  },
-  cartItemCount: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 2,
-    letterSpacing: 0.5,
-  },
-  cartTotalAmount: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  plusTaxes: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.8)',
-  },
-  viewCartBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-  },
-  viewCartText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  floatingCartContainer: { position: 'absolute', bottom: 24, left: 16, right: 16, zIndex: 50 },
+  cartButton: { borderRadius: 16, overflow: 'hidden', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 8 },
+  cartGradient: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20 },
+  cartItemCount: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  cartTotalAmount: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  plusTaxes: { fontSize: 10, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
+  viewCartBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  viewCartText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
+
+  // Skeleton
+  skeletonContainer: { flexDirection: 'row', paddingVertical: 24, borderBottomWidth: 1, borderColor: '#f0f0f0' },
+  skeletonBox: { borderRadius: 4, backgroundColor: '#E5E7EB' },
 });

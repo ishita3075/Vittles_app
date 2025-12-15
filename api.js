@@ -89,6 +89,7 @@ export const addMenuItem = async (vendorId, menuItem) => {
       price: menuItem.price,
       category: menuItem.category,
       description: menuItem.description,
+      foodType: menuItem.isVeg ? "Veg" : "Non-Veg",
       available: menuItem.available,
     });
     return response.data;
@@ -243,7 +244,7 @@ export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
    ========================================================================= */
 
 const paymentApi = axios.create({
-  baseURL: 'http://192.168.1.102:8089', // your Spring Boot IP
+  baseURL: 'http://10.10.144.95:8089', // your Spring Boot IP
   headers: {
     'Content-Type': 'application/json',
   },
@@ -365,31 +366,6 @@ authApi.interceptors.request.use(
 export const fetchCurrentUser = async () => {
   const res = await authApi.get('/api/user/me');
   return res.data; // { id, name, email }
-};
-/* =========================================================================
-   REVIEW API (Spring Boot - Local)
-   ========================================================================= */
-
-// ⚠️ Replace with YOUR IP
-const REVIEW_BASE_URL = "http://192.168.1.102:8080";
-
-const reviewApi = axios.create({
-  baseURL: REVIEW_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// 👉 Create review
-export const createReview = async (payload) => {
-  const res = await reviewApi.post("/api/reviews", payload);
-  return res.data;
-};
-
-// 👉 Get vendor reviews
-export const getReviewsByVendor = async (vendorId) => {
-  const res = await reviewApi.get(`/api/reviews/vendor/${vendorId}`);
-  return res.data;
 };
 
 /* =========================================================================

@@ -13,12 +13,15 @@ import {
   ActivityIndicator,
   Platform,
   UIManager,
-  LayoutAnimation
+  LayoutAnimation,
+  Easing
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
+
+const AnimatedIcon = Animated.createAnimatedComponent(Ionicons);
 
 const { height, width } = Dimensions.get("window");
 
@@ -80,7 +83,8 @@ export default function VendorProfileScreen({ navigation }) {
   // Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
   const listAnim = useRef(new Animated.Value(0)).current;
-  
+  const breathAnim = useRef(new Animated.Value(1)).current;
+
   // Modal Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(height)).current;
@@ -92,6 +96,22 @@ export default function VendorProfileScreen({ navigation }) {
     Animated.parallel([
       Animated.timing(headerAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
       Animated.timing(listAnim, { toValue: 1, duration: 700, delay: 250, useNativeDriver: true }),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(breathAnim, {
+            toValue: 1.1,
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(breathAnim, {
+            toValue: 1,
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      )
     ]).start();
   }, []);
 
@@ -174,7 +194,7 @@ export default function VendorProfileScreen({ navigation }) {
 
   // Menu items
   const operationItems = [
-    { icon: "star-outline", title: "Reviews & Ratings", color: "#8B5CF6", badge: "New", badgeColor: "#F59E0B", onPress: () => navigation.navigate("VendorReviews") },
+    // { icon: "star-outline", title: "Reviews & Ratings", color: "#8B5CF6", badge: "New", badgeColor: "#F59E0B", onPress: () => navigation.navigate("VendorReviews") },
   ];
 
   const businessItems = [
@@ -189,22 +209,48 @@ export default function VendorProfileScreen({ navigation }) {
       {/* 1. Header Background */}
       <View style={styles.headerBackground}>
         <LinearGradient
-          colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
+          colors={["#1A237E", "#303F9F", "#1A237E"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
+          locations={[0, 0.5, 1]}
           style={styles.headerGradient}
         >
-          <View style={styles.headerDecorationCircle} />
-          <View style={styles.headerDecorationCircleSmall} />
+          {/* --- Animated Background Decoration --- */}
+          <View style={StyleSheet.absoluteFill}>
+            {[
+              { name: "restaurant-outline", size: 48, top: '10%', left: '5%', rotate: '15deg' },
+              { name: "leaf-outline", size: 42, top: '25%', right: '10%', rotate: '-10deg' },
+              { name: "nutrition-outline", size: 54, top: '50%', left: '15%', rotate: '25deg' },
+              { name: "fast-food-outline", size: 40, top: '15%', left: '45%', rotate: '10deg' },
+            ].map((icon, index) => (
+              <AnimatedIcon
+                key={index}
+                name={icon.name}
+                size={icon.size}
+                color="rgba(255,255,255,0.06)"
+                style={{
+                  position: 'absolute',
+                  top: icon.top,
+                  left: icon.left,
+                  right: icon.right,
+                  bottom: icon.bottom,
+                  transform: [
+                    { scale: breathAnim },
+                    { rotate: icon.rotate }
+                  ]
+                }}
+              />
+            ))}
+          </View>
         </LinearGradient>
       </View>
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* 2. Profile Card */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.profileCard,
             {
@@ -242,40 +288,13 @@ export default function VendorProfileScreen({ navigation }) {
         </Animated.View>
 
         {/* 3. Menu Sections */}
-        <Animated.View 
-          style={{ 
-            opacity: listAnim, 
-            transform: [{ translateY: listAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }] 
+        <Animated.View
+          style={{
+            opacity: listAnim,
+            transform: [{ translateY: listAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }]
           }}
         >
-          {/* Operations */}
-          <View style={styles.menuGroupContainer}>
-            <Text style={styles.menuGroupTitle}>Operations</Text>
-            <View style={styles.menuList}>
-              {operationItems.map((item, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.menuItem, idx === operationItems.length - 1 && styles.lastMenuItem]}
-                  activeOpacity={0.75}
-                  onPress={item.onPress}
-                >
-                  <View style={[styles.menuIconBox, { backgroundColor: item.color + "15" }]}>
-                    <Ionicons name={item.icon} size={20} color={item.color} />
-                  </View>
 
-                  <Text style={styles.menuText}>{item.title}</Text>
-
-                  {item.badge && (
-                    <View style={[styles.menuBadge, item.badgeColor && { backgroundColor: item.badgeColor }]}>
-                      <Text style={styles.menuBadgeText}>{item.badge}</Text>
-                    </View>
-                  )}
-
-                  <Ionicons name="chevron-forward" size={18} color={COLORS_THEME.grayText} />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
 
           {/* Business */}
           <View style={styles.menuGroupContainer}>
@@ -299,9 +318,9 @@ export default function VendorProfileScreen({ navigation }) {
           </View>
 
           {/* Sign Out */}
-          <TouchableOpacity 
-            style={styles.signOutButton} 
-            onPress={showSignOutAlert} 
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={showSignOutAlert}
             activeOpacity={0.85}
           >
             <Text style={styles.signOutButtonText}>Log Out Vendor Account</Text>
@@ -314,9 +333,9 @@ export default function VendorProfileScreen({ navigation }) {
       {/* --- Sign-Out Modal --- */}
       <Modal visible={isModalVisible} transparent animationType="none" statusBarTranslucent onRequestClose={() => hideAlert()}>
         <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
-          <Animated.View 
+          <Animated.View
             style={[
-              styles.customAlertContainer, 
+              styles.customAlertContainer,
               { transform: [{ translateY: slideAnim }, { scale: scaleAnim }] }
             ]}
           >
@@ -331,11 +350,11 @@ export default function VendorProfileScreen({ navigation }) {
 
             <View style={styles.modalContent}>
               <Animated.View style={[styles.modalIconBox, { transform: [{ rotate: rotateInterpolate }] }]}>
-                <LinearGradient 
-                  colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]} 
+                <LinearGradient
+                  colors={["#1A237E", "#303F9F"]}
                   style={styles.modalIconGradient}
                 >
-                  <Ionicons name="log-out" size={28} color="#FFF" style={{marginLeft: 4}} />
+                  <Ionicons name="log-out" size={28} color="#FFF" style={{ marginLeft: 4 }} />
                 </LinearGradient>
               </Animated.View>
 
@@ -343,8 +362,8 @@ export default function VendorProfileScreen({ navigation }) {
               <Text style={styles.modalMessage}>Are you sure you want to log out? You will stop receiving order notifications.</Text>
 
               <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleSignOut} activeOpacity={0.9}>
-                <LinearGradient 
-                  colors={[COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]} 
+                <LinearGradient
+                  colors={["#1A237E", "#303F9F"]}
                   style={styles.modalBtnGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -379,56 +398,56 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   headerGradient: { flex: 1 },
-  headerDecorationCircle: { 
-    position: "absolute", 
-    top: -50, 
-    right: -50, 
-    width: 200, 
-    height: 200, 
-    borderRadius: 100, 
-    backgroundColor: "rgba(255,255,255,0.05)" 
+  headerDecorationCircle: {
+    position: "absolute",
+    top: -50,
+    right: -50,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.05)"
   },
-  headerDecorationCircleSmall: { 
-    position: "absolute", 
-    bottom: 20, 
-    left: -20, 
-    width: 100, 
-    height: 100, 
-    borderRadius: 50, 
-    backgroundColor: "rgba(255,255,255,0.03)" 
+  headerDecorationCircleSmall: {
+    position: "absolute",
+    bottom: 20,
+    left: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(255,255,255,0.03)"
   },
-  
-  scrollContent: { 
-    paddingTop: 100, 
-    paddingBottom: 30 
+
+  scrollContent: {
+    paddingTop: 100,
+    paddingBottom: 30
   },
 
   // Profile Card
-  profileCard: { 
-    marginHorizontal: 20, 
-    borderRadius: 24, 
-    padding: 24, 
+  profileCard: {
+    marginHorizontal: 20,
+    borderRadius: 24,
+    padding: 24,
     backgroundColor: COLORS_THEME.white,
-    shadowColor: "#000", 
-    shadowOffset: { width: 0, height: 10 }, 
-    shadowOpacity: 0.06, 
-    shadowRadius: 20, 
-    elevation: 10, 
-    marginBottom: 24 
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 10,
+    marginBottom: 24
   },
-  profileHeader: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    marginBottom: 20 
+  profileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20
   },
   avatarWrapper: { marginRight: 16 },
-  avatarGradient: { 
-    width: 70, 
-    height: 70, 
-    borderRadius: 35, 
-    justifyContent: "center", 
-    alignItems: "center", 
-    borderWidth: 3, 
+  avatarGradient: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
     borderColor: "#FFF",
     shadowColor: COLORS_THEME.aeroBlue,
     shadowOffset: { width: 0, height: 4 },
@@ -436,107 +455,107 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   profileInfo: { flex: 1 },
-  userName: { 
-    fontSize: 20, 
-    fontWeight: "800", 
+  userName: {
+    fontSize: 20,
+    fontWeight: "800",
     marginBottom: 4,
     color: COLORS_THEME.darkNavy,
   },
-  userEmail: { 
-    fontSize: 13, 
+  userEmail: {
+    fontSize: 13,
     marginBottom: 8,
     color: COLORS_THEME.grayText,
   },
 
   // Stats
-  statsRow: { 
-    flexDirection: "row", 
-    justifyContent: "space-between", 
-    paddingTop: 20, 
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: 20,
     borderTopWidth: 1,
     borderColor: '#F3F4F6'
   },
-  statItem: { 
-    alignItems: "center", 
-    flex: 1 
+  statItem: {
+    alignItems: "center",
+    flex: 1
   },
-  statIconContainer: { 
-    width: 36, 
-    height: 36, 
-    borderRadius: 12, 
-    justifyContent: "center", 
-    alignItems: "center", 
-    marginBottom: 8 
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8
   },
-  statValue: { 
-    fontSize: 16, 
-    fontWeight: "800", 
+  statValue: {
+    fontSize: 16,
+    fontWeight: "800",
     color: COLORS_THEME.darkNavy,
     marginBottom: 2
   },
-  statLabel: { 
-    fontSize: 11, 
+  statLabel: {
+    fontSize: 11,
     color: COLORS_THEME.grayText,
     fontWeight: '600',
   },
 
   // Menus
   menuGroupContainer: { marginBottom: 20, paddingHorizontal: 20 },
-  menuGroupTitle: { 
-    fontSize: 13, 
-    fontWeight: "700", 
-    marginBottom: 12, 
+  menuGroupTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 12,
     marginLeft: 4,
-    textTransform: "uppercase", 
+    textTransform: "uppercase",
     color: COLORS_THEME.grayText,
     letterSpacing: 0.5
   },
-  menuList: { 
-    borderRadius: 16, 
+  menuList: {
+    borderRadius: 16,
     overflow: "hidden",
     backgroundColor: COLORS_THEME.white,
     borderWidth: 1,
     borderColor: COLORS_THEME.border,
   },
-  menuItem: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    padding: 16, 
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
     borderBottomWidth: 1,
     borderColor: '#F3F4F6',
   },
   lastMenuItem: { borderBottomWidth: 0 },
-  menuIconBox: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 12, 
-    justifyContent: "center", 
-    alignItems: "center", 
-    marginRight: 14 
+  menuIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14
   },
-  menuText: { 
-    flex: 1, 
-    fontSize: 15, 
+  menuText: {
+    flex: 1,
+    fontSize: 15,
     fontWeight: "600",
     color: COLORS_THEME.darkNavy,
   },
-  menuBadge: { 
-    backgroundColor: COLORS_THEME.error, 
-    paddingHorizontal: 8, 
-    paddingVertical: 3, 
-    borderRadius: 12, 
-    marginRight: 8 
+  menuBadge: {
+    backgroundColor: COLORS_THEME.error,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginRight: 8
   },
   menuBadgeText: { color: "#FFF", fontSize: 11, fontWeight: "700" },
 
   // Buttons
-  signOutButton: { 
-    marginHorizontal: 20, 
-    marginTop: 12, 
-    paddingVertical: 16, 
-    borderRadius: 16, 
-    alignItems: "center", 
-    justifyContent: "center", 
+  signOutButton: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "#FEF2F2",
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.1)'
@@ -544,19 +563,19 @@ const styles = StyleSheet.create({
   signOutButtonText: { color: COLORS_THEME.error, fontSize: 15, fontWeight: "800" },
 
   // Modal
-  modalOverlay: { 
-    flex: 1, 
-    backgroundColor: "rgba(0,0,0,0.55)", 
-    justifyContent: "center", 
-    alignItems: "center", 
-    padding: 20 
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20
   },
-  customAlertContainer: { 
-    width: "100%", 
-    maxWidth: 340, 
-    borderRadius: 24, 
-    padding: 24, 
-    alignItems: "center", 
+  customAlertContainer: {
+    width: "100%",
+    maxWidth: 340,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
     overflow: "hidden",
     backgroundColor: COLORS_THEME.white
   },
@@ -564,10 +583,10 @@ const styles = StyleSheet.create({
   modalCircle: { position: "absolute", width: 100, height: 100, borderRadius: 50, opacity: 0.1 },
   closeModalBtn: { position: "absolute", top: 16, right: 16, zIndex: 10 },
   modalContent: { marginTop: 10, alignItems: "center", width: "100%" },
-  modalIconBox: { 
-    width: 72, 
-    height: 72, 
-    borderRadius: 36, 
+  modalIconBox: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     marginBottom: 20,
     shadowColor: COLORS_THEME.steelBlue,
     shadowOffset: { width: 0, height: 8 },

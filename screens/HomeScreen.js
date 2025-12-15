@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,8 @@ import {
   UIManager,
   TouchableOpacity,
   Modal,
-  FlatList
+  FlatList,
+  Animated
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import PromoCarousel from '../components/PromoCarousel';
@@ -20,6 +21,7 @@ import CategoriesList from "../components/CategoriesList";
 import NearbyRestaurants from "../components/NearbyRestaurants";
 import { useTheme } from "../contexts/ThemeContext";
 import { getAllVendors, getVendorMenu } from '../api';
+import { commonStyles } from '../styles/common';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android') {
@@ -28,29 +30,23 @@ if (Platform.OS === 'android') {
   }
 }
 
-// --- PALETTE CONSTANTS (Aero Blue Theme) ---
-const COLORS = {
-  aeroBlue: "#7CB9E8",          
-  steelBlue: "#5A94C4",         
-  darkNavy: "#0A2342",          
-  aeroBlueLight: "rgba(124, 185, 232, 0.1)",
-  border: "rgba(0,0,0,0.05)",
-  card: "#FFFFFF",
-  white: "#FFFFFF",
-  grayText: "#6B7280",
-  background: "#F9FAFB",
-  success: "#059669", 
-};
+// --- PALETTE CONSTANTS removed in favor of ThemeContext
 
 // --- CATEGORIES DATA ---
 const CATEGORIES = [
-  { id: "all", name: "All", icon: "🍽️" },
-  { id: "burger", name: "Burger", icon: "🍔" },
-  { id: "pizza", name: "Pizza", icon: "🍕" },
-  { id: "chai", name: "Chai", icon: "☕" },
-  { id: "dessert", name: "Dessert", icon: "🍰" },
-  { id: "icecream", name: "Ice cream", icon: "🍦" },
-  { id: "drinks", name: "Drinks", icon: "🥤" },
+  { id: "maggi", name: "Maggi", image: "https://img.icons8.com/fluency/96/noodles.png" },
+  { id: "sandwich", name: "Sandwich", image: "https://img.icons8.com/fluency/96/sandwich.png" },
+  { id: "coffee", name: "Coffee & Chai", image: "https://img.icons8.com/fluency/96/coffee.png" },
+  { id: "fastfood", name: "Pizza & Burgers", image: "https://img.icons8.com/fluency/96/pizza.png" },
+  { id: "salad", name: "Salad", image: "https://img.icons8.com/fluency/96/salad.png" },
+  { id: "dessert", name: "Cakes & Desserts", image: "https://img.icons8.com/fluency/96/cake.png" },
+  { id: "breakfast", name: "Breakfast", image: "https://img.icons8.com/fluency/96/sunny-side-up-eggs.png" },
+  { id: "icecream", name: "Ice Cream", image: "https://img.icons8.com/fluency/96/ice-cream-cone.png" },
+  // Extra for scroll
+  { id: "biryani", name: "Biryani", image: "https://img.icons8.com/fluency/96/rice-bowl.png" },
+  { id: "thali", name: "Thali", image: "https://img.icons8.com/fluency/96/bento.png" },
+  { id: "dosa", name: "South Indian", image: "https://img.icons8.com/fluency/96/vegetarian-food.png" },
+  { id: "rolls", name: "Rolls", image: "https://img.icons8.com/fluency/96/burrito.png" },
 ];
 
 // --- Responsive Utilities ---
@@ -104,6 +100,19 @@ const transformVendorToRestaurant = (vendor) => {
 
 export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
+
+  // Animation State
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const HEADER_HEIGHT = 290; // Increased to fully hide blue artifact line
+
+  // Standard Collapsible behavior (Only shows at top)
+  // This calculates absolute position based on scroll:
+  // 0 -> Visible, 245 -> Hidden. Stays hidden if scroll > 245.
+  const translateY = scrollY.interpolate({
+    inputRange: [0, HEADER_HEIGHT],
+    outputRange: [0, -HEADER_HEIGHT],
+    extrapolate: 'clamp',
+  });
 
   // State
   const [searchQuery, setSearchQuery] = useState("");
@@ -160,11 +169,11 @@ export default function HomeScreen({ navigation }) {
     let categoryObj = null;
 
     if (typeof categoryInput === 'object' && categoryInput !== null) {
-        categoryId = categoryInput.id;
-        categoryObj = categoryInput;
+      categoryId = categoryInput.id;
+      categoryObj = categoryInput;
     } else {
-        categoryId = categoryInput;
-        categoryObj = CATEGORIES.find(c => c.id === categoryInput);
+      categoryId = categoryInput;
+      categoryObj = CATEGORIES.find(c => c.id === categoryInput);
     }
 
     if (!categoryId) return;
@@ -180,27 +189,27 @@ export default function HomeScreen({ navigation }) {
 
     // Prepare Data for POPUP (Specific items with prices)
     const popupResults = [];
-    
-    vendors.forEach(restaurant => {
-        const catKey = categoryId.toLowerCase();
-        
-        // Find specific items in the menu that match the category
-        const matchingItems = restaurant.menu.filter(item => {
-             const name = (item.itemName || item.name || "").toLowerCase();
-             const cat = (item.category || "").toLowerCase();
-             return name.includes(catKey) || cat.includes(catKey);
-        });
 
-        if (matchingItems.length > 0) {
-            popupResults.push({
-                restaurantObj: restaurant, 
-                items: matchingItems
-            });
-        }
+    vendors.forEach(restaurant => {
+      const catKey = categoryId.toLowerCase();
+
+      // Find specific items in the menu that match the category
+      const matchingItems = restaurant.menu.filter(item => {
+        const name = (item.itemName || item.name || "").toLowerCase();
+        const cat = (item.category || "").toLowerCase();
+        return name.includes(catKey) || cat.includes(catKey);
+      });
+
+      if (matchingItems.length > 0) {
+        popupResults.push({
+          restaurantObj: restaurant,
+          items: matchingItems
+        });
+      }
     });
 
     setPopupData(popupResults);
-    
+
     // CHANGE: Open modal ALWAYS, even if results are empty
     setModalVisible(true);
   };
@@ -209,25 +218,25 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     if (!searchQuery) {
-        setFilteredRestaurants(vendors);
-        return;
+      setFilteredRestaurants(vendors);
+      return;
     }
     const query = searchQuery.toLowerCase();
-    
-    const result = vendors.filter(r => {
-        // 1. Search Name
-        const nameMatch = r.name.toLowerCase().includes(query);
-        
-        // 2. Search Main Cuisine
-        const cuisineMatch = r.cuisine.toLowerCase().includes(query);
-        
-        // 3. Search Deep Inside Menu (Items & Categories)
-        const menuMatch = r.menu && r.menu.some(item => 
-           (item.itemName || item.name || "").toLowerCase().includes(query) || 
-           (item.category || "").toLowerCase().includes(query)
-        );
 
-        return nameMatch || cuisineMatch || menuMatch;
+    const result = vendors.filter(r => {
+      // 1. Search Name
+      const nameMatch = r.name.toLowerCase().includes(query);
+
+      // 2. Search Main Cuisine
+      const cuisineMatch = r.cuisine.toLowerCase().includes(query);
+
+      // 3. Search Deep Inside Menu (Items & Categories)
+      const menuMatch = r.menu && r.menu.some(item =>
+        (item.itemName || item.name || "").toLowerCase().includes(query) ||
+        (item.category || "").toLowerCase().includes(query)
+      );
+
+      return nameMatch || cuisineMatch || menuMatch;
     });
 
     setFilteredRestaurants(result);
@@ -246,29 +255,46 @@ export default function HomeScreen({ navigation }) {
   }, [navigation]);
 
   return (
-    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <TopNavbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onClearSearch={handleClearSearch}
-      />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Animated.View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          elevation: 10,
+          transform: [{ translateY }]
+        }}
+      >
+        <TopNavbar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onClearSearch={handleClearSearch}
+        />
+      </Animated.View>
 
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 265 }]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[COLORS.aeroBlue]}
-            tintColor={COLORS.aeroBlue}
-            progressViewOffset={20}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            progressViewOffset={HEADER_HEIGHT + 20}
           />
         }
       >
         <View style={styles.carouselSection}>
           <View style={[styles.sectionHeader, { paddingHorizontal: responsive.spacing.lg, marginBottom: responsive.spacing.sm }]}>
-            <Text style={[styles.sectionTitle, { color: COLORS.darkNavy }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Recommended for you
             </Text>
           </View>
@@ -278,16 +304,16 @@ export default function HomeScreen({ navigation }) {
         <CategoriesList
           categories={CATEGORIES}
           selectedCategory={selectedCategory}
-          onCategorySelect={handleCategoryPress} 
+          onCategorySelect={handleCategoryPress}
         />
 
         <View style={styles.listSection}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={[styles.sectionTitle, { color: COLORS.darkNavy }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 {searchQuery ? 'Search Results' : 'All Eateries'}
               </Text>
-              <Text style={[styles.sectionSubtitle, { color: COLORS.grayText }]}>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
                 {loading ? 'Finding best spots...' : `${filteredRestaurants.length} places near you`}
               </Text>
             </View>
@@ -309,7 +335,7 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         <View style={{ height: 80 }} />
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* --- THE POPUP MODAL --- */}
       <Modal
@@ -319,72 +345,70 @@ export default function HomeScreen({ navigation }) {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-            <TouchableOpacity 
-                style={styles.modalBackdrop} 
-                activeOpacity={1} 
-                onPress={() => setModalVisible(false)} 
-            />
-            
-            <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                    <View style={styles.modalHeaderLeft}>
-                        <Text style={styles.modalIcon}>{currentCategoryObj?.icon}</Text>
-                        <View>
-                            <Text style={styles.modalTitle}>{currentCategoryObj?.name} Places</Text>
-                            <Text style={styles.modalSubtitle}>Found {popupData.length} places</Text>
-                        </View>
-                    </View>
-                    <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
-                        <Ionicons name="close" size={24} color={COLORS.grayText} />
-                    </TouchableOpacity>
-                </View>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setModalVisible(false)}
+          />
 
-                <FlatList 
-                    data={popupData}
-                    keyExtractor={(item, index) => index.toString()}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
-                    // --- NOTHING FOUND SCREEN ---
-                    ListEmptyComponent={
-                        <View style={styles.emptyStateContainer}>
-                            <View style={styles.emptyStateIconContainer}>
-                                <Ionicons name="search-outline" size={40} color="#9CA3AF" />
-                            </View>
-                            <Text style={styles.emptyStateTitle}>No {currentCategoryObj?.name} found</Text>
-                            <Text style={styles.emptyStateSub}>
-                                We couldn't find any restaurants serving {currentCategoryObj?.name?.toLowerCase()} nearby.
-                            </Text>
-                        </View>
-                    }
-                    renderItem={({ item }) => (
-                        <TouchableOpacity 
-                            style={styles.popupCard}
-                            onPress={() => handleRestaurantPress(item.restaurantObj)}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.popupCardHeader}>
-                                <Text style={styles.popupResName}>{item.restaurantObj.name}</Text>
-                                <View style={styles.popupResMeta}>
-                                    <Ionicons name="star" size={12} color="#F59E0B" />
-                                    <Text style={styles.popupResRating}>{item.restaurantObj.rating}</Text>
-                                    <Text style={styles.popupResDot}>•</Text>
-                                    <Text style={styles.popupResDist}>{item.restaurantObj.distance}</Text>
-                                </View>
-                            </View>
-                            {item.items.map((food, idx) => (
-                                <View key={idx} style={styles.popupMenuRow}>
-                                    <View style={{flex: 1}}>
-                                        <Text style={styles.popupFoodName} numberOfLines={1}>{food.itemName || food.name}</Text>
-                                    </View>
-                                    <Text style={styles.popupFoodPrice}>
-                                        ₹{food.price ? parseFloat(food.price).toFixed(0) : 'NA'}
-                                    </Text>
-                                </View>
-                            ))}
-                        </TouchableOpacity>
-                    )}
-                />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <Text style={styles.modalIcon}>{currentCategoryObj?.icon}</Text>
+                <View>
+                  <Text style={styles.modalTitle}>{currentCategoryObj?.name} Places</Text>
+                  <Text style={styles.modalSubtitle}>Found {popupData.length} places</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
+
+            <FlatList
+              data={popupData}
+              keyExtractor={(item, index) => index.toString()}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+              // --- NOTHING FOUND SCREEN ---
+              ListEmptyComponent={
+                <View style={styles.emptyStateContainer}>
+                  <View style={styles.emptyStateIconContainer}>
+                    <Ionicons name="search-outline" size={40} color="#9CA3AF" />
+                  </View>
+                  <Text style={styles.emptyStateTitle}>No {currentCategoryObj?.name} found</Text>
+                  <Text style={styles.emptyStateSub}>
+                    We couldn't find any restaurants serving {currentCategoryObj?.name?.toLowerCase()} nearby.
+                  </Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.popupCard}
+                  onPress={() => handleRestaurantPress(item.restaurantObj)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.popupCardHeader}>
+                    <Text style={styles.popupResName}>{item.restaurantObj.name}</Text>
+                    <View style={styles.popupResMeta}>
+                      <Ionicons name="star" size={12} color="#F59E0B" />
+                      <Text style={styles.popupResRating}>{item.restaurantObj.rating}</Text>
+                    </View>
+                  </View>
+                  {item.items.map((food, idx) => (
+                    <View key={idx} style={styles.popupMenuRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.popupFoodName} numberOfLines={1}>{food.itemName || food.name}</Text>
+                      </View>
+                      <Text style={styles.popupFoodPrice}>
+                        ₹{food.price ? parseFloat(food.price).toFixed(0) : 'NA'}
+                      </Text>
+                    </View>
+                  ))}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
         </View>
       </Modal>
     </View>
@@ -450,13 +474,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalBackdrop: {
-      flex: 1,
+    flex: 1,
   },
   modalContent: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    height: '75%', 
+    height: '75%',
     padding: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
@@ -465,118 +489,117 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 20,
-      borderBottomWidth: 1,
-      borderBottomColor: '#F3F4F6',
-      paddingBottom: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    paddingBottom: 15,
   },
   modalHeaderLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   modalIcon: {
-      fontSize: 28,
-      marginRight: 10,
+    fontSize: 28,
+    marginRight: 10,
   },
   modalTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: COLORS.darkNavy,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1C1C1E',
   },
   modalSubtitle: {
-      fontSize: 12,
-      color: COLORS.grayText,
+    fontSize: 12,
+    color: '#8E8E93',
   },
   closeBtn: {
-      padding: 5,
-      backgroundColor: '#F3F4F6',
-      borderRadius: 20,
+    padding: 5,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
   },
   popupCard: {
-      backgroundColor: '#F9FAFB',
-      borderRadius: 16,
-      padding: 15,
-      marginBottom: 15,
-      borderWidth: 1,
-      borderColor: '#E5E7EB',
+    ...commonStyles.card,
+    backgroundColor: '#F9FAFB',
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   popupCardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 10,
-      paddingBottom: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: 'rgba(0,0,0,0.05)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   popupResName: {
-      fontSize: 15,
-      fontWeight: '700',
-      color: COLORS.darkNavy,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1C1C1E',
   },
   popupResMeta: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   popupResRating: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: COLORS.grayText,
-      marginLeft: 3,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8E8E93',
+    marginLeft: 3,
   },
   popupResDot: {
-      marginHorizontal: 4,
-      color: '#D1D5DB',
+    marginHorizontal: 4,
+    color: '#D1D5DB',
   },
   popupResDist: {
-      fontSize: 12,
-      color: COLORS.grayText,
+    fontSize: 12,
+    color: '#8E8E93',
   },
   popupMenuRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 6,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   popupFoodName: {
-      fontSize: 14,
-      color: '#4B5563',
-      fontWeight: '500',
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
   },
   popupFoodPrice: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: COLORS.success,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#34C759',
   },
   // --- EMPTY STATE STYLES ---
   emptyStateContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 40,
-      paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   emptyStateIconContainer: {
-      width: 80,
-      height: 80,
-      backgroundColor: '#F3F4F6',
-      borderRadius: 40,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 16,
+    width: 80,
+    height: 80,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   emptyStateTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: COLORS.darkNavy,
-      marginBottom: 8,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1C1C1E',
+    marginBottom: 8,
   },
   emptyStateSub: {
-      textAlign: 'center',
-      color: COLORS.grayText,
-      lineHeight: 20,
-      fontSize: 14,
+    textAlign: 'center',
+    color: '#8E8E93',
+    lineHeight: 20,
+    fontSize: 14,
   }
 });

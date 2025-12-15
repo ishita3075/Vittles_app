@@ -10,7 +10,9 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useWishlist } from '../contexts/WishlistContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { commonStyles } from '../styles/common';
 
 // --- Local Theme Constants ---
 const PALETTE = {
@@ -27,7 +29,10 @@ const PALETTE = {
 const RestaurantCard = ({ restaurant }) => {
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const [imageError, setImageError] = React.useState(false);
+
+  const isFavorite = isInWishlist(restaurant.id);
 
   const handlePress = () => {
     navigation.navigate('RestaurantDetails', { restaurant });
@@ -66,15 +71,23 @@ const RestaurantCard = ({ restaurant }) => {
         {renderImage()}
 
         {/* Gradient for text contrast on image */}
-        <LinearGradient
+        {/* <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.7)']}
           style={styles.gradientOverlay}
-        />
+        /> */}
 
         {/* Top Right: Favorite Icon Placeholder */}
-        <View style={styles.favoriteButton}>
-          <Ionicons name="heart-outline" size={20} color="#FFF" />
-        </View>
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={() => toggleWishlist(restaurant)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={20}
+            color={isFavorite ? "#EF4444" : "#FFF"}
+          />
+        </TouchableOpacity>
 
         {/* Bottom Right of Image: Info Chips */}
         <View style={styles.imageInfoRow}>
@@ -116,20 +129,11 @@ const RestaurantCard = ({ restaurant }) => {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20, // Increased radius
-    marginBottom: 24, // More spacing
-    overflow: 'visible', // Allow shadows to spill out
-    // Premium Shadow
-    shadowColor: "#0A2342",
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    ...commonStyles.card,
+    padding: 0, // Reset padding for image
+    marginBottom: 24,
+    overflow: 'visible',
+    borderWidth: 0,
     backgroundColor: '#FFF',
   },
   imageContainer: {
@@ -145,13 +149,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  gradientOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '60%', // Higher gradient
-  },
+
   favoriteButton: {
     position: 'absolute',
     top: 16,

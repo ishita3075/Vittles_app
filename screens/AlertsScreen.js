@@ -25,15 +25,16 @@ import {
   deleteNotificationApi,
   clearAllNotifications,
 } from "../api";
+import { commonStyles } from "../styles/common";
 
 const { width } = Dimensions.get('window');
 
 // --- PALETTE CONSTANTS (Aero Blue Theme) ---
 const COLORS = {
-  aeroBlue: "#7CB9E8",
-  steelBlue: "#5A94C4",
-  darkNavy: "#0A2342",
-  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  aeroBlue: "#007AFF", // Updated to Bright Blue
+  steelBlue: "#0056B3", // Updated to Deep Blue
+  darkNavy: "#004494",  // Updated to Darker Blue
+  aeroBlueLight: "rgba(0, 122, 255, 0.15)", // Updated Light Blue
   white: "#FFFFFF",
   grayText: "#6B7280",
   background: "#F9FAFB",
@@ -239,11 +240,11 @@ export default function AlertsScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* --- Gradient Header --- */}
       <LinearGradient
-        colors={[COLORS.aeroBlue, COLORS.darkNavy]}
+        colors={["#1A237E", "#303F9F", "#1A237E"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        locations={[0, 0.5, 1]}
         style={styles.header}
       >
         <View style={styles.headerContent}>
@@ -275,7 +276,7 @@ export default function AlertsScreen({ navigation }) {
       <View style={styles.contentContainer}>
         {loading ? (
           <View style={styles.loadingState}>
-             <Text style={{color: COLORS.grayText}}>Loading updates...</Text>
+            <Text style={{ color: COLORS.grayText }}>Loading updates...</Text>
           </View>
         ) : alerts.length > 0 ? (
           <FlatList
@@ -413,13 +414,9 @@ const styles = StyleSheet.create({
   },
 
   alertCard: {
-    borderRadius: 16,
+    ...commonStyles.card,
+    padding: 0, // Reset padding as inner content has handling
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
     overflow: 'hidden',
   },
   cardInner: {

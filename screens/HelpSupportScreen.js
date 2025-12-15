@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  StyleSheet, 
-  StatusBar, 
-  TextInput, 
-  Alert, 
-  Platform, 
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  TextInput,
+  Alert,
+  Platform,
   KeyboardAvoidingView,
   Linking,
   Animated,
@@ -19,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
+import CustomHeader from "../components/CustomHeader";
 
 // Enable LayoutAnimation
 if (Platform.OS === 'android') {
@@ -51,24 +52,24 @@ const FAQItem = ({ question, answer }) => {
 
   return (
     <View style={[
-      styles.faqItem, 
-      { 
-        backgroundColor: COLORS.card, 
-        borderColor: expanded ? COLORS.aeroBlue : COLORS.border 
+      styles.faqItem,
+      {
+        backgroundColor: COLORS.card,
+        borderColor: expanded ? COLORS.aeroBlue : COLORS.border
       }
     ]}>
-      <TouchableOpacity 
-        style={styles.faqHeader} 
+      <TouchableOpacity
+        style={styles.faqHeader}
         onPress={toggleExpand}
         activeOpacity={0.7}
       >
         <Text style={[styles.faqQuestion, { color: expanded ? COLORS.steelBlue : COLORS.darkNavy }]}>
           {question}
         </Text>
-        <Ionicons 
-          name={expanded ? "chevron-up" : "chevron-down"} 
-          size={20} 
-          color={expanded ? COLORS.steelBlue : COLORS.grayText} 
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={20}
+          color={expanded ? COLORS.steelBlue : COLORS.grayText}
         />
       </TouchableOpacity>
       {expanded && (
@@ -85,30 +86,30 @@ const SupportInput = ({ label, value, onChangeText, placeholder, multiline, icon
   <View style={styles.inputWrapper}>
     <Text style={styles.inputLabel}>{label}</Text>
     <View style={[
-      styles.inputContainer, 
-      { 
+      styles.inputContainer,
+      {
         backgroundColor: COLORS.white,
         borderColor: COLORS.border,
         height: multiline ? 120 : 56,
         alignItems: multiline ? 'flex-start' : 'center', // Align top for multiline, center for single
       }
     ]}>
-      <Ionicons 
-        name={icon} 
-        size={20} 
-        color={COLORS.steelBlue} 
-        style={{ 
-          marginRight: 12, 
+      <Ionicons
+        name={icon}
+        size={20}
+        color={COLORS.steelBlue}
+        style={{
+          marginRight: 12,
           marginTop: multiline ? 14 : 0, // Align icon to top for multiline
-          opacity: 0.8 
-        }} 
+          opacity: 0.8
+        }}
       />
       <TextInput
         style={[
-          styles.input, 
-          { 
-            color: COLORS.darkNavy, 
-            height: '100%', 
+          styles.input,
+          {
+            color: COLORS.darkNavy,
+            height: '100%',
             textAlignVertical: multiline ? 'top' : 'center', // Android vertical align
             paddingTop: multiline ? 14 : 0, // Padding for multiline text start
             paddingBottom: multiline ? 14 : 0,
@@ -128,7 +129,7 @@ const SupportInput = ({ label, value, onChangeText, placeholder, multiline, icon
 
 // --- Helper: Contact Card ---
 const ContactCard = ({ icon, title, subtitle, action }) => (
-  <TouchableOpacity 
+  <TouchableOpacity
     style={[styles.contactCard, { backgroundColor: COLORS.card, borderColor: COLORS.border }]}
     onPress={action}
     activeOpacity={0.7}
@@ -146,7 +147,7 @@ const ContactCard = ({ icon, title, subtitle, action }) => (
 
 export default function HelpSupportScreen() {
   const navigation = useNavigation();
-  
+
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -174,7 +175,7 @@ export default function HelpSupportScreen() {
       Alert.alert("Missing Information", "Please fill in all required fields");
       return;
     }
-    
+
     Alert.alert("Message Sent", "Thank you for contacting us! We'll get back to you soon.");
     setFormData({ fullName: "", email: "", mobile: "", content: "" });
   };
@@ -186,50 +187,32 @@ export default function HelpSupportScreen() {
   return (
     <View style={[styles.container, { backgroundColor: COLORS.background }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
-      {/* 1. Curved Header */}
-      <View style={styles.headerBackground}>
-        <LinearGradient
-          colors={[COLORS.aeroBlue, COLORS.darkNavy]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-            
-            <Text style={styles.headerTitle}>Help Center</Text>
-            {/* Dummy view for centering title */}
-            <View style={{ width: 40 }} /> 
-          </View>
-        </LinearGradient>
-      </View>
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      <CustomHeader title="Help Center" />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-            
+
             {/* 2. Contact Cards */}
             <Text style={[styles.sectionHeader, { color: COLORS.grayText }]}>CONTACT US</Text>
             <View style={styles.contactSection}>
-              <ContactCard 
-                icon="call" 
-                title="Call Support" 
-                subtitle="+91 98765 43210" 
+              <ContactCard
+                icon="call"
+                title="Call Support"
+                subtitle="+91 98765 43210"
                 action={handleCall}
               />
-              <ContactCard 
-                icon="mail" 
-                title="Email Us" 
-                subtitle="support@vittle.com" 
+              <ContactCard
+                icon="mail"
+                title="Email Us"
+                subtitle="support@vittle.com"
                 action={handleEmail}
               />
             </View>
@@ -237,32 +220,31 @@ export default function HelpSupportScreen() {
             {/* 3. FAQ Section */}
             <Text style={[styles.sectionHeader, { color: COLORS.grayText, marginTop: 32 }]}>FREQUENTLY ASKED QUESTIONS</Text>
             <View style={styles.faqSection}>
-              <FAQItem 
+              <FAQItem
                 question="How do I track my order?"
                 answer="Go to the 'Orders' tab in your profile to view real-time status updates for all your active orders."
               />
-              <FAQItem 
+              <FAQItem
                 question="Can I cancel my order?"
                 answer="You cannot cancel your order once placed so be careful."
               />
-              <FAQItem 
+              <FAQItem
                 question="What payment methods do you accept?"
-                answer="We accept UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, and Net Banking."
+                answer="We accept UPI (GPay, PhonePe, Paytm)."
               />
             </View>
 
-            {/* 4. Message Form */}
             <Text style={[styles.sectionHeader, { color: COLORS.grayText, marginTop: 32 }]}>SEND A MESSAGE</Text>
             <View style={styles.formContainer}>
-              <SupportInput 
+              <SupportInput
                 label="Full Name"
                 value={formData.fullName}
                 onChangeText={(t) => handleInputChange('fullName', t)}
                 placeholder="John Doe"
                 icon="person-outline"
               />
-              
-              <SupportInput 
+
+              <SupportInput
                 label="Email Address"
                 value={formData.email}
                 onChangeText={(t) => handleInputChange('email', t)}
@@ -271,7 +253,7 @@ export default function HelpSupportScreen() {
                 icon="mail-outline"
               />
 
-              <SupportInput 
+              <SupportInput
                 label="Your Message"
                 value={formData.content}
                 onChangeText={(t) => handleInputChange('content', t)}
@@ -280,7 +262,7 @@ export default function HelpSupportScreen() {
                 icon="chatbox-ellipses-outline"
               />
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleSubmit}
                 activeOpacity={0.9}
@@ -309,7 +291,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  
+
   // Header
   headerBackground: {
     height: 120,

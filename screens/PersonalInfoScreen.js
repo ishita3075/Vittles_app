@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TextInput, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
   StatusBar,
   Alert,
   Animated,
@@ -18,6 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
+import CustomHeader from "../components/CustomHeader";
 
 // Enable LayoutAnimation
 if (Platform.OS === 'android') {
@@ -45,8 +46,8 @@ const ProfileInput = ({ label, value, onChangeText, icon, editable, keyboardType
   <View style={styles.inputWrapper}>
     <Text style={styles.inputLabel}>{label}</Text>
     <View style={[
-      styles.inputContainer, 
-      { 
+      styles.inputContainer,
+      {
         backgroundColor: editable ? COLORS.white : 'transparent',
         borderWidth: editable ? 1 : 0,
         borderColor: editable ? COLORS.aeroBlue : 'transparent',
@@ -74,7 +75,7 @@ const ProfileInput = ({ label, value, onChangeText, icon, editable, keyboardType
 
 export default function PersonalInfoScreen({ navigation }) {
   const { user, updateUserProfile } = useAuth();
-  
+
   // Animation
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -149,41 +150,23 @@ export default function PersonalInfoScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
-      {/* 1. Clean Header */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[COLORS.aeroBlue, COLORS.darkNavy]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Profile</Text>
-            
-            <TouchableOpacity 
-              style={styles.editBtn} 
-              onPress={handleToggleEdit}
-            >
-              <Text style={styles.editBtnText}>{isEditing ? "Done" : "Edit"}</Text>
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
-      </View>
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      <CustomHeader
+        title="My Profile"
+        rightIcon={isEditing ? "checkmark" : "create-outline"}
+        onRightAction={handleToggleEdit}
+      />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-            
+
             {/* 2. Profile Photo */}
             <View style={styles.profileHeader}>
               <View style={styles.avatarContainer}>
@@ -209,25 +192,25 @@ export default function PersonalInfoScreen({ navigation }) {
 
             {/* 3. Form Fields */}
             <View style={styles.formContainer}>
-              <ProfileInput 
-                label="Full Name" 
-                value={userInfo.fullName} 
+              <ProfileInput
+                label="Full Name"
+                value={userInfo.fullName}
                 onChangeText={(t) => updateField('fullName', t)}
                 icon="person-outline"
                 editable={isEditing}
                 placeholder="Your Name"
               />
-              <ProfileInput 
-                label="Email Address" 
-                value={userInfo.email} 
+              <ProfileInput
+                label="Email Address"
+                value={userInfo.email}
                 onChangeText={(t) => updateField('email', t)}
                 icon="mail-outline"
                 editable={false} // Locked
                 placeholder="name@example.com"
               />
-              <ProfileInput 
-                label="Phone Number" 
-                value={userInfo.phoneNumber} 
+              <ProfileInput
+                label="Phone Number"
+                value={userInfo.phoneNumber}
                 onChangeText={(t) => updateField('phoneNumber', t)}
                 icon="call-outline"
                 editable={isEditing}
@@ -239,8 +222,8 @@ export default function PersonalInfoScreen({ navigation }) {
             {/* 4. Action Buttons */}
             <View style={styles.actionSection}>
               {isEditing ? (
-                <TouchableOpacity 
-                  style={[styles.saveButton, { opacity: isLoading ? 0.7 : 1 }]} 
+                <TouchableOpacity
+                  style={[styles.saveButton, { opacity: isLoading ? 0.7 : 1 }]}
                   onPress={handleSave}
                   disabled={isLoading}
                 >
@@ -258,7 +241,7 @@ export default function PersonalInfoScreen({ navigation }) {
                   </LinearGradient>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.changePassButton}
                   onPress={() => navigation.navigate('ForgotPassword')}
                 >
@@ -281,7 +264,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  
+
   // Header
   headerContainer: {
     height: 100,

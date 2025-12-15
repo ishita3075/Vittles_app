@@ -1,6 +1,7 @@
 // contexts/ThemeContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import { colors } from '../styles/colors';
 
 const ThemeContext = createContext();
 
@@ -15,64 +16,37 @@ export const useTheme = () => {
 export const ThemeProvider = ({ children }) => {
   const systemColorScheme = useColorScheme();
   const [isDark, setIsDark] = useState(systemColorScheme === 'dark');
-  const [theme, setTheme] = useState({});
-
   // Color schemes
   const lightColors = {
-    // Primary colors
-    primary: '#8B3358',
-    primaryGradient: ['#8B3358', '#670D2F', '#3A081C'], // Burgundy gradient for navbars
-    
-    // Background colors
-     background: '#f4f4f4',
-    card: '#ffffff',
-    tabBar: '#ffffff',
-    
-    // Text colors
-    text: '#1a1a1a',
-    textSecondary: '#666666',
-    
-    // UI colors
-    border: '#e6e6e6',
-    error: '#dc2626',
-    white: '#ffffff',
-    black: '#000000',
-    
-    // Semantic colors
-    success: '#00a850',
-    warning: '#f59e0b',
-    info: '#3b82f6',
+    ...colors, // Spread default colors
+
+    // Explicit overrides if needed for light mode
+    tabBar: colors.card,
+    isDark: false,
   };
 
   const darkColors = {
-    // Primary colors
-    primary: '#00a850',
-    primaryGradient: ['#8B3358', '#670D2F', '#3A081C'], // Same gradient for dark mode
-    
-    // Background colors
-    background: '#121212',
-    card: '#1e1e1e',
-    tabBar: '#1e1e1e',
-    
-    // Text colors
-    text: '#ffffff',
-    textSecondary: '#a0a0a0',
-    
-    // UI colors
-    border: '#2a2a2a',
-    error: '#ef4444',
-    white: '#ffffff',
-    black: '#000000',
-    
-    // Semantic colors
-    success: '#00a850',
-    warning: '#f59e0b',
-    info: '#3b82f6',
+    ...colors, // Start with defaults
+
+    // Dark Mode Overrides
+    background: '#000000',
+    card: '#1C1C1E',
+    text: '#FFFFFF',
+    textSecondary: '#8E8E93',
+    border: '#38383A',
+    inputBg: '#1C1C1E',
+    tabBar: '#1C1C1E',
+
+    // Keep gradients vibrant even in dark mode
+    primaryGradient: ['#1A237E', '#3949AB'],
+
+    isDark: true,
   };
 
-  useEffect(() => {
-    setTheme(isDark ? darkColors : lightColors);
-  }, [isDark]);
+  // Derive theme directly to ensure updates to 'colors.js' are reflected immediately
+  const theme = isDark ? darkColors : lightColors;
+
+  // No useEffect needed for syncing theme state
 
   const toggleTheme = () => {
     setIsDark(!isDark);

@@ -1,52 +1,74 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, Image, View } from "react-native";
+import { colors } from '../styles/colors';
 
 const CategoryItem = ({ category, isSelected, onPress }) => {
   return (
     <TouchableOpacity
-      style={[
-        styles.categoryItem,
-        isSelected && styles.categoryItemSelected
-      ]}
+      style={styles.container}
       onPress={onPress}
+      activeOpacity={0.7}
     >
-      <Text style={styles.categoryIcon}>{category.icon}</Text>
-      <Text style={[
-        styles.categoryName,
-        isSelected && styles.categoryNameSelected
-      ]}>{category.name}</Text>
+      <View style={[styles.imageContainer, isSelected && styles.selectedBorder]}>
+        <Image
+          source={{ uri: category.image }}
+          style={styles.image}
+        />
+      </View>
+      <Text style={[styles.name, isSelected && styles.selectedText]} numberOfLines={2}>
+        {category.name}
+      </Text>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  categoryItem: {
+  container: {
     alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 15,
-    marginRight: 10,
-    minWidth: 80,
-    elevation: 2,
+    width: 85,
+    // paddingHorizontal removed
+  },
+  imageContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
+    marginBottom: 8,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    // Shadow for "floating" effect
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  categoryItemSelected: {
-    backgroundColor: "#7CB9E8", // Aero Blue
+  image: {
+    width: '65%',
+    height: '65%',
+    resizeMode: 'contain',
   },
-  categoryIcon: {
-    fontSize: 24,
-    marginBottom: 5
+  selectedBorder: {
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
-  categoryName: {
+  name: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#6B7280" // Gray Text
+    fontWeight: "500",
+    color: "#4B5563",
+    textAlign: "center",
+    height: 34, // Fixed height for 2 lines of text to ensure alignment
+    textAlignVertical: 'top',
   },
-  categoryNameSelected: {
-    color: "#fff"
+  selectedText: {
+    color: colors.primary,
+    fontWeight: "700",
   },
 });
 

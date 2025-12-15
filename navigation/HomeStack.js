@@ -8,7 +8,7 @@ import { TouchableOpacity, View, Text } from 'react-native';
 
 // Import all screens
 import HomeScreen from '../screens/HomeScreen';
-import RestaurantDetails from '../screens/RestaurantDetails';
+
 import ProfileScreen from '../screens/ProfileScreen';
 import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
@@ -121,18 +121,7 @@ const HomeStack = () => {
         })}
       />
 
-      {/* Restaurant Details */}
-      <Stack.Screen
-        name="RestaurantDetails"
-        component={RestaurantDetails}
-        options={({ route }) => ({
-          title: route.params?.restaurant?.name || 'Restaurant',
-          headerLeft: () => <CustomBackButton />,
-          headerRight: () => <CartIcon />,
-          headerBackTitle: 'Back',
-          headerShown: false,
-        })}
-      />
+
 
       {/* Cart Screen */}
       <Stack.Screen

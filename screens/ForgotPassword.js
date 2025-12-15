@@ -19,22 +19,12 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { colors } from "../styles/colors";
 
 const { width, height } = Dimensions.get("window");
 
-// --- PALETTE CONSTANTS ---
-const COLORS = {
-  // New Theme Colors (Aero Blue)
-  aeroBlue: "#7CB9E8",          // Primary Light Blue
-  steelBlue: "#5A94C4",         // Mid Blue (for gradients/text)
-  darkNavy: "#0A2342",          // Deep background (matches Navbar)
-  aeroBlueLight: "rgba(124, 185, 232, 0.1)", // Light background for icons
-  
-  // Base Colors
-  white: "#FFFFFF",
-  grayText: "#6B7280",
-  inputBg: "#F9FAFB",
-};
+// --- PALETTE CONSTANTS removed in favor of ThemeContext
+import { useTheme } from "../contexts/ThemeContext";
 
 // Enable LayoutAnimation
 if (Platform.OS === 'android') {
@@ -58,24 +48,24 @@ const ModernInput = ({ icon, value, onChangeText, placeholder, error }) => {
 
   const borderColor = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#F3F4F6', COLORS.steelBlue]
+    outputRange: ['#F3F4F6', colors.primary]
   });
 
-  const iconColor = isFocused ? COLORS.steelBlue : '#9CA3AF';
+  const iconColor = isFocused ? colors.primary : '#9CA3AF';
 
   return (
     <View style={styles.inputWrapper}>
       <Animated.View style={[
         styles.inputContainer,
-        { 
+        {
           borderColor: error ? '#EF4444' : borderColor,
-          backgroundColor: isFocused ? 'rgba(255, 255, 255, 0.95)' : COLORS.inputBg
+          backgroundColor: isFocused ? 'rgba(255, 255, 255, 0.95)' : colors.inputBg
         },
         isFocused && styles.inputFocused
       ]}>
         <View style={[
-          styles.iconBox, 
-          { backgroundColor: isFocused ? COLORS.aeroBlueLight : 'rgba(124, 185, 232, 0.05)' }
+          styles.iconBox,
+          { backgroundColor: isFocused ? 'rgba(0, 122, 255, 0.1)' : 'rgba(124, 185, 232, 0.05)' }
         ]}>
           <Ionicons name={icon} size={20} color={error ? '#EF4444' : iconColor} />
         </View>
@@ -89,8 +79,8 @@ const ModernInput = ({ icon, value, onChangeText, placeholder, error }) => {
           onBlur={() => setIsFocused(false)}
           keyboardType="email-address"
           autoCapitalize="none"
-          cursorColor={COLORS.steelBlue}
-          selectionColor={`rgba(${parseInt(COLORS.steelBlue.slice(1, 3), 16)}, ${parseInt(COLORS.steelBlue.slice(3, 5), 16)}, ${parseInt(COLORS.steelBlue.slice(5, 7), 16)}, 0.2)`}
+          cursorColor={colors.primary}
+          selectionColor={'rgba(0, 122, 255, 0.2)'}
         />
       </Animated.View>
       {error ? (
@@ -103,6 +93,7 @@ const ModernInput = ({ icon, value, onChangeText, placeholder, error }) => {
 };
 
 export default function ForgotPasswordScreen({ navigation }) {
+  const { colors } = useTheme();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -110,7 +101,7 @@ export default function ForgotPasswordScreen({ navigation }) {
 
   // Animations
   // Start the form completely off-screen (at the bottom)
-  const slideAnim = useRef(new Animated.Value(height)).current; 
+  const slideAnim = useRef(new Animated.Value(height)).current;
 
   const formTranslateY = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(0)).current;
@@ -135,10 +126,10 @@ export default function ForgotPasswordScreen({ navigation }) {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         const keyboardHeight = e.endCoordinates.height;
         setKeyboardHeight(keyboardHeight);
-        
+
         // Calculate form movement
         const moveUpBy = keyboardHeight + 20;
-        
+
         Animated.parallel([
           Animated.timing(formTranslateY, {
             toValue: -moveUpBy,
@@ -163,7 +154,7 @@ export default function ForgotPasswordScreen({ navigation }) {
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        
+
         Animated.parallel([
           Animated.timing(formTranslateY, {
             toValue: 0,
@@ -181,7 +172,7 @@ export default function ForgotPasswordScreen({ navigation }) {
             useNativeDriver: true,
           })
         ]).start();
-        
+
         setTimeout(() => setKeyboardHeight(0), 300);
       }
     );
@@ -195,7 +186,7 @@ export default function ForgotPasswordScreen({ navigation }) {
   const handleForgotPassword = async () => {
     Keyboard.dismiss();
     setError("");
-    
+
     if (!email || !email.includes('@')) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       return setError("Please enter a valid email address.");
@@ -206,10 +197,10 @@ export default function ForgotPasswordScreen({ navigation }) {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
       setIsSuccess(true);
-      
+
       // Trigger Success Animation
       Animated.spring(successScale, {
         toValue: 1,
@@ -232,13 +223,13 @@ export default function ForgotPasswordScreen({ navigation }) {
   const renderForm = () => (
     <>
       <View style={styles.textGroup}>
-        <Text style={styles.welcomeText}>Forgot Password?</Text>
-        <Text style={styles.instructionText}>
+        <Text style={[styles.welcomeText, { color: colors.text }]}>Forgot Password?</Text>
+        <Text style={[styles.instructionText, { color: colors.textSecondary }]}>
           Don't worry! It happens. Please enter the email associated with your account.
         </Text>
       </View>
 
-      <ModernInput 
+      <ModernInput
         icon="mail-outline"
         placeholder="Enter your email address"
         value={email}
@@ -247,13 +238,13 @@ export default function ForgotPasswordScreen({ navigation }) {
       />
 
       <TouchableOpacity
-        style={styles.submitButton}
+        style={[styles.submitButton, { shadowColor: colors.primary }]}
         onPress={handleForgotPassword}
         disabled={loading}
         activeOpacity={0.9}
       >
         <LinearGradient
-          colors={[COLORS.aeroBlue, COLORS.steelBlue]}
+          colors={colors.primaryGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradientButton}
@@ -264,25 +255,25 @@ export default function ForgotPasswordScreen({ navigation }) {
             <>
               <Text style={styles.submitButtonText}>Send Reset Link</Text>
               <View style={styles.btnArrow}>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.steelBlue} />
+                <Ionicons name="arrow-forward" size={16} color={colors.primary} />
               </View>
             </>
           )}
         </LinearGradient>
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.backButtonContainer}
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="chevron-back" size={18} color={COLORS.steelBlue} />
-        <Text style={styles.backButtonText}>Back to Login</Text>
+        <Ionicons name="chevron-back" size={18} color={colors.primary} />
+        <Text style={[styles.backButtonText, { color: colors.primary }]}>Back to Login</Text>
       </TouchableOpacity>
     </>
   );
 
   const renderSuccess = () => (
-    <Animated.View 
+    <Animated.View
       style={[
         styles.successWrapper,
         {
@@ -303,17 +294,17 @@ export default function ForgotPasswordScreen({ navigation }) {
         </View>
       </Animated.View>
 
-      <Text style={styles.successTitle}>Check your email</Text>
-      <Text style={styles.successMessage}>
-        We have sent a password recovery instruction to your email <Text style={{fontWeight: '700', color: '#1F2937'}}>{email}</Text>.
+      <Text style={[styles.successTitle, { color: colors.text }]}>Check your email</Text>
+      <Text style={[styles.successMessage, { color: colors.textSecondary }]}>
+        We have sent a password recovery instruction to your email <Text style={{ fontWeight: '700', color: colors.text }}>{email}</Text>.
       </Text>
 
-      <TouchableOpacity 
-        style={styles.primaryActionBtn}
+      <TouchableOpacity
+        style={[styles.primaryActionBtn, { shadowColor: colors.primary }]}
         onPress={openEmailApp}
       >
         <LinearGradient
-          colors={[COLORS.aeroBlue, COLORS.steelBlue]}
+          colors={colors.primaryGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.primaryActionGradient}
@@ -323,30 +314,30 @@ export default function ForgotPasswordScreen({ navigation }) {
         </LinearGradient>
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.secondaryActionBtn}
         onPress={() => {
-          setIsSuccess(false); 
-          setError(""); 
+          setIsSuccess(false);
+          setError("");
           successScale.setValue(0);
         }}
       >
-        <Text style={styles.secondaryActionText}>Skip, I'll confirm later</Text>
+        <Text style={[styles.secondaryActionText, { color: colors.textSecondary }]}>Skip, I'll confirm later</Text>
       </TouchableOpacity>
 
-      <View style={styles.resendContainer}>
-        <Text style={styles.resendText}>Did not receive the email? Check your spam filter, or </Text>
+      <View style={[styles.resendContainer, { borderTopColor: colors.border }]}>
+        <Text style={[styles.resendText, { color: colors.textPlaceholder }]}>Did not receive the email? Check your spam filter, or </Text>
         <TouchableOpacity onPress={handleForgotPassword}>
-            <Text style={styles.resendLink}>try another email address</Text>
+          <Text style={[styles.resendLink, { color: colors.primary }]}>try another email address</Text>
         </TouchableOpacity>
       </View>
     </Animated.View>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
+
       {/* Background Image with Overlay */}
       <ImageBackground
         source={{ uri: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop" }}
@@ -355,7 +346,7 @@ export default function ForgotPasswordScreen({ navigation }) {
       >
         <LinearGradient
           // Dark Navy overlay
-          colors={['rgba(10, 35, 66, 0.7)', 'rgba(10, 35, 66, 0.9)']}
+          colors={[colors.darkOverlay, colors.darkOverlay]}
           style={styles.overlay}
         />
 
@@ -366,13 +357,13 @@ export default function ForgotPasswordScreen({ navigation }) {
         {/* Animated Header */}
         <Animated.View style={[
           styles.header,
-          { 
+          {
             opacity: headerOpacity,
             transform: [{ translateY: headerTranslateY }]
           }
         ]}>
-          
-          
+
+
           <View style={styles.iconHeaderContainer}>
             <LinearGradient
               colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']}
@@ -384,20 +375,21 @@ export default function ForgotPasswordScreen({ navigation }) {
         </Animated.View>
 
         {/* Animated Form Container */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.formContainer,
             {
               transform: [
                 { translateY: formTranslateY },
                 { translateY: slideAnim } // Sheet Slide Up Animation
-              ]
+              ],
+              backgroundColor: colors.card // Changed from cardBackground to card
             }
           ]}
         >
-          <View style={styles.dragHandle} />
-          
-          <ScrollView 
+          <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
+
+          <ScrollView
             style={styles.formScroll}
             contentContainerStyle={styles.formScrollContent}
             showsVerticalScrollIndicator={false}
@@ -417,7 +409,7 @@ export default function ForgotPasswordScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.darkNavy,
+    backgroundColor: '#000000', // Fallback
   },
   background: {
     flex: 1,
@@ -530,7 +522,7 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     fontSize: 15,
-    color: COLORS.grayText,
+    color: '#8E8E93',
     lineHeight: 24,
   },
   inputWrapper: {
@@ -550,7 +542,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   inputFocused: {
-    shadowColor: COLORS.aeroBlue,
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -581,7 +573,7 @@ const styles = StyleSheet.create({
   submitButton: {
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: COLORS.aeroBlue,
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
@@ -617,7 +609,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   backButtonText: {
-    color: COLORS.steelBlue,
+    color: '#007AFF',
     fontSize: 15,
     fontWeight: '700',
     marginLeft: 6,
@@ -667,7 +659,7 @@ const styles = StyleSheet.create({
   },
   successMessage: {
     fontSize: 15,
-    color: COLORS.grayText,
+    color: '#8E8E93',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
@@ -677,7 +669,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: COLORS.aeroBlue,
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -702,7 +694,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
   secondaryActionText: {
-    color: COLORS.grayText,
+    color: '#8E8E93',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -722,7 +714,7 @@ const styles = StyleSheet.create({
   },
   resendLink: {
     fontSize: 14,
-    color: COLORS.steelBlue,
+    color: colors.primary,
     fontWeight: '700',
   },
 });
