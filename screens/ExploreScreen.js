@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TextInput, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
   FlatList,
   ActivityIndicator
 } from "react-native";
@@ -115,7 +115,7 @@ export default function HomeScreen() {
 
     // Filter by category
     if (selectedCategory !== "all") {
-      filtered = filtered.filter(restaurant => 
+      filtered = filtered.filter(restaurant =>
         restaurant.cuisine.toLowerCase() === selectedCategory
       );
     }
@@ -188,13 +188,13 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1 }}>
       <TopNavbar />
-      <ScrollView 
+      <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Hello! 👋</Text>
+          <Text style={styles.greeting}>Hello! 🍽️</Text>
           <Text style={styles.subtitle}>Find the best restaurants near you</Text>
         </View>
 

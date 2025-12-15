@@ -13,12 +13,16 @@ import {
   ActivityIndicator,
   Animated,
   RefreshControl,
-  Alert
+  Alert,
+  Easing
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
+
+
+const AnimatedIcon = Animated.createAnimatedComponent(Ionicons);
 
 const { width } = Dimensions.get("window");
 
@@ -36,15 +40,15 @@ if (Platform.OS === 'android') {
 
 // --- PALETTE CONSTANTS (Aero Blue Theme) ---
 const COLORS_THEME = {
-  aeroBlue: "#7CB9E8",
-  steelBlue: "#5A94C4",
-  darkNavy: "#0A2342",
+  aeroBlue: "#3949AB", // Replace Aero Blue with Primary Light
+  steelBlue: "#1A237E", // Replace Steel Blue with Primary
+  darkNavy: "#0D133E",
   white: "#FFFFFF",
   grayText: "#6B7280",
-  background: "#F9FAFB",
+  background: "#F4F6FA",
   border: "rgba(0,0,0,0.08)",
   card: "#FFFFFF",
-  aeroBlueLight: "rgba(124, 185, 232, 0.15)",
+  aeroBlueLight: "rgba(57, 73, 171, 0.15)",
   success: "#10B981",
   warning: "#F59E0B",
   error: "#EF4444",
@@ -65,9 +69,9 @@ const StatItem = ({ label, value, icon, color }) => (
 const OrderTicket = ({ order, onUpdateStatus }) => {
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending': return COLORS_THEME.warning; 
+      case 'pending': return COLORS_THEME.warning;
       case 'preparing': return COLORS_THEME.aeroBlue;
-      case 'completed': return COLORS_THEME.success; 
+      case 'completed': return COLORS_THEME.success;
       default: return COLORS_THEME.grayText;
     }
   };
@@ -77,7 +81,7 @@ const OrderTicket = ({ order, onUpdateStatus }) => {
   return (
     <View style={styles.ticketCard}>
       <View style={[styles.ticketStatusBar, { backgroundColor: statusColor }]} />
-      
+
       <View style={styles.ticketContent}>
         {/* Header */}
         <View style={styles.ticketHeader}>
@@ -107,12 +111,12 @@ const OrderTicket = ({ order, onUpdateStatus }) => {
         {/* Footer & Actions */}
         <View style={styles.ticketFooter}>
           <View>
-             <Text style={styles.timeText}>Placed at {order.time}</Text>
-             <Text style={styles.priceText}>Total: ₹{order.price}</Text>
+            <Text style={styles.timeText}>Placed at {order.time}</Text>
+            <Text style={styles.priceText}>Total: ₹{order.price}</Text>
           </View>
-          
+
           {order.status === 'pending' && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: COLORS_THEME.warning }]}
               onPress={() => onUpdateStatus(order.id, 'preparing')}
               activeOpacity={0.8}
@@ -123,7 +127,7 @@ const OrderTicket = ({ order, onUpdateStatus }) => {
           )}
 
           {order.status === 'preparing' && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: COLORS_THEME.steelBlue }]}
               onPress={() => onUpdateStatus(order.id, 'completed')}
               activeOpacity={0.8}
@@ -135,8 +139,8 @@ const OrderTicket = ({ order, onUpdateStatus }) => {
 
           {order.status === 'completed' && (
             <View style={styles.completedBadge}>
-               <Ionicons name="checkmark-done" size={18} color={COLORS_THEME.success} />
-               <Text style={[styles.completedText, { color: COLORS_THEME.success }]}>Done</Text>
+              <Ionicons name="checkmark-done" size={18} color={COLORS_THEME.success} />
+              <Text style={[styles.completedText, { color: COLORS_THEME.success }]}>Done</Text>
             </View>
           )}
         </View>
@@ -157,20 +161,39 @@ export default function VendorDashboard() {
 
   const { user } = useAuth();
   const vendorId = user?.id;
-  const { colors } = useTheme(); 
+  const { colors } = useTheme();
 
   const incomeAnim = useRef(new Animated.Value(0)).current;
+  const breathAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (vendorId) fetchVendorOrders();
   }, [vendorId]);
 
   useEffect(() => {
-    Animated.timing(incomeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true
-    }).start();
+    Animated.parallel([
+      Animated.timing(incomeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true
+      }),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(breathAnim, {
+            toValue: 1.1,
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(breathAnim, {
+            toValue: 1,
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    ]).start();
   }, []);
 
   const fetchVendorOrders = async () => {
@@ -237,7 +260,7 @@ export default function VendorDashboard() {
           };
         } else {
           if (grouped[orderId].status === "completed" && status !== "completed") {
-              grouped[orderId].status = status.toLowerCase();
+            grouped[orderId].status = status.toLowerCase();
           }
         }
 
@@ -265,7 +288,7 @@ export default function VendorDashboard() {
       setOrders(activeOrders);
       setDoneCount(completedOrders.length);
 
-      
+
       // -----------------------------
       // FIXED: TODAY'S EARNINGS (IST)
       // -----------------------------
@@ -319,10 +342,10 @@ export default function VendorDashboard() {
     if (!newStatus) setIsHalted(false); // Disable pause if closed
 
     try {
-        await updateStoreStatus(newStatus);
+      await updateStoreStatus(newStatus);
     } catch (e) {
-        setIsOpen(!newStatus); // Revert
-        Alert.alert("Error", "Failed to update store status");
+      setIsOpen(!newStatus); // Revert
+      Alert.alert("Error", "Failed to update store status");
     }
   };
 
@@ -350,9 +373,9 @@ export default function VendorDashboard() {
 
       if (newStatus === 'completed') {
         setTimeout(() => {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            setOrders(prev => prev.filter(o => o.id !== id));
-            setDailyIncome(prev => prev + order.price);
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setOrders(prev => prev.filter(o => o.id !== id));
+          setDailyIncome(prev => prev + order.price);
         }, 500);
       }
 
@@ -369,6 +392,7 @@ export default function VendorDashboard() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -384,33 +408,62 @@ export default function VendorDashboard() {
         {/* 1. Scrollable Header Block */}
         <View style={styles.headerBlock}>
           <LinearGradient
-            colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
+            colors={["#1A237E", "#303F9F", "#1A237E"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
+            locations={[0, 0.5, 1]}
             style={styles.headerGradient}
           >
+            {/* --- Animated Background Decoration --- */}
+            <View style={StyleSheet.absoluteFill}>
+              {[
+                { name: "restaurant-outline", size: 48, top: '10%', left: '5%', rotate: '15deg' },
+                { name: "cash-outline", size: 42, top: '25%', right: '10%', rotate: '-10deg' },
+                { name: "trending-up-outline", size: 54, top: '50%', left: '15%', rotate: '25deg' },
+                { name: "receipt-outline", size: 45, top: '40%', right: '25%', rotate: '-5deg' },
+              ].map((icon, index) => (
+                <AnimatedIcon
+                  key={index}
+                  name={icon.name}
+                  size={icon.size}
+                  color="rgba(255,255,255,0.06)"
+                  style={{
+                    position: 'absolute',
+                    top: icon.top,
+                    left: icon.left,
+                    right: icon.right,
+                    bottom: icon.bottom,
+                    transform: [
+                      { scale: breathAnim },
+                      { rotate: icon.rotate }
+                    ]
+                  }}
+                />
+              ))}
+            </View>
+
             <View style={styles.headerTopRow}>
-               <View>
-                 <Text style={styles.greetingText}>Hello, Chef!</Text>
-                 <Text style={styles.storeNameText}>{user?.name || "My Store"}</Text>
-               </View>
-               <View style={[
-                 styles.statusPill, 
-                 { 
-                   backgroundColor: isOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                   borderColor: isOpen ? COLORS_THEME.success : COLORS_THEME.error
-                 }
-               ]}>
-                 <View style={[styles.statusDot, { backgroundColor: isOpen ? COLORS_THEME.success : COLORS_THEME.error }]} />
-                 <Text style={styles.statusText}>{isOpen ? 'ONLINE' : 'OFFLINE'}</Text>
-               </View>
+              <View>
+                <Text style={styles.greetingText}>Hello, Chef!</Text>
+                <Text style={styles.storeNameText}>{user?.name || "My Store"}</Text>
+              </View>
+              <View style={[
+                styles.statusPill,
+                {
+                  backgroundColor: isOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                  borderColor: isOpen ? COLORS_THEME.success : COLORS_THEME.error
+                }
+              ]}>
+                <View style={[styles.statusDot, { backgroundColor: isOpen ? COLORS_THEME.success : COLORS_THEME.error }]} />
+                <Text style={[styles.statusText, { color: '#FFFFFF' }]}>{isOpen ? 'ONLINE' : 'OFFLINE'}</Text>
+              </View>
             </View>
 
             <View style={styles.revenueContainer}>
-               <Text style={styles.revenueLabel}>TODAY'S EARNINGS</Text>
-               <Animated.Text style={[styles.revenueValue, { opacity: incomeAnim }]}>
-                 ₹{dailyIncome.toLocaleString()}
-               </Animated.Text>
+              <Text style={styles.revenueLabel}>TODAY'S EARNINGS</Text>
+              <Animated.Text style={[styles.revenueValue, { opacity: incomeAnim }]}>
+                ₹{dailyIncome.toLocaleString()}
+              </Animated.Text>
             </View>
           </LinearGradient>
         </View>
@@ -419,17 +472,17 @@ export default function VendorDashboard() {
         <View style={styles.commandCenter}>
           {/* Online/Offline Toggle */}
           <View style={styles.switchRow}>
-             <View>
-                <Text style={styles.controlTitle}>Accepting Orders</Text>
-                <Text style={styles.controlSub}>
-                    {isOpen ? "Store is live" : "Store is currently closed"}
-                </Text>
-             </View>
-             <TouchableOpacity onPress={toggleShop} activeOpacity={0.8}>
-                <View style={[styles.switchTrack, { backgroundColor: isOpen ? COLORS_THEME.success : '#E5E7EB' }]}>
-                  <View style={[styles.switchThumb, { transform: [{ translateX: isOpen ? 24 : 2 }] }]} />
-                </View>
-             </TouchableOpacity>
+            <View>
+              <Text style={styles.controlTitle}>Accepting Orders</Text>
+              <Text style={styles.controlSub}>
+                {isOpen ? "Store is live" : "Store is currently closed"}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={toggleShop} activeOpacity={0.8}>
+              <View style={[styles.switchTrack, { backgroundColor: isOpen ? COLORS_THEME.success : '#E5E7EB' }]}>
+                <View style={[styles.switchThumb, { transform: [{ translateX: isOpen ? 24 : 2 }] }]} />
+              </View>
+            </TouchableOpacity>
           </View>
 
           {isOpen && (
@@ -437,31 +490,30 @@ export default function VendorDashboard() {
               <View style={styles.controlDivider} />
               {/* Pause Orders Toggle */}
               <View style={styles.switchRow}>
-                 <View>
-                    <Text style={styles.controlTitle}>Pause Orders</Text>
-                    <Text style={styles.controlSub}>
-                        {isHalted ? "New orders are paused" : "Accepting new orders"}
-                    </Text>
-                 </View>
-                 <TouchableOpacity onPress={togglePause} activeOpacity={0.8}>
-                    <View style={[styles.switchTrack, { backgroundColor: isHalted ? COLORS_THEME.warning : '#E5E7EB' }]}>
-                      <View style={[styles.switchThumb, { transform: [{ translateX: isHalted ? 24 : 2 }] }]} />
-                    </View>
-                 </TouchableOpacity>
+                <View>
+                  <Text style={styles.controlTitle}>Pause Orders</Text>
+                  <Text style={styles.controlSub}>
+                    {isHalted ? "New orders are paused" : "Accepting new orders"}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={togglePause} activeOpacity={0.8}>
+                  <View style={[styles.switchTrack, { backgroundColor: isHalted ? COLORS_THEME.warning : '#E5E7EB' }]}>
+                    <View style={[styles.switchThumb, { transform: [{ translateX: isHalted ? 24 : 2 }] }]} />
+                  </View>
+                </TouchableOpacity>
               </View>
             </>
           )}
-          
+
           <View style={styles.controlDivider} />
 
           {/* Stats Row */}
           <View style={styles.statsRow}>
-             <StatItem label="Pending" value={pendingCount} icon="notifications" color={COLORS_THEME.warning} />
-             <View style={styles.vertDivider} />
-             <StatItem label="Prep" value={preparingCount} icon="flame" color={COLORS_THEME.aeroBlue} />
-             <View style={styles.vertDivider} />
-             <StatItem label="Done" value={doneCount} icon="checkmark-done-circle" color={COLORS_THEME.success} />
-
+            <StatItem label="Pending" value={pendingCount} icon="notifications" color={COLORS_THEME.warning} />
+            <View style={styles.vertDivider} />
+            <StatItem label="Prep" value={preparingCount} icon="flame" color={COLORS_THEME.aeroBlue} />
+            <View style={styles.vertDivider} />
+            <StatItem label="Done" value={doneCount} icon="checkmark-done-circle" color={COLORS_THEME.success} />
           </View>
         </View>
 

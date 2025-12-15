@@ -25,8 +25,24 @@ export const AuthProvider = ({ children }) => {
   const [vendorList, setVendorList] = useState([]);
 
   useEffect(() => {
-    checkStoredUser();
-    loadVendors(); // <-- load vendor data once
+    const initAuth = async () => {
+      try {
+        // Create a delay promise to ensure minimum loading time (prevent blink if too fast)
+        // and allow layout to settle.
+        const minLoadTime = new Promise(resolve => setTimeout(resolve, 250));
+
+        await Promise.all([
+          checkStoredUser(),
+          loadVendors(),
+          minLoadTime
+        ]);
+      } catch (e) {
+        console.error("Auth initialization failed:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initAuth();
   }, []);
 
   // ✅ Fetch all vendors from vendor backend
@@ -58,8 +74,6 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Token/User check failed:', err.message);
       await clearStorage();
-    } finally {
-      setIsLoading(false);
     }
   };
 

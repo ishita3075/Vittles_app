@@ -34,10 +34,10 @@ if (Platform.OS === 'android') {
 // --- PALETTE CONSTANTS ---
 // Added explicit RGBA values for transparent backgrounds to prevent iOS errors
 const COLORS_THEME = {
-  aeroBlue: "#7CB9E8",
-  aeroBlueFade: "rgba(124, 185, 232, 0.15)", // Transparent version
-  steelBlue: "#5A94C4",
-  steelBlueFade: "rgba(90, 148, 196, 0.15)", // Transparent version
+  aeroBlue: "#3949AB", // Replace Aero Blue with Primary Light
+  aeroBlueFade: "rgba(57, 73, 171, 0.15)",
+  steelBlue: "#1A237E", // Replace Steel Blue with Primary
+  steelBlueFade: "rgba(26, 35, 126, 0.15)",
   darkNavy: "#0A2342",
   white: "#FFFFFF",
   grayText: "#6B7280",
@@ -45,32 +45,32 @@ const COLORS_THEME = {
   border: "rgba(0,0,0,0.08)",
   card: "#FFFFFF",
   inputBg: "#F3F4F6",
-  success: "#10B981", 
+  success: "#10B981",
   successFade: "rgba(16, 185, 129, 0.15)", // Transparent version
-  error: "#EF4444",   
-  errorFade: "rgba(239, 68, 68, 0.1)",     
+  error: "#EF4444",
+  errorFade: "rgba(239, 68, 68, 0.1)",
   veg: "#16A34A",
-  vegFade: "#ECFDF5",     
-  nonVeg: "#DC2626",  
+  vegFade: "#ECFDF5",
+  nonVeg: "#DC2626",
   nonVegFade: "#FEF2F2"
 };
 
 // --- Helper: Veg/Non-Veg Icon ---
 const VegIndicator = ({ isVeg, size = 12 }) => (
   <View style={[
-    styles.vegIconBorder, 
-    { 
-      width: size, 
-      height: size, 
-      borderRadius: 2, 
-      borderColor: isVeg ? COLORS_THEME.veg : COLORS_THEME.nonVeg 
+    styles.vegIconBorder,
+    {
+      width: size,
+      height: size,
+      borderRadius: 2,
+      borderColor: isVeg ? COLORS_THEME.veg : COLORS_THEME.nonVeg
     }
   ]}>
     <View style={[
-      styles.vegIconDot, 
-      { 
+      styles.vegIconDot,
+      {
         backgroundColor: isVeg ? COLORS_THEME.veg : COLORS_THEME.nonVeg,
-        width: size * 0.5, 
+        width: size * 0.5,
         height: size * 0.5,
         borderRadius: size * 0.5
       }
@@ -82,7 +82,7 @@ const VegIndicator = ({ isVeg, size = 12 }) => (
 const MenuItemCard = ({ item, onToggle, onDelete }) => {
   return (
     <View style={[
-      styles.menuCard, 
+      styles.menuCard,
       { borderLeftColor: item.available ? COLORS_THEME.success : COLORS_THEME.error }
     ]}>
       <View style={styles.cardContent}>
@@ -98,7 +98,7 @@ const MenuItemCard = ({ item, onToggle, onDelete }) => {
           </View>
           <Text style={styles.cardPrice}>₹{item.price}</Text>
         </View>
-        
+
         <Text style={styles.cardDesc} numberOfLines={2}>
           {item.description}
         </Text>
@@ -107,7 +107,7 @@ const MenuItemCard = ({ item, onToggle, onDelete }) => {
 
         <View style={styles.cardFooter}>
           <View style={[
-            styles.statusBadge, 
+            styles.statusBadge,
             { backgroundColor: item.available ? COLORS_THEME.vegFade : COLORS_THEME.nonVegFade }
           ]}>
             <View style={[styles.statusDot, { backgroundColor: item.available ? COLORS_THEME.success : COLORS_THEME.error }]} />
@@ -117,17 +117,17 @@ const MenuItemCard = ({ item, onToggle, onDelete }) => {
           </View>
 
           <View style={styles.actions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.iconButton}
               onPress={() => onToggle(item.id)}
             >
-              <Ionicons 
-                name={item.available ? "eye-off-outline" : "eye-outline"} 
-                size={18} 
-                color={COLORS_THEME.darkNavy} 
+              <Ionicons
+                name={item.available ? "eye-off-outline" : "eye-outline"}
+                size={18}
+                color={COLORS_THEME.darkNavy}
               />
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.iconButton, { backgroundColor: COLORS_THEME.nonVegFade, borderColor: 'transparent' }]}
               onPress={() => onDelete(item.id)}
             >
@@ -146,7 +146,7 @@ const FormInput = ({ label, value, onChangeText, placeholder, keyboardType, mult
     <Text style={styles.inputLabel}>{label}</Text>
     <TextInput
       style={[
-        styles.input, 
+        styles.input,
         multiline && { height: 80, textAlignVertical: 'top', paddingTop: 12 }
       ]}
       placeholder={placeholder}
@@ -166,7 +166,7 @@ export default function VendorMenu() {
   const [newItem, setNewItem] = useState({ name: "", price: "", category: "", description: "", isVeg: true });
   const [activeCategory, setActiveCategory] = useState("All");
   const [categories, setCategories] = useState(["All"]);
-  
+
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -236,7 +236,7 @@ export default function VendorMenu() {
       };
 
       const response = await addMenuItem(vendorId, payload);
-      
+
       const newLocalItem = {
         id: response.id?.toString() || Math.random().toString(),
         name: response.itemName || newItem.name,
@@ -282,7 +282,7 @@ export default function VendorMenu() {
         style: "destructive",
         onPress: async () => {
           setMenu(prev => prev.filter(i => i.id !== id));
-          try { await deleteMenuItem(vendorId, id); } catch (e) {}
+          try { await deleteMenuItem(vendorId, id); } catch (e) { }
         }
       }
     ]);
@@ -308,8 +308,8 @@ export default function VendorMenu() {
                 <Text style={styles.headerTitle}>Menu Manager</Text>
                 <Text style={styles.headerSubtitle}>Manage your catalog</Text>
               </View>
-              <TouchableOpacity 
-                style={styles.addButtonHeader} 
+              <TouchableOpacity
+                style={styles.addButtonHeader}
                 onPress={toggleForm}
                 activeOpacity={0.8}
               >
@@ -320,11 +320,11 @@ export default function VendorMenu() {
         </LinearGradient>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        
+
         {/* 2. Unified Dashboard (Fixes Layout Issues) */}
         <View style={styles.dashboardCard}>
           {/* Stat 1 */}
@@ -342,7 +342,7 @@ export default function VendorMenu() {
 
           {/* Stat 2 */}
           <View style={styles.dashboardItem}>
-             <View style={[styles.dashboardIcon, { backgroundColor: COLORS_THEME.successFade }]}>
+            <View style={[styles.dashboardIcon, { backgroundColor: COLORS_THEME.successFade }]}>
               <Ionicons name="checkmark-circle" size={20} color={COLORS_THEME.success} />
             </View>
             <View>
@@ -351,7 +351,7 @@ export default function VendorMenu() {
             </View>
           </View>
 
-           <View style={styles.verticalDivider} />
+          <View style={styles.verticalDivider} />
 
           {/* Stat 3 */}
           <View style={styles.dashboardItem}>
@@ -371,50 +371,50 @@ export default function VendorMenu() {
             <Text style={styles.formTitle}>Add New Item</Text>
             <View style={styles.formRow}>
               <View style={{ flex: 2, marginRight: 12 }}>
-                <FormInput 
+                <FormInput
                   label="Item Name" placeholder="E.g. Butter Chicken"
-                  value={newItem.name} onChangeText={(t) => setNewItem({...newItem, name: t})}
+                  value={newItem.name} onChangeText={(t) => setNewItem({ ...newItem, name: t })}
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <FormInput 
+                <FormInput
                   label="Price (₹)" placeholder="0" keyboardType="numeric"
-                  value={newItem.price} onChangeText={(t) => setNewItem({...newItem, price: t})}
+                  value={newItem.price} onChangeText={(t) => setNewItem({ ...newItem, price: t })}
                 />
               </View>
             </View>
-            <FormInput 
+            <FormInput
               label="Category" placeholder="E.g. Main Course"
-              value={newItem.category} onChangeText={(t) => setNewItem({...newItem, category: t})}
+              value={newItem.category} onChangeText={(t) => setNewItem({ ...newItem, category: t })}
             />
 
             <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Dietary Type</Text>
-                <View style={styles.vegToggleContainer}>
-                    <TouchableOpacity 
-                        style={[styles.vegOption, newItem.isVeg && { backgroundColor: COLORS_THEME.vegFade, borderColor: COLORS_THEME.veg }]}
-                        onPress={() => setNewItem({...newItem, isVeg: true})}
-                    >
-                        <VegIndicator isVeg={true} size={16} />
-                        <Text style={[styles.vegOptionText, newItem.isVeg && { color: COLORS_THEME.veg, fontWeight: '700' }]}>Veg</Text>
-                    </TouchableOpacity>
+              <Text style={styles.inputLabel}>Dietary Type</Text>
+              <View style={styles.vegToggleContainer}>
+                <TouchableOpacity
+                  style={[styles.vegOption, newItem.isVeg && { backgroundColor: COLORS_THEME.vegFade, borderColor: COLORS_THEME.veg }]}
+                  onPress={() => setNewItem({ ...newItem, isVeg: true })}
+                >
+                  <VegIndicator isVeg={true} size={16} />
+                  <Text style={[styles.vegOptionText, newItem.isVeg && { color: COLORS_THEME.veg, fontWeight: '700' }]}>Veg</Text>
+                </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        style={[styles.vegOption, !newItem.isVeg && { backgroundColor: COLORS_THEME.nonVegFade, borderColor: COLORS_THEME.nonVeg }]}
-                        onPress={() => setNewItem({...newItem, isVeg: false})}
-                    >
-                        <VegIndicator isVeg={false} size={16} />
-                        <Text style={[styles.vegOptionText, !newItem.isVeg && { color: COLORS_THEME.nonVeg, fontWeight: '700' }]}>Non-Veg</Text>
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={[styles.vegOption, !newItem.isVeg && { backgroundColor: COLORS_THEME.nonVegFade, borderColor: COLORS_THEME.nonVeg }]}
+                  onPress={() => setNewItem({ ...newItem, isVeg: false })}
+                >
+                  <VegIndicator isVeg={false} size={16} />
+                  <Text style={[styles.vegOptionText, !newItem.isVeg && { color: COLORS_THEME.nonVeg, fontWeight: '700' }]}>Non-Veg</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <FormInput 
+            <FormInput
               label="Description" placeholder="Brief description..." multiline
-              value={newItem.description} onChangeText={(t) => setNewItem({...newItem, description: t})}
+              value={newItem.description} onChangeText={(t) => setNewItem({ ...newItem, description: t })}
             />
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.submitBtn} onPress={addItem} disabled={isAdding} activeOpacity={0.9}
             >
               <LinearGradient
@@ -436,11 +436,11 @@ export default function VendorMenu() {
         <View style={styles.categorySection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
             {categories.map(cat => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={cat}
                 style={[
-                  styles.catChip, 
-                  { 
+                  styles.catChip,
+                  {
                     backgroundColor: activeCategory === cat ? COLORS_THEME.aeroBlue : COLORS_THEME.white,
                     borderColor: activeCategory === cat ? COLORS_THEME.aeroBlue : COLORS_THEME.border
                   }
@@ -448,7 +448,7 @@ export default function VendorMenu() {
                 onPress={() => setActiveCategory(cat)}
               >
                 <Text style={[
-                  styles.catText, 
+                  styles.catText,
                   { color: activeCategory === cat ? '#FFF' : COLORS_THEME.grayText }
                 ]}>{cat}</Text>
               </TouchableOpacity>
@@ -467,13 +467,13 @@ export default function VendorMenu() {
         ) : (
           <View style={styles.menuList}>
             {filteredMenu.map(item => (
-              <MenuItemCard 
+              <MenuItemCard
                 key={item.id} item={item} onToggle={toggleAvailability} onDelete={deleteItem}
               />
             ))}
           </View>
         )}
-        
+
         <View style={{ height: 100 }} />
       </ScrollView>
     </View>
@@ -482,13 +482,13 @@ export default function VendorMenu() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS_THEME.background },
-  
+
   vegIconBorder: { borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   vegIconDot: {},
-  
+
   // --- HEADER ---
   headerContainer: {
-    height: HEADER_HEIGHT, 
+    height: HEADER_HEIGHT,
     width: '100%',
     position: 'absolute',
     top: 0,
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingBottom: 16, 
+    paddingBottom: 16,
   },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#FFF' },
   headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
 
   // --- SCROLL CONTENT ---
   scrollContent: {
-    paddingTop: HEADER_HEIGHT + 20, 
+    paddingTop: HEADER_HEIGHT + 20,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
@@ -584,20 +584,20 @@ const styles = StyleSheet.create({
   inputGroup: { marginBottom: 16 },
   inputLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6, color: COLORS_THEME.darkNavy, marginLeft: 4 },
   input: {
-    borderWidth: 1, 
-    borderColor: COLORS_THEME.border, 
+    borderWidth: 1,
+    borderColor: COLORS_THEME.border,
     borderRadius: 12,
-    padding: 12, 
-    fontSize: 15, 
-    backgroundColor: COLORS_THEME.inputBg, 
+    padding: 12,
+    fontSize: 15,
+    backgroundColor: COLORS_THEME.inputBg,
     color: COLORS_THEME.darkNavy, // Explicit Text Color
   },
-  
+
   vegToggleContainer: { flexDirection: 'row', gap: 12 },
   vegOption: {
-      flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-      paddingVertical: 10, borderWidth: 1, borderColor: COLORS_THEME.border,
-      borderRadius: 12, gap: 8, backgroundColor: COLORS_THEME.inputBg
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 10, borderWidth: 1, borderColor: COLORS_THEME.border,
+    borderRadius: 12, gap: 8, backgroundColor: COLORS_THEME.inputBg
   },
   vegOptionText: { fontSize: 14, color: COLORS_THEME.grayText, fontWeight: '500' },
 

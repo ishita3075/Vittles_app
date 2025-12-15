@@ -9,6 +9,7 @@ import MyReviewsScreen from "../screens/MyReviewsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import HelpSupportScreen from "../screens/HelpSupportScreen";
 import PrivacyPolicyScreen from "../screens/PrivacyPolicyScreen";
+import WishlistScreen from "../screens/WishlistScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -16,61 +17,67 @@ export default function ProfileStack() {
   return (
     <Stack.Navigator>
       {/* ✅ Changed name from "ProfileHome" → "Profile" */}
-      <Stack.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        options={{ 
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
           title: "Account",
           headerShown: false
-        }} 
+        }}
       />
-      <Stack.Screen 
-        name="PersonalInfo" 
-        component={PersonalInfoScreen} 
-        options={{ title: "Personal Information",
-          headerShown:false,
-         }} 
-      />
-      <Stack.Screen 
-        name="PaymentMethods" 
-        component={PaymentMethodsScreen} 
-        options={{ title: "Payment Methods",headerShown:false, }} 
-      />
-      <Stack.Screen 
-        name="OrderHistory" 
-        component={OrderHistoryScreen} 
-        options={{ title: "Order History" ,headerShown:false,}} 
-      />
-      
-      {/* ✅ Added OrderDetails Screen */}
-      <Stack.Screen 
-        name="OrderDetails" 
-        component={OrderDetailsScreen} 
-        options={{ 
+      <Stack.Screen
+        name="PersonalInfo"
+        component={PersonalInfoScreen}
+        options={{
+          title: "Personal Information",
           headerShown: false,
-          presentation: 'card'
-        }} 
+        }}
+      />
+      <Stack.Screen
+        name="PaymentMethods"
+        component={PaymentMethodsScreen}
+        options={{ title: "Payment Methods", headerShown: false, }}
+      />
+      <Stack.Screen
+        name="OrderHistory"
+        component={OrderHistoryScreen}
+        options={{ title: "Order History", headerShown: false, }}
       />
 
-      <Stack.Screen 
-        name="MyReviews" 
-        component={MyReviewsScreen} 
-        options={{ title: "My Reviews",headerShown:false, }} 
+      {/* ✅ Added OrderDetails Screen */}
+      <Stack.Screen
+        name="OrderDetails"
+        component={OrderDetailsScreen}
+        options={{
+          headerShown: false,
+          presentation: 'card'
+        }}
       />
-      <Stack.Screen 
-        name="Settings" 
-        component={SettingsScreen} 
-        options={{ title: "Settings" ,headerShown:false,}} 
+
+      <Stack.Screen
+        name="MyReviews"
+        component={MyReviewsScreen}
+        options={{ title: "My Reviews", headerShown: false, }}
       />
-      <Stack.Screen 
-        name="HelpSupport" 
-        component={HelpSupportScreen} 
-        options={{ title: "Help & Support" ,headerShown:false,}} 
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: "Settings", headerShown: false, }}
       />
-      <Stack.Screen 
-        name="PrivacyPolicy" 
-        component={PrivacyPolicyScreen} 
-        options={{ title: "Privacy Policy",headerShown:false, }} 
+      <Stack.Screen
+        name="HelpSupport"
+        component={HelpSupportScreen}
+        options={{ title: "Help & Support", headerShown: false, }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ title: "Privacy Policy", headerShown: false, }}
+      />
+      <Stack.Screen
+        name="Wishlist"
+        component={WishlistScreen}
+        options={{ title: "My Favorites", headerShown: false }}
       />
     </Stack.Navigator>
   );

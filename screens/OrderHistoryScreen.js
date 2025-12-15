@@ -24,6 +24,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { getOrdersByCustomer } from "../api";
 import { useAuth } from "../contexts/AuthContext";
+import CustomHeader from "../components/CustomHeader";
+import { commonStyles } from "../styles/common";
 
 const { width } = Dimensions.get('window');
 
@@ -133,7 +135,7 @@ const ReviewModal = ({ visible, onClose, onSubmit, restaurantName }) => {
           <TouchableOpacity style={styles.closeModalBtn} onPress={onClose}>
             <Ionicons name="close" size={20} color={COLORS_THEME.grayText} />
           </TouchableOpacity>
-          
+
           <Text style={styles.modalTitle}>Rate your food</Text>
           <Text style={styles.modalSubtitle}>How was {restaurantName}?</Text>
 
@@ -233,24 +235,26 @@ const OrderCard = ({ order, navigation, index, onReviewPress }) => {
       <View style={styles.actionRow}>
         <TouchableOpacity
           style={styles.outlineBtn}
-          onPress={() => navigation.navigate('OrderDetails', { order: {
-             ...order,
-             date: formatDate(order.date),
-             itemsList: order._itemsList || []
-          }})}
+          onPress={() => navigation.navigate('OrderDetails', {
+            order: {
+              ...order,
+              date: formatDate(order.date),
+              itemsList: order._itemsList || []
+            }
+          })}
         >
           <Text style={styles.outlineBtnText}>Details</Text>
         </TouchableOpacity>
 
         {/* REVIEW BUTTON (Only if Delivered) */}
         {order.status === 'Delivered' && (
-           <TouchableOpacity 
-             style={styles.reviewBtn} 
-             onPress={() => onReviewPress(order)}
-           >
-             <Ionicons name="star-outline" size={16} color={COLORS_THEME.steelBlue} />
-             <Text style={styles.reviewBtnText}>Review</Text>
-           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.reviewBtn}
+            onPress={() => onReviewPress(order)}
+          >
+            <Ionicons name="star-outline" size={16} color={COLORS_THEME.steelBlue} />
+            <Text style={styles.reviewBtnText}>Review</Text>
+          </TouchableOpacity>
         )}
 
         {order.status === 'Delivered' && (
@@ -277,7 +281,7 @@ export default function OrderHistoryScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
-  
+
   const [allOrders, setAllOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
 
@@ -377,12 +381,12 @@ export default function OrderHistoryScreen({ navigation }) {
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = allOrders.filter(order => {
-      const matchesSearch = order.restaurant.toLowerCase().includes(lowerQuery) || 
-                            order.id.toString().includes(lowerQuery);
+      const matchesSearch = order.restaurant.toLowerCase().includes(lowerQuery) ||
+        order.id.toString().includes(lowerQuery);
       const matchesFilter = activeFilter === 'All' || order.status === activeFilter;
       return matchesSearch && matchesFilter;
     });
-    
+
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setFilteredOrders(filtered);
   }, [searchQuery, activeFilter, allOrders]);
@@ -437,11 +441,11 @@ export default function OrderHistoryScreen({ navigation }) {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
         {['All', 'Processing', 'Delivered', 'Cancelled'].map(filter => (
-          <FilterChip 
+          <FilterChip
             key={filter}
-            label={filter} 
-            active={activeFilter === filter} 
-            onPress={() => setActiveFilter(filter)} 
+            label={filter}
+            active={activeFilter === filter}
+            onPress={() => setActiveFilter(filter)}
           />
         ))}
       </ScrollView>
@@ -453,19 +457,19 @@ export default function OrderHistoryScreen({ navigation }) {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* Review Modal */}
-      <ReviewModal 
+      <ReviewModal
         visible={reviewModalVisible}
         onClose={() => setReviewModalVisible(false)}
         onSubmit={handleReviewSubmit}
         restaurantName={selectedOrderForReview?.restaurant}
       />
 
-      {/* Header Background */}
       <View style={styles.headerBackground}>
         <LinearGradient
-          colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
+          colors={["#1A237E", "#303F9F", "#1A237E"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
+          locations={[0, 0.5, 1]}
           style={styles.headerGradient}
         >
           <View style={styles.navBar}>
@@ -476,7 +480,7 @@ export default function OrderHistoryScreen({ navigation }) {
               <Ionicons name="arrow-back" size={24} color="#FFF" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>My Orders</Text>
-            <View style={{width: 40}} />
+            <View style={{ width: 40 }} />
           </View>
           <Text style={styles.headerSubtitle}>Past meals & yummy deals</Text>
           <View style={styles.decorCircle} />
@@ -489,22 +493,22 @@ export default function OrderHistoryScreen({ navigation }) {
           data={filteredOrders}
           keyExtractor={item => item.id.toString()}
           renderItem={({ item, index }) => (
-            <OrderCard 
-              order={item} 
-              index={index} 
+            <OrderCard
+              order={item}
+              index={index}
               navigation={navigation}
-              onReviewPress={openReviewModal} 
+              onReviewPress={openReviewModal}
             />
           )}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={styles.flatListContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl 
-              refreshing={refreshing} 
+            <RefreshControl
+              refreshing={refreshing}
               onRefresh={onRefresh}
               colors={[COLORS_THEME.aeroBlue]}
-              tintColor={COLORS_THEME.aeroBlue} 
+              tintColor={COLORS_THEME.aeroBlue}
             />
           }
           ListEmptyComponent={
@@ -521,10 +525,10 @@ export default function OrderHistoryScreen({ navigation }) {
             )
           }
           ListFooterComponent={isLoading && (
-             <View style={{marginTop: 20}}>
-                <OrderSkeleton />
-                <OrderSkeleton />
-             </View>
+            <View style={{ marginTop: 20 }}>
+              <OrderSkeleton />
+              <OrderSkeleton />
+            </View>
           )}
         />
       </View>
@@ -592,7 +596,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   flatListContent: {
-    paddingTop: 140, 
+    paddingTop: 140,
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
@@ -613,7 +617,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 8,
-    marginTop: -40, 
+    marginTop: -40,
     marginBottom: 20,
   },
   statItem: {
@@ -676,17 +680,8 @@ const styles = StyleSheet.create({
 
   // Order Card
   orderCard: {
-    borderRadius: 16,
-    padding: 16,
-    backgroundColor: COLORS_THEME.white,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS_THEME.border,
+    ...commonStyles.card,
+    borderWidth: 0, // Common style has shadow, remove border if desired
   },
   orderCardSkeleton: {
     borderRadius: 16,
@@ -757,7 +752,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS_THEME.darkNavy,
   },
-  
+
   // Action Buttons
   actionRow: {
     flexDirection: 'row',

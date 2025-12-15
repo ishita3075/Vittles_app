@@ -22,6 +22,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { createRazorpayOrder } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import CustomHeader from "../components/CustomHeader";
+import { colors } from '../styles/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -55,15 +57,15 @@ const CheckoutInput = ({ label, value, onChangeText, placeholder, icon, multilin
       styles.inputContainer,
       multiline && { height: 100, alignItems: 'flex-start' }
     ]}>
-      <Ionicons 
-        name={icon} 
-        size={20} 
-        color={COLORS_THEME.steelBlue} 
-        style={{ marginRight: 12, marginTop: multiline ? 12 : 0 }} 
+      <Ionicons
+        name={icon}
+        size={20}
+        color={COLORS_THEME.steelBlue}
+        style={{ marginRight: 12, marginTop: multiline ? 12 : 0 }}
       />
       <TextInput
         style={[
-          styles.input, 
+          styles.input,
           multiline && { textAlignVertical: 'top', paddingTop: 12, height: '100%' }
         ]}
         value={value}
@@ -94,13 +96,13 @@ const PaymentListItem = ({ title, subtitle, icon, isSelected }) => (
   >
     <View style={styles.paymentItemLeft}>
       <View style={[
-        styles.paymentIconBox, 
+        styles.paymentIconBox,
         { backgroundColor: isSelected ? COLORS_THEME.aeroBlueLight : '#F3F4F6' }
       ]}>
-        <MaterialCommunityIcons 
-          name={icon} 
-          size={24} 
-          color={isSelected ? COLORS_THEME.steelBlue : COLORS_THEME.grayText} 
+        <MaterialCommunityIcons
+          name={icon}
+          size={24}
+          color={isSelected ? COLORS_THEME.steelBlue : COLORS_THEME.grayText}
         />
       </View>
       <View>
@@ -112,7 +114,7 @@ const PaymentListItem = ({ title, subtitle, icon, isSelected }) => (
     </View>
 
     <View style={[
-      styles.radioCircle, 
+      styles.radioCircle,
       { borderColor: isSelected ? COLORS_THEME.aeroBlue : COLORS_THEME.grayText }
     ]}>
       {isSelected && <View style={[styles.radioDot, { backgroundColor: COLORS_THEME.aeroBlue }]} />}
@@ -121,6 +123,7 @@ const PaymentListItem = ({ title, subtitle, icon, isSelected }) => (
 );
 
 const CheckoutScreen = ({ route, navigation }) => {
+  const insets = useSafeAreaInsets();
   const { cartItems = [], subtotal = 0, deliveryFee = 0, tax = 0, grandTotal = 0 } = route.params || {};
   const { user } = useAuth();
   const userId = user?.id || user?.userId || user?._id;
@@ -128,7 +131,7 @@ const CheckoutScreen = ({ route, navigation }) => {
   const [customerName, setCustomerName] = useState(user?.name || '');
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
   const [specialInstructions, setSpecialInstructions] = useState('');
-  
+
   // Only UPI enabled
   const paymentMethod = 'upi';
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -155,7 +158,7 @@ const CheckoutScreen = ({ route, navigation }) => {
     try {
       const amountInPaise = Number(grandTotal.toFixed(2));
       const paymentOrder = await createRazorpayOrder(amountInPaise);
-      
+
       const firstItem = cartItems[0];
 
       const orderPayload = {
@@ -199,35 +202,13 @@ const CheckoutScreen = ({ route, navigation }) => {
     <View style={[styles.container, { backgroundColor: COLORS_THEME.background }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* Header */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity 
-              onPress={() => navigation.goBack()} 
-              style={styles.backButton}
-              hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-            >
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-            
-            <Text style={styles.headerTitle}>Checkout</Text>
-            
-            {/* Dummy View for perfect center alignment */}
-            <View style={{ width: 40 }} />
-          </View>
-        </LinearGradient>
-      </View>
+      <CustomHeader title="Checkout" />
+
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Animated.View style={{ opacity: fadeAnim }}>
-            
+
             {/* Delivery Info */}
             <View style={styles.section}>
               <Text style={styles.sectionHeader}>DELIVERY DETAILS</Text>
@@ -277,7 +258,7 @@ const CheckoutScreen = ({ route, navigation }) => {
               <View style={styles.summaryBox}>
                 {cartItems.map((item, index) => (
                   <View key={index} style={styles.summaryRow}>
-                    <View style={{flexDirection: 'row', flex: 1, alignItems: 'center'}}>
+                    <View style={{ flexDirection: 'row', flex: 1, alignItems: 'center' }}>
                       <View style={styles.qtyBadge}>
                         <Text style={styles.summaryQty}>{item.quantity}x</Text>
                       </View>
@@ -306,7 +287,7 @@ const CheckoutScreen = ({ route, navigation }) => {
 
                 <View style={styles.dashedDivider}>
                   {/* CSS-tricks for dashed line in RN usually involve views or SVGs, keep simple line for now */}
-                  <View style={{height: 1, width: '100%', backgroundColor: COLORS_THEME.border}} />
+                  <View style={{ height: 1, width: '100%', backgroundColor: COLORS_THEME.border }} />
                 </View>
 
                 <View style={styles.totalRow}>
@@ -322,13 +303,13 @@ const CheckoutScreen = ({ route, navigation }) => {
       </KeyboardAvoidingView>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Math.max(24, insets.bottom + 10) }]}>
         <View style={styles.footerContent}>
           <View>
             <Text style={styles.footerLabel}>TOTAL PAYABLE</Text>
             <Text style={styles.footerAmount}>₹{grandTotal.toFixed(2)}</Text>
           </View>
-          
+
           <TouchableOpacity
             style={styles.payButtonWrapper}
             onPress={handlePlaceOrder}
@@ -336,7 +317,7 @@ const CheckoutScreen = ({ route, navigation }) => {
             activeOpacity={0.9}
           >
             <LinearGradient
-              colors={isPlacingOrder ? [COLORS_THEME.grayText, COLORS_THEME.grayText] : [COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]}
+              colors={isPlacingOrder ? [COLORS_THEME.grayText, COLORS_THEME.grayText] : colors.primaryGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.payButtonGradient}
@@ -347,13 +328,13 @@ const CheckoutScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </View >
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  
+
   // Header
   headerContainer: {
     height: 110,
@@ -391,16 +372,16 @@ const styles = StyleSheet.create({
   // Content
   scrollContent: { padding: 20, paddingTop: 24 },
   section: { marginBottom: 28 },
-  sectionHeader: { 
-    fontSize: 13, 
-    fontWeight: '700', 
-    marginBottom: 12, 
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 12,
     color: COLORS_THEME.grayText,
     marginLeft: 4,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  
+
   // Input
   card: {
     backgroundColor: COLORS_THEME.white,
@@ -413,10 +394,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   inputGroup: { marginBottom: 16 },
-  inputLabel: { 
-    fontSize: 12, 
-    fontWeight: '600', 
-    color: COLORS_THEME.darkNavy, 
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS_THEME.darkNavy,
     marginBottom: 6,
     marginLeft: 4,
   },
@@ -430,9 +411,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS_THEME.inputBg,
     height: 50,
   },
-  input: { 
-    flex: 1, 
-    fontSize: 15, 
+  input: {
+    flex: 1,
+    fontSize: 15,
     color: COLORS_THEME.darkNavy,
     paddingVertical: 0,
   },
@@ -455,30 +436,30 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   paymentItemLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  paymentIconBox: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 12, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  paymentIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   paymentItemTitle: { fontSize: 15, fontWeight: '700' },
   paymentItemSubtitle: { fontSize: 12, color: COLORS_THEME.grayText, marginTop: 2 },
-  radioCircle: { 
-    width: 22, 
-    height: 22, 
-    borderRadius: 11, 
-    borderWidth: 2, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  radioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   radioDot: { width: 12, height: 12, borderRadius: 6 },
 
   // Summary
-  summaryBox: { 
+  summaryBox: {
     backgroundColor: COLORS_THEME.white,
-    padding: 20, 
-    borderRadius: 16, 
+    padding: 20,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: COLORS_THEME.border,
     shadowColor: "#000",
@@ -487,11 +468,11 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
-  summaryRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 14, 
-    justifyContent: 'space-between' 
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    justifyContent: 'space-between'
   },
   qtyBadge: {
     backgroundColor: COLORS_THEME.aeroBlueLight,
@@ -500,31 +481,31 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 10,
   },
-  summaryQty: { 
-    fontSize: 13, 
-    color: COLORS_THEME.steelBlue, 
+  summaryQty: {
+    fontSize: 13,
+    color: COLORS_THEME.steelBlue,
     fontWeight: '700'
   },
-  summaryName: { 
-    fontSize: 15, 
-    color: COLORS_THEME.darkNavy, 
-    fontWeight: '600', 
+  summaryName: {
+    fontSize: 15,
+    color: COLORS_THEME.darkNavy,
+    fontWeight: '600',
     marginRight: 12,
     flex: 1,
   },
-  summaryPrice: { 
-    fontSize: 15, 
-    fontWeight: '700', 
-    color: COLORS_THEME.darkNavy 
+  summaryPrice: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS_THEME.darkNavy
   },
-  
+
   divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 12 },
   dashedDivider: { marginVertical: 12 },
-  
+
   billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   billLabel: { fontSize: 14, color: COLORS_THEME.grayText },
   billValue: { fontSize: 14, fontWeight: '500', color: COLORS_THEME.darkNavy },
-  
+
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
   totalLabel: { fontSize: 16, fontWeight: '700', color: COLORS_THEME.darkNavy },
   totalValue: { fontSize: 18, fontWeight: '800', color: COLORS_THEME.darkNavy },
@@ -549,7 +530,7 @@ const styles = StyleSheet.create({
   footerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   footerLabel: { fontSize: 11, fontWeight: '600', color: COLORS_THEME.grayText, textTransform: 'uppercase' },
   footerAmount: { fontSize: 22, fontWeight: '800', color: COLORS_THEME.darkNavy },
-  
+
   payButtonWrapper: {
     borderRadius: 14,
     overflow: 'hidden',

@@ -2,43 +2,32 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   StyleSheet,
   ScrollView,
-  StatusBar,
   Animated,
   Dimensions,
   LayoutAnimation,
+  Platform,
   UIManager,
-  ImageBackground,
+  KeyboardAvoidingView,
   Keyboard,
-  Platform
+  Image
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../contexts/AuthContext";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ NEW
-import { fetchCurrentUser } from "../api"; // ✅ NEW
+
+import ScreenWrapper from "../components/ui/ScreenWrapper";
+import ModernInput from "../components/ui/ModernInput";
+import GradientButton from "../components/ui/GradientButton";
+import { colors } from "../styles/colors";
+import { fetchCurrentUser } from "../api";
 
 const { width, height } = Dimensions.get("window");
 
-// --- PALETTE CONSTANTS ---
-const COLORS = {
-  // New Theme Colors (Aero Blue)
-  aeroBlue: "#7CB9E8",          // Primary Light Blue
-  steelBlue: "#5A94C4",         // Mid Blue (for gradients/text)
-  darkNavy: "#0A2342",          // Deep background (matches Navbar)
-  aeroBlueLight: "rgba(124, 185, 232, 0.1)", // Light background for icons
-
-  // Base Colors
-  white: "#FFFFFF",
-  grayText: "#6B7280",
-  inputBg: "#F9FAFB",
-};
-
-// Enable LayoutAnimation for Android
+// Enable LayoutAnimation
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -47,196 +36,87 @@ if (Platform.OS === 'android') {
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // Animations
-  // Start the form completely off-screen (at the bottom)
-  const slideAnim = useRef(new Animated.Value(height)).current;
-
-  // Keyboard & Header Animations
-  const formTranslateY = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(0)).current;
-  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(height)).current; // Start from bottom
 
   useEffect(() => {
-    // Entrance Animation: Smooth slide up from bottom (Sheet effect)
-    Animated.spring(slideAnim, {
-      toValue: 0,
-      damping: 15,    // Controls oscillation
-      stiffness: 90,  // Controls speed
-      mass: 1,        // Controls weight
-      useNativeDriver: true,
-    }).start();
-
-    // Keyboard listeners
-    const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        const keyboardHeight = e.endCoordinates.height;
-        setKeyboardHeight(keyboardHeight);
-
-        // Calculate form movement - we want it to rise above keyboard
-        const moveUpBy = keyboardHeight + 20;
-
-        // Animate form up
-        Animated.parallel([
-          Animated.timing(formTranslateY, {
-            toValue: -moveUpBy,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          // Fade out header when keyboard opens
-          Animated.timing(headerOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          // Move header up slightly
-          Animated.timing(headerTranslateY, {
-            toValue: -30,
-            duration: 300,
-            useNativeDriver: true,
-          })
-        ]).start();
-      }
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
-        // Animate everything back to original positions
-        Animated.parallel([
-          Animated.timing(formTranslateY, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          // Fade header back in
-          Animated.timing(headerOpacity, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          // Move header back down
-          Animated.timing(headerTranslateY, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          })
-        ]).start();
-
-        setTimeout(() => setKeyboardHeight(0), 300);
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        damping: 15,
+        stiffness: 90,
+        mass: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
-
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleLogin = async () => {
     Keyboard.dismiss();
-
     setError("");
+
     if (!email || !password) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      return setError("Please fill all fields.");
-    }
-    if (!validateEmail(email)) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      return setError("Please enter a valid email address.");
+      return setError("Please fill in all fields.");
     }
 
-    setIsLoading(true);
+    setLoading(true);
     try {
       const result = await login(email, password);
 
       if (result.success) {
-        // ✅ NEW: fetch /api/user/me and store userId in AsyncStorage
-        try {
-          const me = await fetchCurrentUser();
-          console.log("🔐 /api/user/me response:", me);
-
-          if (me && me.id != null) {
-            await AsyncStorage.setItem("userId", String(me.id));
-            console.log("💾 Saved userId to AsyncStorage:", me.id);
-          } else {
-            console.log("⚠️ /api/user/me did not return an id", me);
-          }
-        } catch (e) {
-          console.log("❌ Error fetching current user after login:", e);
+        const me = await fetchCurrentUser();
+        if (me && me.id != null) {
+          await AsyncStorage.setItem("userId", String(me.id));
         }
-
-        navigation.reset({ index: 0, routes: [{ name: "MainTabs" }] });
+        // Navigation is handled by RootNavigator usually, but good to be explicit for success feedback
       } else {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setError(result.error);
       }
-    } catch (error) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    } catch (err) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <ScreenWrapper>
+      {/* Header with Logo */}
+      <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+        <View style={styles.logoContainer}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']}
+            style={styles.logoGradient}
+          >
+            <Image source={require("../assets/Vittles_3.jpg")} style={{ width: 100, height: 100, borderRadius: 20 }} resizeMode="contain" />
+          </LinearGradient>
+        </View>
+        <Text style={styles.appName}>Vittles</Text>
+        <Text style={styles.tagline}>Taste the Extraordinary</Text>
+      </Animated.View>
 
-      <ImageBackground
-        source={{ uri: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop" }}
-        style={styles.background}
-        resizeMode="cover"
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === "ios" ? "padding" : undefined} // Android handles behavior differently with windowSoftInputMode
       >
-        <LinearGradient
-          // Dark Navy overlay
-          colors={['rgba(10, 35, 66, 0.7)', 'rgba(10, 35, 66, 0.9)']}
-          style={styles.overlay}
-        />
-
-        <View style={styles.circle1} />
-        <View style={styles.circle2} />
-
-        <Animated.View style={[
-          styles.header,
-          {
-            opacity: headerOpacity,
-            transform: [{ translateY: headerTranslateY }]
-          }
-        ]}>
-          <View style={styles.logoContainer}>
-            <LinearGradient
-              colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']}
-              style={styles.logoGradient}
-            >
-              <Ionicons name="restaurant" size={40} color="#FFFFFF" />
-            </LinearGradient>
-          </View>
-          <Text style={styles.appName}>Vittles</Text>
-          <Text style={styles.tagline}>Experience flavor in every bite</Text>
-        </Animated.View>
-
         <Animated.View
           style={[
             styles.formContainer,
             {
-              transform: [
-                { translateY: formTranslateY }, // For keyboard movement
-                { translateY: slideAnim }       // Entrance: Slide up from bottom
-              ]
+              transform: [{ translateY: slideAnim }]
             }
           ]}
         >
@@ -247,12 +127,10 @@ export default function LoginScreen({ navigation }) {
             contentContainerStyle={styles.formScrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            bounces={false}
-            keyboardDismissMode="interactive"
           >
-            <View style={styles.formHeader}>
+            <View style={styles.textGroup}>
               <Text style={styles.welcomeText}>Welcome Back</Text>
-              <Text style={styles.instructionText}>Sign in to continue your food journey</Text>
+              <Text style={styles.instructionText}>Sign in to continue your delicious journey</Text>
             </View>
 
             {error ? (
@@ -262,144 +140,61 @@ export default function LoginScreen({ navigation }) {
               </View>
             ) : null}
 
-            <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Email Address</Text>
-              <View style={styles.inputContainer}>
-                <View style={styles.iconBox}>
-                  {/* Updated Icon Color to Steel Blue */}
-                  <Ionicons name="mail" size={18} color={COLORS.steelBlue} />
-                </View>
-                <TextInput
-                  style={styles.input}
-                  placeholder="name@example.com"
-                  placeholderTextColor="#9CA3AF"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  returnKeyType="next"
-                />
-              </View>
-            </View>
+            <ModernInput
+              icon="mail-outline"
+              placeholder="Email Address"
+              value={email}
+              onChangeText={(t) => { setError(''); setEmail(t); }}
+              keyboardType="email-address"
+              error={error && error.toLowerCase().includes('email') ? error : null} // Simple heuristic
+            />
 
-            <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputContainer}>
-                <View style={styles.iconBox}>
-                  {/* Updated Icon Color to Steel Blue */}
-                  <Ionicons name="lock-closed" size={18} color={COLORS.steelBlue} />
-                </View>
-                <TextInput
-                  style={styles.input}
-                  placeholder="••••••••"
-                  placeholderTextColor="#9CA3AF"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!isPasswordVisible}
-                  autoCapitalize="none"
-                  returnKeyType="done"
-                  onSubmitEditing={handleLogin}
-                />
-                <TouchableOpacity
-                  onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-                  style={styles.eyeIcon}
-                >
-                  <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={20} color="#9CA3AF" />
-                </TouchableOpacity>
-              </View>
-            </View>
+            <ModernInput
+              icon="lock-closed-outline"
+              placeholder="Password"
+              value={password}
+              onChangeText={(t) => { setError(''); setPassword(t); }}
+              secureTextEntry
+              returnKeyType="go"
+              onSubmitEditing={handleLogin}
+              error={error && error.toLowerCase().includes('password') ? error : null}
+            />
 
             <TouchableOpacity
-              style={styles.forgotButton}
-              onPress={() => {
-                Keyboard.dismiss();
-                navigation.navigate("ForgotPassword");
-              }}
+              style={styles.forgotPassContainer}
+              onPress={() => navigation.navigate("ForgotPassword")}
             >
-              <Text style={styles.forgotText}>Forgot Password?</Text>
+              <Text style={styles.forgotPassText}>Forgot Password?</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.loginButton}
+            <GradientButton
+              title="Log In"
+              icon="log-in-outline"
               onPress={handleLogin}
-              disabled={isLoading}
-              activeOpacity={0.9}
-            >
-              <LinearGradient
-                // Updated Gradient: Aero Blue -> Steel Blue
-                colors={[COLORS.aeroBlue, COLORS.steelBlue]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.gradientButton}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <>
-                    <Text style={styles.loginButtonText}>Sign In</Text>
-                    <View style={styles.btnArrow}>
-                      {/* Updated Arrow Color */}
-                      <Ionicons name="arrow-forward" size={16} color={COLORS.steelBlue} />
-                    </View>
-                  </>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
+              isLoading={loading}
+              colors={colors.primaryGradient}
+            />
 
-            <View style={styles.signupRow}>
-              <Text style={styles.signupText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => {
-                Keyboard.dismiss();
-                navigation.navigate("Signup");
-              }}>
-                <Text style={styles.signupLink}>Create Account</Text>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
+                <Text style={styles.signupLink}>Sign Up</Text>
               </TouchableOpacity>
             </View>
+
           </ScrollView>
         </Animated.View>
-      </ImageBackground>
-    </View>
+      </KeyboardAvoidingView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.darkNavy, // Updated Background
-  },
-  background: {
-    flex: 1,
-    width: width,
-    height: height,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  circle1: {
-    position: "absolute",
-    width: width * 1.2,
-    height: width * 1.2,
-    borderRadius: width * 0.6,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    top: -width * 0.5,
-    left: -width * 0.1,
-  },
-  circle2: {
-    position: "absolute",
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: width * 0.4,
-    backgroundColor: "rgba(255,255,255,0.02)",
-    top: -width * 0.2,
-    right: -width * 0.3,
-  },
   header: {
-    position: "absolute",
-    top: height * 0.12,
-    left: 0,
-    right: 0,
+    height: height * 0.35, // Taller header for login
+    justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
+    paddingTop: Platform.OS === 'ios' ? 40 : 20,
   },
   logoContainer: {
     marginBottom: 16,
@@ -410,9 +205,9 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   logoGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
+    width: 130,
+    height: 130,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -434,33 +229,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: 0.5,
   },
+
+  keyboardAvoid: {
+    flex: 1,
+  },
+
+  // Bottom Sheet
   formContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    paddingTop: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.3,
     shadowRadius: 25,
     elevation: 20,
-    maxHeight: height * 0.7,
-    minHeight: height * 0.5,
-  },
-  formScroll: {
-    flex: 1,
-  },
-  formScrollContent: {
-    paddingHorizontal: 32,
-    paddingBottom: 40,
-    paddingTop: 10,
-  },
-  formHeader: {
-    marginBottom: 20,
+    overflow: 'hidden' // Important for border radius
   },
   dragHandle: {
     width: 40,
@@ -468,7 +253,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 24,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  formScroll: {
+    flex: 1,
+  },
+  formScrollContent: {
+    paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+
+  textGroup: {
+    marginBottom: 32,
   },
   welcomeText: {
     fontSize: 26,
@@ -478,9 +276,9 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     fontSize: 15,
-    color: COLORS.grayText,
-    marginBottom: 28,
+    color: '#6B7280',
   },
+
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -490,106 +288,39 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#FEE2E2',
+    gap: 8
   },
   errorText: {
     color: '#EF4444',
-    marginLeft: 8,
     fontSize: 13,
     flex: 1,
     fontWeight: '500',
   },
-  inputWrapper: {
-    marginBottom: 18,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#374151',
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.inputBg,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    height: 56,
-    paddingHorizontal: 12,
-  },
-  iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: COLORS.aeroBlueLight, // Updated Background
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-    fontWeight: '500',
-  },
-  eyeIcon: {
-    padding: 8,
-  },
-  forgotButton: {
+
+  forgotPassContainer: {
     alignSelf: 'flex-end',
-    marginBottom: 28,
-  },
-  forgotText: {
-    color: COLORS.steelBlue, // Updated Text
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  loginButton: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    shadowColor: COLORS.aeroBlue, // Updated Shadow
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 10,
     marginBottom: 24,
+    marginTop: -8, // Pull closer to password input
   },
-  gradientButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 58,
-    gap: 12,
-  },
-  loginButtonText: {
-    color: '#FFF',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  btnArrow: {
-    backgroundColor: '#FFF',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  signupRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  signupText: {
-    color: COLORS.grayText,
+  forgotPassText: {
+    color: colors.primary,
+    fontWeight: '600',
     fontSize: 14,
-    fontWeight: '500',
+  },
+
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  footerText: {
+    color: '#6B7280',
+    fontSize: 14,
   },
   signupLink: {
-    color: COLORS.steelBlue, // Updated Link
+    color: colors.primary,
+    fontWeight: '700',
     fontSize: 14,
-    fontWeight: '800',
-  },
+  }
+
 });

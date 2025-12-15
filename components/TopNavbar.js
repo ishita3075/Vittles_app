@@ -109,11 +109,10 @@ export default function TopNavbar({
   return (
     <View style={styles.outerContainer}>
       <LinearGradient
-        // Aero Blue Theme: Top-to-Bottom Vertical Gradient
-        // #7CB9E8 (Aero Blue) -> #5A94C4 (Steel Blue) -> #0A2342 (Dark Navy)
-        colors={["#7CB9E8", "#5A94C4", "#0A2342"]}
+        colors={["#1A237E", "#303F9F", "#1A237E"]} // Subtler middle shine
         start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        end={{ x: 1, y: 1 }} // Diagonal flow
+        locations={[0, 0.5, 1]}
         style={styles.gradient}
       >
         <SafeAreaView edges={["top"]} style={styles.safeContent}>
@@ -183,7 +182,7 @@ export default function TopNavbar({
                 <View style={styles.textColumn}>
                   <Text style={styles.greetingText}>{getTimeGreeting()},</Text>
                   <Text style={styles.nameText} numberOfLines={1}>
-                    {user?.name?.split(' ')[0] || "Guest"} 👋
+                    {user?.name?.split(' ')[0] || "Guest"} 🍽️
                   </Text>
                 </View>
               </TouchableOpacity>

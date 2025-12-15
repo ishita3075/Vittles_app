@@ -18,10 +18,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../contexts/CartContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from "../contexts/AuthContext";
+import CustomHeader from "../components/CustomHeader";
 import { LinearGradient } from 'expo-linear-gradient';
 import { getVendorMenu } from '../api';
+import { colors } from '../styles/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -48,6 +52,7 @@ const COLORS_THEME = {
 
 export default function CartScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const {
     cart,
@@ -321,25 +326,11 @@ export default function CartScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* Header */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[COLORS_THEME.aeroBlue, COLORS_THEME.darkNavy]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerBackground}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Cart</Text>
-            <TouchableOpacity onPress={handleClearCart} disabled={isClearing}>
-              <Text style={styles.clearText}>Clear All</Text>
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
-      </View>
+      <CustomHeader
+        title="My Cart"
+        rightIcon="trash-outline"
+        onRightAction={clearCart}
+      />
 
       <Animated.ScrollView
         style={[styles.scrollView, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
@@ -419,7 +410,11 @@ export default function CartScreen() {
       </Animated.ScrollView>
 
       {/* Footer */}
-      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+      <View style={[styles.footer, {
+        backgroundColor: colors.card,
+        borderTopColor: colors.border,
+        paddingBottom: Math.max(24, insets.bottom + 10)
+      }]}>
         <View style={styles.footerContent}>
           <View>
             <Text style={[styles.footerTotalLabel, { color: colors.textSecondary }]}>TOTAL</Text>
@@ -432,7 +427,7 @@ export default function CartScreen() {
             activeOpacity={0.9}
           >
             <LinearGradient
-              colors={[COLORS_THEME.aeroBlue, COLORS_THEME.steelBlue]}
+              colors={colors.primaryGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.checkoutBtn}

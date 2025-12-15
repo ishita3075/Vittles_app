@@ -167,7 +167,7 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark, onPress }) => {
             >
               <View style={styles.textContent}>
                 <View style={styles.ctaButton}>
-                  <Text style={styles.ctaText}>Shop Now</Text>
+                  <Text style={styles.ctaText}>Get Now</Text>
                   <Ionicons name="arrow-forward" size={14} color="#FFF" />
                 </View>
               </View>

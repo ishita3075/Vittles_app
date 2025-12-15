@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
+import { colors } from './styles/colors'; // Import centralized colors
 import {
   View,
   Text,
@@ -22,6 +23,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { CartProvider, useCart } from "./contexts/CartContext";
 import { DataProvider } from "./contexts/DataContext";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
+import { WishlistProvider } from "./contexts/WishlistContext";
 
 // Screens
 import HomeStack from "./navigation/HomeStack";
@@ -29,12 +31,15 @@ import ProfileStack from "./navigation/ProfileStack";
 import LoginScreen from "./screens/LoginScreen";
 import SignupScreen from "./screens/SignupScreen";
 import AlertsScreen from "./screens/AlertsScreen";
+import CartConflictModal from "./components/CartConflictModal";
 import CartScreen from "./screens/CartScreen";
 import VendorMenu from "./screens/VendorMenu";
 import VendorDashboard from "./screens/VendorDashboard";
+import CheckoutScreen from "./screens/CheckoutScreen";
 import ForgotPasswordScreen from "./screens/ForgotPassword";
 import VendorProfileStack from "./navigation/VendorProfileStack";
 import RazorpayScreen from "./screens/RazorpayScreen"; // ✅ ADDED IMPORT
+import RestaurantDetails from "./screens/RestaurantDetails";
 
 // Assets
 import vit from './assets/Vittles_2.jpg';
@@ -55,57 +60,7 @@ const VENDOR_EMAILS = [
 
 // --- Helper Components ---
 
-const FloatingCartButton = () => {
-  const { totalItems } = useCart();
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
 
-  // Animation for badge pop
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (totalItems > 0) {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 5,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      scaleAnim.setValue(0);
-    }
-  }, [totalItems]);
-
-  if (totalItems === 0) return null;
-
-  const bottomPosition = insets.bottom + (isTablet ? 80 : 70);
-  const rightPosition = 20;
-
-  return (
-    <TouchableOpacity
-      style={[styles.floatingButton, { bottom: bottomPosition, right: rightPosition }]}
-      onPress={() => navigation.navigate("Cart")}
-      activeOpacity={0.9}
-    >
-      <View style={[styles.cartButton, { backgroundColor: colors.primary }]}>
-        <Ionicons name="cart" size={24} color="#fff" />
-        <Animated.View
-          style={[
-            styles.badge,
-            {
-              backgroundColor: colors.error || '#FF3B30',
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}
-        >
-          <Text style={styles.badgeText}>
-            {totalItems > 99 ? "99+" : totalItems}
-          </Text>
-        </Animated.View>
-      </View>
-    </TouchableOpacity>
-  );
-};
 
 const LoadingScreen = () => {
   const { colors } = useTheme();
@@ -166,7 +121,7 @@ const MainTabs = () => {
           tabBarStyle: [
             styles.tabBar,
             {
-              backgroundColor: colors.tabBar || colors.card,
+              backgroundColor: "#EEF1F7",
               borderTopColor: colors.border,
               height: (isTablet ? 70 : 60) + insets.bottom,
               paddingBottom: insets.bottom + 4,
@@ -229,8 +184,8 @@ const MainTabs = () => {
         )}
       </Tab.Navigator>
 
-      {/* {!isVendor && <FloatingCartButton />} */}
-    </View>
+
+    </View >
   );
 };
 
@@ -270,6 +225,22 @@ const RootNavigator = () => {
               presentation: 'modal'
             }}
           />
+          <Stack.Screen
+            name="RestaurantDetails"
+            component={RestaurantDetails}
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right'
+            }}
+          />
+          <Stack.Screen
+            name="Checkout"
+            component={CheckoutScreen}
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right'
+            }}
+          />
         </>
       ) : (
         <>
@@ -290,9 +261,12 @@ export default function App() {
       <AuthProvider>
         <DataProvider>
           <CartProvider>
-            <NavigationContainer>
-              <RootNavigator />
-            </NavigationContainer>
+            <WishlistProvider>
+              <NavigationContainer>
+                <RootNavigator />
+                <CartConflictModal />
+              </NavigationContainer>
+            </WishlistProvider>
           </CartProvider>
         </DataProvider>
       </AuthProvider>
@@ -315,40 +289,7 @@ const styles = StyleSheet.create({
   },
 
   // Floating Button
-  floatingButton: {
-    position: "absolute",
-    zIndex: 999,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  cartButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: '#FFF',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: "bold",
-  },
+
 
   // Tab Bar
   tabBar: {
