@@ -13,6 +13,9 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from 'expo-haptics'; // Add import
+
+
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -33,7 +36,7 @@ const { width } = Dimensions.get("window");
 const ITEM_WIDTH = width; // full-width paging
 const HEIGHT = 180; // fixed to match RestaurantCard
 
-const data = [
+const DUMMY_DATA = [
   { id: "1", image: one, name: "Special Sushi Set" },
   { id: "2", image: two, name: "Gourmet Burger" },
   { id: "3", image: three, name: "Italian Pasta" },
@@ -107,10 +110,22 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark, onPress }) => {
     }).start();
   };
 
+  // Resolve Image Source
+  let imageSource;
+  if (typeof item.image === 'string' && item.image.startsWith('http')) {
+    imageSource = { uri: item.image };
+  } else if (item.image) {
+    // It might be a local require, or something else
+    imageSource = item.image;
+  } else {
+    // Fallback if no image (cycle through DUMMY images based on index)
+    const fallbackImages = [one, two, three, four];
+    imageSource = fallbackImages[index % fallbackImages.length];
+  }
+
   return (
     <View style={styles.itemContainer}>
       <Pressable
-        onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         style={styles.pressableArea}
@@ -142,7 +157,7 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark, onPress }) => {
               ]}
             >
               <Animated.Image
-                source={item.image}
+                source={imageSource}
                 style={styles.image}
                 resizeMode="cover"
               />
@@ -166,10 +181,17 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark, onPress }) => {
               ]}
             >
               <View style={styles.textContent}>
-                <View style={styles.ctaButton}>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                    onPress();
+                  }}
+                  activeOpacity={0.8}
+                  style={styles.ctaButton}
+                >
                   <Text style={styles.ctaText}>Get Now</Text>
                   <Ionicons name="arrow-forward" size={14} color="#FFF" />
-                </View>
+                </TouchableOpacity>
               </View>
             </Animated.View>
 
@@ -180,7 +202,7 @@ const CarouselItem = ({ item, index, scrollX, colors, isDark, onPress }) => {
   );
 };
 
-export default function PromoCarousel() {
+export default function PromoCarousel({ data }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef(null);
   const autoScrollTimer = useRef(null);
@@ -188,12 +210,24 @@ export default function PromoCarousel() {
   const { colors, isDark } = useTheme();
   const navigation = useNavigation();
 
+  // Use passed data if available, otherwise fallback
+  const carouselData = (data && data.length > 0) ? data : DUMMY_DATA;
+
   // Parallax / tilt animation value (used)
   const scrollX = useRef(new Animated.Value(0)).current;
 
   // --- Navigation Logic ---
   const handleItemPress = (item) => {
-    // Construct a dummy restaurant object for the details screen
+    // If it has vendorData, it's a real restaurant object from HomeScreen
+    if (item.vendorData) {
+      navigation.navigate("RestaurantDetails", {
+        restaurant: item,
+        vendor: item.vendorData
+      });
+      return;
+    }
+
+    // Fallback / Mock logic for dummy items
     const mockRestaurant = {
       id: `promo_${item.id}`,
       name: item.name,
@@ -217,7 +251,7 @@ export default function PromoCarousel() {
     autoScrollTimer.current = setInterval(() => {
       if (!isInteracting.current && flatListRef.current) {
         setActiveIndex((prevIndex) => {
-          const nextIndex = (prevIndex + 1) % data.length;
+          const nextIndex = (prevIndex + 1) % carouselData.length;
           flatListRef.current.scrollToIndex({
             index: nextIndex,
             animated: true,
@@ -226,7 +260,7 @@ export default function PromoCarousel() {
         });
       }
     }, 4000);
-  }, []);
+  }, [carouselData.length]); // depend on data length
 
   const stopAutoScroll = () => {
     if (autoScrollTimer.current) {
@@ -289,12 +323,12 @@ export default function PromoCarousel() {
     <View style={styles.container}>
       <Animated.FlatList
         ref={flatListRef}
-        data={data}
+        data={carouselData}
         renderItem={renderItem}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         onScrollBeginDrag={onScrollBeginDrag}
@@ -312,7 +346,7 @@ export default function PromoCarousel() {
 
       {/* Floating Pagination Dots */}
       <View style={styles.paginationContainer}>
-        {data.map((_, i) => (
+        {carouselData.map((_, i) => (
           <TouchableOpacity
             key={i}
             onPress={() => handleDotPress(i)}

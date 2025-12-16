@@ -16,6 +16,7 @@ import {
   Dimensions
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useCart } from '../contexts/CartContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
@@ -93,6 +94,7 @@ const PaymentListItem = ({ title, subtitle, icon, isSelected }) => (
       }
     ]}
     activeOpacity={1}
+    onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
   >
     <View style={styles.paymentItemLeft}>
       <View style={[
@@ -143,6 +145,7 @@ const CheckoutScreen = ({ route, navigation }) => {
   }, []);
 
   const handlePlaceOrder = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     if (!customerName.trim() || !phoneNumber.trim()) {
       Alert.alert("Missing Information", "Please provide your Name and Phone Number to continue.");
       return;

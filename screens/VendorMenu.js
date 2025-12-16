@@ -232,7 +232,8 @@ export default function VendorMenu() {
         category: itemCategory,
         description: newItem.description || "",
         available: true,
-        foodType: newItem.isVeg ? "Veg" : "Non-Veg"
+        foodType: newItem.isVeg ? "Veg" : "Non-Veg",
+        isVeg: newItem.isVeg
       };
 
       const response = await addMenuItem(vendorId, payload);

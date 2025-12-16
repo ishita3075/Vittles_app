@@ -1,12 +1,12 @@
 {
   "user": {
     "id": "1",
-    "name": "John Davidson",
-    "email": "john.d@example.com",
+    "name": "Name",
+    "email": "email@gmail.com",
     "avatar": "https://i.pravatar.cc/150?img=3",
-    "joinedDate": "January 2024",
-    "phone": "+1 (555) 123-4567",
-    "location": "New York, USA"
+    "joinedDate": "yyyy-mm-dd",
+    "phone": "1234567890",
+    "location": "location"
   },
   "stats": {
     "orders": 24,

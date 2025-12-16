@@ -15,6 +15,7 @@ import {
   Animated
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from 'expo-haptics';
 import PromoCarousel from '../components/PromoCarousel';
 import TopNavbar from "../components/TopNavbar";
 import CategoriesList from "../components/CategoriesList";
@@ -165,6 +166,7 @@ export default function HomeScreen({ navigation }) {
 
   // --- LOGIC: Only Popup, No Background Filter ---
   const handleCategoryPress = (categoryInput) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     let categoryId = '';
     let categoryObj = null;
 
@@ -247,6 +249,7 @@ export default function HomeScreen({ navigation }) {
 
   // Navigation Handler
   const handleRestaurantPress = useCallback((restaurant) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setModalVisible(false); // Close modal
     navigation.navigate("RestaurantDetails", {
       restaurant,
@@ -305,7 +308,7 @@ export default function HomeScreen({ navigation }) {
               Recommended for you
             </Text>
           </View>
-          <PromoCarousel />
+          <PromoCarousel data={vendors.slice(0, 5)} />
         </View>
 
         <CategoriesList

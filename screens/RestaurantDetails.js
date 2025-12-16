@@ -17,6 +17,7 @@ import {
   Keyboard
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Haptics from 'expo-haptics';
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useCart } from "../contexts/CartContext";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -57,6 +58,7 @@ const MenuItem = React.memo(({ item, quantity, onAdd, onIncrement, onDecrement, 
   }, []);
 
   const animateButton = (callback) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.sequence([
       Animated.timing(btnScale, { toValue: 0.9, duration: 50, useNativeDriver: true }),
       Animated.timing(btnScale, { toValue: 1, duration: 100, useNativeDriver: true })
@@ -343,10 +345,13 @@ export default function RestaurantDetails() {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <WishlistButton
                 isActive={isFavorite}
-                onPress={() => toggleWishlist(restaurant)}
                 activeColor="#EF4444"
                 inactiveColor={colors.primary}
                 style={{ marginRight: 0 }}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  toggleWishlist(restaurant);
+                }}
               />
               <TouchableOpacity onPress={openSearch} style={styles.stickyIconBtn}>
                 <Ionicons name="search" size={24} color={colors.primary} />
@@ -455,7 +460,10 @@ export default function RestaurantDetails() {
         <View style={[styles.floatingCartContainer, { bottom: 24 + insets.bottom }]}>
           <TouchableOpacity
             style={[styles.cartButton, { shadowColor: colors.primaryDark }]}
-            onPress={() => navigation.navigate("Cart")}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate("Cart");
+            }}
             activeOpacity={0.95}
           >
             <LinearGradient

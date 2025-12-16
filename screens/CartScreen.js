@@ -17,6 +17,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useCart } from '../contexts/CartContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -177,6 +178,7 @@ export default function CartScreen() {
 
   const handleCheckout = () => {
     if (totalItems === 0) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     navigation.navigate('Checkout', {
       cartItems: cart,
       restaurantId: currentRestaurant,
@@ -225,7 +227,7 @@ export default function CartScreen() {
           <View style={styles.itemContent}>
             <View style={styles.itemHeader}>
               <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>
-              <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.deleteBtn}>
+              <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); removeItem(item.id); }} style={styles.deleteBtn}>
                 <Ionicons name="trash-outline" size={18} color="#EF4444" />
               </TouchableOpacity>
             </View>
@@ -240,6 +242,7 @@ export default function CartScreen() {
               <View style={[styles.qtyContainer, { backgroundColor: colors.background }]}>
                 <TouchableOpacity
                   onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                     decrementItem(item.id);
                   }}
@@ -250,6 +253,7 @@ export default function CartScreen() {
                 <Text style={[styles.qtyText, { color: colors.text }]}>{item.quantity}</Text>
                 <TouchableOpacity
                   onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                     incrementItem(item.id);
                   }}
@@ -281,7 +285,10 @@ export default function CartScreen() {
         <Text style={[styles.recPrice, { color: colors.textSecondary }]}>₹{item.price}</Text>
         <TouchableOpacity
           style={[styles.recAddBtn, { backgroundColor: colors.primary + '15' }]}
-          onPress={() => handleAddRecommendation(item)}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            handleAddRecommendation(item);
+          }}
         >
           <Text style={[styles.recAddText, { color: colors.primary }]}>ADD</Text>
         </TouchableOpacity>

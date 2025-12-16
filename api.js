@@ -84,14 +84,26 @@ export const getVendorMenu = async (vendorId) => {
 // Add item to vendor's menu
 export const addMenuItem = async (vendorId, menuItem) => {
   try {
-    const response = await vendorApi.post(`/vendors/${vendorId}/menu`, {
+    console.log("addMenuItem called with:", JSON.stringify(menuItem));
+    /* 
+       Ensure we send BOTH foodType and isVeg to satisfy backend.
+       Derived from either property to be safe.
+    */
+    const isVeg = menuItem.isVeg !== undefined ? menuItem.isVeg : (menuItem.foodType === "Veg");
+    const foodType = menuItem.foodType || (isVeg ? "Veg" : "Non-Veg");
+
+    const payload = {
       itemName: menuItem.itemName ?? menuItem.name,
       price: menuItem.price,
       category: menuItem.category,
       description: menuItem.description,
-      foodType: menuItem.isVeg ? "Veg" : "Non-Veg",
+      foodType: foodType,
+      isVeg: isVeg, // Sending explicit boolean as well
       available: menuItem.available,
-    });
+    };
+    console.log("Sending payload to API:", JSON.stringify(payload));
+
+    const response = await vendorApi.post(`/vendors/${vendorId}/menu`, payload);
     return response.data;
   } catch (error) {
     console.error('Error adding menu item:', error);
