@@ -373,14 +373,14 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: 'Outfit_800ExtraBold',
     color: "#FFF",
     letterSpacing: 0.5,
   },
   headerSubtitle: {
     fontSize: 13,
     color: "rgba(255,255,255,0.8)",
-    fontWeight: "500",
+    fontFamily: 'Outfit_500Medium',
   },
   markReadBtn: {
     flexDirection: 'row',
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
   markReadText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: 'Outfit_700Bold',
     color: "#FFF",
   },
 
@@ -450,13 +450,13 @@ const styles = StyleSheet.create({
   },
   alertTitle: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: 'Outfit_700Bold',
     marginBottom: 4,
   },
   alertTime: {
     fontSize: 12,
     color: "#9CA3AF",
-    fontWeight: "500",
+    fontFamily: 'Outfit_500Medium',
   },
   closeButton: {
     padding: 4,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: "800",
+    fontFamily: 'Outfit_800ExtraBold',
     color: COLORS.darkNavy,
     marginBottom: 8,
   },
@@ -483,6 +483,7 @@ const styles = StyleSheet.create({
     color: COLORS.grayText,
     textAlign: "center",
     lineHeight: 22,
+    fontFamily: 'Outfit_400Regular',
   },
   fab: {
     position: "absolute",

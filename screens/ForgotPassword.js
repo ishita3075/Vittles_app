@@ -296,7 +296,7 @@ export default function ForgotPasswordScreen({ navigation }) {
 
       <Text style={[styles.successTitle, { color: colors.text }]}>Check your email</Text>
       <Text style={[styles.successMessage, { color: colors.textSecondary }]}>
-        We have sent a password recovery instruction to your email <Text style={{ fontWeight: '700', color: colors.text }}>{email}</Text>.
+        We have sent a password recovery instruction to your email <Text style={{ fontFamily: 'Outfit_700Bold', color: colors.text }}>{email}</Text>.
       </Text>
 
       <TouchableOpacity
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: '#111827',
     marginBottom: 12,
     letterSpacing: -0.5,
@@ -524,6 +524,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#8E8E93',
     lineHeight: 24,
+    fontFamily: 'Outfit_400Regular',
   },
   inputWrapper: {
     marginBottom: 24,
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#1F2937',
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
     height: '100%',
   },
   inlineError: {
@@ -568,7 +569,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 6,
     marginLeft: 4,
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
   },
   submitButton: {
     borderRadius: 18,
@@ -590,7 +591,7 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#FFF',
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     letterSpacing: 0.5,
   },
   btnArrow: {
@@ -611,7 +612,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#007AFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     marginLeft: 6,
   },
   successWrapper: {
@@ -652,7 +653,7 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontSize: 24,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: '#111827',
     marginBottom: 12,
     textAlign: 'center',
@@ -664,6 +665,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 32,
     paddingHorizontal: 20,
+    fontFamily: 'Outfit_400Regular',
   },
   primaryActionBtn: {
     width: '100%',
@@ -686,7 +688,7 @@ const styles = StyleSheet.create({
   primaryActionText: {
     color: '#FFF',
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     marginLeft: 8,
   },
   secondaryActionBtn: {
@@ -696,7 +698,7 @@ const styles = StyleSheet.create({
   secondaryActionText: {
     color: '#8E8E93',
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
   resendContainer: {
     marginTop: 32,
@@ -711,10 +713,11 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'center',
     marginBottom: 4,
+    fontFamily: 'Outfit_400Regular',
   },
   resendLink: {
     fontSize: 14,
     color: colors.primary,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
 });

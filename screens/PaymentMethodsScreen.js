@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
   StatusBar,
   Animated,
   Dimensions,
@@ -50,10 +50,10 @@ const UPICard = ({ method, index, onDelete }) => {
   }, []);
 
   return (
-    <Animated.View 
-      style={{ 
-        opacity: fadeAnim, 
-        transform: [{ translateY: slideAnim }] 
+    <Animated.View
+      style={{
+        opacity: fadeAnim,
+        transform: [{ translateY: slideAnim }]
       }}
     >
       <LinearGradient
@@ -71,9 +71,9 @@ const UPICard = ({ method, index, onDelete }) => {
             <Text style={styles.cardId}>{method.upiId}</Text>
           </View>
         </View>
-        
-        <TouchableOpacity 
-          onPress={() => onDelete(method.id)} 
+
+        <TouchableOpacity
+          onPress={() => onDelete(method.id)}
           style={styles.deleteBtn}
         >
           <Ionicons name="trash-outline" size={20} color="rgba(255,255,255,0.8)" />
@@ -86,28 +86,28 @@ const UPICard = ({ method, index, onDelete }) => {
 export default function PaymentMethodsScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
-  
+
   const [paymentMethods, setPaymentMethods] = useState([
-    { 
-      id: 1, 
-      name: "Google Pay", 
-      upiId: "user@oksbi", 
-      icon: "google", 
-      colors: ["#4285F4", "#34A853"] 
+    {
+      id: 1,
+      name: "Google Pay",
+      upiId: "user@oksbi",
+      icon: "google",
+      colors: ["#4285F4", "#34A853"]
     },
-    { 
-      id: 2, 
-      name: "PhonePe", 
-      upiId: "9876543210@ybl", 
-      icon: "cellphone-check", 
-      colors: ["#5f259f", "#9d50bb"] 
+    {
+      id: 2,
+      name: "PhonePe",
+      upiId: "9876543210@ybl",
+      icon: "cellphone-check",
+      colors: ["#5f259f", "#9d50bb"]
     },
-    { 
-      id: 3, 
-      name: "Paytm", 
-      upiId: "9876543210@paytm", 
-      icon: "wallet", 
-      colors: ["#002E6E", "#00B9F1"] 
+    {
+      id: 3,
+      name: "Paytm",
+      upiId: "9876543210@paytm",
+      icon: "wallet",
+      colors: ["#002E6E", "#00B9F1"]
     },
   ]);
 
@@ -121,9 +121,9 @@ export default function PaymentMethodsScreen() {
       "Are you sure you want to remove this payment method?",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Remove", 
-          style: "destructive", 
+        {
+          text: "Remove",
+          style: "destructive",
           onPress: () => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setPaymentMethods(prev => prev.filter(m => m.id !== id));
@@ -136,7 +136,7 @@ export default function PaymentMethodsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" backgroundColor="#8B3358" />
-      
+
       {/* 1. Curved Header */}
       <View style={styles.headerContainer}>
         <LinearGradient
@@ -150,16 +150,16 @@ export default function PaymentMethodsScreen() {
               <Ionicons name="arrow-back" size={24} color="#FFF" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Payments</Text>
-            <View style={{ width: 40 }} /> 
+            <View style={{ width: 40 }} />
           </View>
         </LinearGradient>
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        
+
         {/* Scan & Pay Section - Clean Look */}
         <View style={[styles.scanCard, { backgroundColor: colors.card, shadowColor: colors.border }]}>
           <View style={[styles.scanIconBox, { backgroundColor: colors.primary + '15' }]}>
@@ -177,17 +177,17 @@ export default function PaymentMethodsScreen() {
         {/* Clean List */}
         <View style={styles.listContainer}>
           {paymentMethods.map((method, index) => (
-            <UPICard 
-              key={method.id} 
-              method={method} 
-              index={index} 
-              onDelete={removePaymentMethod} 
+            <UPICard
+              key={method.id}
+              method={method}
+              index={index}
+              onDelete={removePaymentMethod}
             />
           ))}
         </View>
 
         {/* Minimal Add Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.addBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
           onPress={addPaymentMethod}
           activeOpacity={0.7}
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  
+
   // Header
   headerContainer: {
     height: 110,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontFamily: "Outfit_700Bold",
     color: '#FFF',
   },
 
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
-  
+
   // Scan Card
   scanCard: {
     flexDirection: 'row',
@@ -277,21 +277,22 @@ const styles = StyleSheet.create({
   },
   scanTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     marginBottom: 2,
   },
   scanSub: {
     fontSize: 13,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Section
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     marginBottom: 16,
     marginLeft: 4,
   },
-  
+
   // UPI Card Styles
   listContainer: {
     marginBottom: 16,
@@ -325,13 +326,13 @@ const styles = StyleSheet.create({
   cardName: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     marginBottom: 2,
   },
   cardId: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: "Outfit_500Medium",
   },
   deleteBtn: {
     padding: 8,
@@ -351,7 +352,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   addBtnText: {
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
     marginLeft: 8,
   },
 
@@ -365,6 +366,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: "Outfit_500Medium",
   },
 });

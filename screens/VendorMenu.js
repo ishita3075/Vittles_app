@@ -511,8 +511,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 16,
   },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: '#FFF' },
-  headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
+  headerTitle: { fontSize: 24, fontFamily: 'Outfit_800ExtraBold', color: '#FFF' },
+  headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.85)', fontFamily: 'Outfit_400Regular' },
   addButtonHeader: {
     width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF',
     justifyContent: 'center', alignItems: 'center',
@@ -563,13 +563,13 @@ const styles = StyleSheet.create({
   },
   dashboardValue: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: COLORS_THEME.darkNavy,
     textAlign: 'center',
   },
   dashboardLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.grayText,
     textAlign: 'center',
   },
@@ -579,10 +579,10 @@ const styles = StyleSheet.create({
     padding: 20, borderRadius: 20, marginBottom: 24, backgroundColor: COLORS_THEME.white,
     shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4,
   },
-  formTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16, color: COLORS_THEME.darkNavy },
+  formTitle: { fontSize: 18, fontFamily: 'Outfit_700Bold', marginBottom: 16, color: COLORS_THEME.darkNavy },
   formRow: { flexDirection: 'row' },
   inputGroup: { marginBottom: 16 },
-  inputLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6, color: COLORS_THEME.darkNavy, marginLeft: 4 },
+  inputLabel: { fontSize: 12, fontFamily: 'Outfit_600SemiBold', marginBottom: 6, color: COLORS_THEME.darkNavy, marginLeft: 4 },
   input: {
     borderWidth: 1,
     borderColor: COLORS_THEME.border,
@@ -591,6 +591,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     backgroundColor: COLORS_THEME.inputBg,
     color: COLORS_THEME.darkNavy, // Explicit Text Color
+    fontFamily: 'Outfit_400Regular',
   },
 
   vegToggleContainer: { flexDirection: 'row', gap: 12 },
@@ -599,17 +600,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10, borderWidth: 1, borderColor: COLORS_THEME.border,
     borderRadius: 12, gap: 8, backgroundColor: COLORS_THEME.inputBg
   },
-  vegOptionText: { fontSize: 14, color: COLORS_THEME.grayText, fontWeight: '500' },
+  vegOptionText: { fontSize: 14, color: COLORS_THEME.grayText, fontFamily: 'Outfit_500Medium' },
 
   submitBtn: { borderRadius: 12, overflow: 'hidden', marginTop: 8 },
   submitGradient: { flexDirection: 'row', padding: 16, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  submitBtnText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
+  submitBtnText: { color: '#FFF', fontFamily: 'Outfit_700Bold', fontSize: 16 },
 
   // --- CATEGORIES ---
   categorySection: { marginBottom: 16 },
   categoryScroll: { paddingRight: 20, gap: 8 },
   catChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  catText: { fontSize: 13, fontWeight: '600' },
+  catText: { fontSize: 13, fontFamily: 'Outfit_600SemiBold' },
 
   // --- MENU CARD ---
   menuList: { gap: 16 },
@@ -620,16 +621,16 @@ const styles = StyleSheet.create({
   cardContent: { padding: 16 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4, flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: COLORS_THEME.darkNavy, flexShrink: 1 },
+  cardTitle: { fontSize: 16, fontFamily: 'Outfit_700Bold', color: COLORS_THEME.darkNavy, flexShrink: 1 },
   categoryPill: { backgroundColor: '#F3F4F6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, alignSelf: 'flex-start' },
-  categoryText: { fontSize: 10, color: COLORS_THEME.grayText, fontWeight: '600', textTransform: 'uppercase' },
-  cardPrice: { fontSize: 16, fontWeight: '700', color: COLORS_THEME.steelBlue },
-  cardDesc: { fontSize: 13, lineHeight: 18, color: COLORS_THEME.grayText, marginBottom: 12 },
+  categoryText: { fontSize: 10, color: COLORS_THEME.grayText, fontFamily: 'Outfit_600SemiBold', textTransform: 'uppercase' },
+  cardPrice: { fontSize: 16, fontFamily: 'Outfit_700Bold', color: COLORS_THEME.steelBlue },
+  cardDesc: { fontSize: 13, lineHeight: 18, color: COLORS_THEME.grayText, marginBottom: 12, fontFamily: 'Outfit_400Regular' },
   divider: { height: 1, backgroundColor: '#F3F4F6', marginBottom: 12 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, gap: 6 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: 11, fontWeight: '700' },
+  statusText: { fontSize: 11, fontFamily: 'Outfit_700Bold' },
   actions: { flexDirection: 'row', gap: 8 },
   iconButton: {
     width: 32, height: 32, borderRadius: 8, backgroundColor: '#F3F4F6',
@@ -637,5 +638,5 @@ const styles = StyleSheet.create({
   },
 
   emptyState: { alignItems: 'center', justifyContent: 'center', padding: 40, marginTop: 20 },
-  emptyText: { marginTop: 10, fontSize: 14, color: COLORS_THEME.grayText },
+  emptyText: { marginTop: 10, fontSize: 14, color: COLORS_THEME.grayText, fontFamily: 'Outfit_400Regular' },
 });

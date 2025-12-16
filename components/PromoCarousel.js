@@ -337,11 +337,12 @@ export default function PromoCarousel() {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 0,
+    marginBottom: -20, // Compensate for shadow padding
     position: 'relative',
   },
   flatListContent: {
-    paddingVertical: 18,
+    paddingTop: 12,
+    paddingBottom: 32, // Increased to allow full shadow rendering without clipping
   },
   itemContainer: {
     width: ITEM_WIDTH,
@@ -356,10 +357,10 @@ const styles = StyleSheet.create({
     height: HEIGHT,
     borderRadius: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5, // Increased from 0.35
+    shadowRadius: 20,   // Increased from 18
+    elevation: 16,      // Increased from 12
     backgroundColor: 'white',
     overflow: 'visible',
   },
@@ -415,7 +416,7 @@ const styles = StyleSheet.create({
   ctaText: {
     color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
   paginationContainer: {
     position: 'absolute',

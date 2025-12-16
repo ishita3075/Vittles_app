@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontFamily: "Outfit_700Bold",
     color: '#FFF',
   },
 
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   },
   introTitle: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: "Outfit_800ExtraBold",
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -247,6 +247,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
     opacity: 0.9,
+    fontFamily: 'Outfit_400Regular',
   },
   updateBadge: {
     flexDirection: 'row',
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
   updateText: {
     color: '#FFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
   },
 
   // Sections
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
   },
   sectionBody: {
     paddingHorizontal: 16,
@@ -297,6 +298,7 @@ const styles = StyleSheet.create({
   sectionContent: {
     fontSize: 14,
     lineHeight: 22,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Footer
@@ -307,10 +309,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
+    fontFamily: 'Outfit_400Regular',
   },
   footerLink: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     textDecorationLine: 'underline',
   },
 });

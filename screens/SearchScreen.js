@@ -19,7 +19,7 @@ const SearchScreen = () => {
           onChangeText={setSearchQuery}
         />
       </View>
-      
+
       {/* Search Results */}
       <FlatList
         data={searchResults}
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   },
   resultName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: "Outfit_500Medium",
   },
 });
 

@@ -1,6 +1,14 @@
 import { StyleSheet, Platform } from 'react-native';
 import { colors } from './colors';
 
+// Global Typography Constants
+export const fonts = {
+    regular: 'Outfit_400Regular',
+    medium: 'Outfit_500Medium',
+    semiBold: 'Outfit_600SemiBold',
+    bold: 'Outfit_700Bold',
+};
+
 export const commonStyles = StyleSheet.create({
     // Premium Card Style (Clean white with colored glow)
     card: {
@@ -58,4 +66,16 @@ export const commonStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+
+    // Typography
+    headerTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 28,
+        color: colors.text,
+    },
+    subTitle: {
+        fontFamily: fonts.medium,
+        fontSize: 16,
+        color: colors.textSecondary,
+    }
 });

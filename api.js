@@ -1,12 +1,12 @@
-// api.js
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URLS } from './config';
 
 /* =========================================================================
    MAIN CUSTOMER API
    ========================================================================= */
 
-const BASE_URL = 'https://foodapp-3-kmi1.onrender.com';
+const BASE_URL = API_URLS.CUSTOMER;
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -43,7 +43,7 @@ api.interceptors.response.use(
    ========================================================================= */
 
 const vendorApi = axios.create({
-  baseURL: 'https://ineat-vendor.onrender.com',
+  baseURL: API_URLS.VENDOR,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -244,7 +244,7 @@ export const updateOrderStatusByCustomerAPI = async (customerId, status) => {
    ========================================================================= */
 
 const paymentApi = axios.create({
-  baseURL: 'http://10.10.144.95:8089', // your Spring Boot IP
+  baseURL: API_URLS.PAYMENT,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -273,7 +273,7 @@ export const createRazorpayOrder = async (amountInPaise) => {
    ========================================================================= */
 
 // 👉 Use your real notification service URL
-const NOTIFICATION_BASE_URL = 'https://vittles-notification-api.onrender.com';
+const NOTIFICATION_BASE_URL = API_URLS.NOTIFICATION;
 
 const notificationApi = axios.create({
   baseURL: NOTIFICATION_BASE_URL,
@@ -340,7 +340,7 @@ export const clearAllNotifications = async (userId) => {
    AUTH API (for /api/user/me)
    ========================================================================= */
 
-const AUTH_BASE_URL = 'https://vittles-app-login-api.onrender.com';
+const AUTH_BASE_URL = API_URLS.AUTH;
 
 const authApi = axios.create({
   baseURL: AUTH_BASE_URL,

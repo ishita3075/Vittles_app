@@ -144,7 +144,7 @@ export default function VendorOrders({ navigation }) {
 
   const renderOrderCard = (order, index) => {
     const statusColor = getStatusColor(order.status);
-    
+
     return (
       <TouchableOpacity
         key={index}
@@ -167,22 +167,22 @@ export default function VendorOrders({ navigation }) {
         <View style={styles.cardBody}>
           <View style={styles.customerRow}>
             <View style={[styles.avatar, { backgroundColor: COLORS_THEME.aeroBlueLight }]}>
-               <Text style={styles.avatarText}>{order.customer.charAt(0)}</Text>
+              <Text style={styles.avatarText}>{order.customer.charAt(0)}</Text>
             </View>
             <View>
               <Text style={styles.customerName}>{order.customer}</Text>
               <Text style={styles.itemsText}>{order.items} Items</Text>
             </View>
           </View>
-          
+
           <View style={styles.priceTag}>
-             <Text style={styles.priceText}>₹{order.total}</Text>
+            <Text style={styles.priceText}>₹{order.total}</Text>
           </View>
         </View>
-        
+
         <View style={styles.cardFooter}>
-           <Text style={styles.viewDetailsText}>View Details</Text>
-           <Ionicons name="chevron-forward" size={16} color={COLORS_THEME.steelBlue} />
+          <Text style={styles.viewDetailsText}>View Details</Text>
+          <Ionicons name="chevron-forward" size={16} color={COLORS_THEME.steelBlue} />
         </View>
       </TouchableOpacity>
     );
@@ -231,7 +231,7 @@ export default function VendorOrders({ navigation }) {
         ) : orders.length === 0 ? (
           <View style={styles.emptyBox}>
             <View style={styles.emptyIconBg}>
-               <Ionicons name="receipt-outline" size={48} color={COLORS_THEME.grayText} />
+              <Ionicons name="receipt-outline" size={48} color={COLORS_THEME.grayText} />
             </View>
             <Text style={styles.emptyTitle}>No orders yet</Text>
             <Text style={styles.emptyText}>New orders will appear here.</Text>
@@ -241,7 +241,7 @@ export default function VendorOrders({ navigation }) {
             {orders.map((order, idx) => renderOrderCard(order, idx))}
           </View>
         )}
-        
+
         <View style={{ height: 40 }} />
       </Animated.ScrollView>
     </View>
@@ -250,7 +250,7 @@ export default function VendorOrders({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS_THEME.background },
-  
+
   // Header
   headerContainer: {
     height: 110,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: '#FFF',
   },
 
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy,
     marginBottom: 8,
   },
@@ -319,6 +319,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS_THEME.grayText,
     textAlign: 'center',
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Order Card
@@ -344,13 +345,14 @@ const styles = StyleSheet.create({
   },
   orderId: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: COLORS_THEME.darkNavy,
   },
   orderTime: {
     fontSize: 12,
     color: COLORS_THEME.grayText,
     marginTop: 2,
+    fontFamily: 'Outfit_400Regular',
   },
   statusBadge: {
     paddingHorizontal: 10,
@@ -359,7 +361,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     textTransform: 'uppercase',
   },
   divider: {
@@ -387,24 +389,25 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.steelBlue,
   },
   customerName: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy,
   },
   itemsText: {
     fontSize: 13,
     color: COLORS_THEME.grayText,
+    fontFamily: 'Outfit_400Regular',
   },
   priceTag: {
     alignItems: 'flex-end',
   },
   priceText: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: COLORS_THEME.darkNavy,
   },
   cardFooter: {
@@ -417,7 +420,7 @@ const styles = StyleSheet.create({
   },
   viewDetailsText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.steelBlue,
   },
 });

@@ -293,8 +293,15 @@ export default function HomeScreen({ navigation }) {
         }
       >
         <View style={styles.carouselSection}>
-          <View style={[styles.sectionHeader, { paddingHorizontal: responsive.spacing.lg, marginBottom: responsive.spacing.sm }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          <View style={[styles.sectionHeader, {
+            paddingHorizontal: responsive.spacing.lg,
+            marginTop: responsive.spacing.xs,
+            marginBottom: responsive.spacing.xs,
+            alignItems: 'center',
+            justifyContent: 'flex-start' // Keep anchor and text together
+          }]}>
+            <View style={{ width: 4, height: 20, backgroundColor: colors.primary, marginRight: 8, borderRadius: 2 }} />
+            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
               Recommended for you
             </Text>
           </View>
@@ -308,9 +315,10 @@ export default function HomeScreen({ navigation }) {
         />
 
         <View style={styles.listSection}>
-          <View style={styles.sectionHeader}>
+          <View style={[styles.sectionHeader, { alignItems: 'center', justifyContent: 'flex-start' }]}>
+            <View style={{ width: 4, height: 36, backgroundColor: colors.primary, marginRight: 8, borderRadius: 2 }} />
             <View>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
                 {searchQuery ? 'Search Results' : 'All Eateries'}
               </Text>
               <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
@@ -439,9 +447,9 @@ const styles = StyleSheet.create({
     marginBottom: responsive.spacing.lg,
   },
   sectionTitle: {
-    fontSize: responsive.font.xl,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+    fontSize: 20, // Slightly smaller than reactive XL
+    fontFamily: 'Outfit_600SemiBold', // Less striking than 800
+    letterSpacing: 0,
     marginBottom: 4,
   },
   sectionSubtitle: {
@@ -507,12 +515,13 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'Outfit_700Bold',
     color: '#1C1C1E',
   },
   modalSubtitle: {
     fontSize: 12,
     color: '#8E8E93',
+    fontFamily: 'Outfit_400Regular',
   },
   closeBtn: {
     padding: 5,
@@ -537,7 +546,7 @@ const styles = StyleSheet.create({
   },
   popupResName: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: '#1C1C1E',
   },
   popupResMeta: {
@@ -546,7 +555,7 @@ const styles = StyleSheet.create({
   },
   popupResRating: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: '#8E8E93',
     marginLeft: 3,
   },
@@ -557,6 +566,7 @@ const styles = StyleSheet.create({
   popupResDist: {
     fontSize: 12,
     color: '#8E8E93',
+    fontFamily: 'Outfit_400Regular',
   },
   popupMenuRow: {
     flexDirection: 'row',
@@ -567,11 +577,11 @@ const styles = StyleSheet.create({
   popupFoodName: {
     fontSize: 14,
     color: '#4B5563',
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
   },
   popupFoodPrice: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: '#34C759',
   },
   // --- EMPTY STATE STYLES ---
@@ -592,7 +602,7 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'Outfit_700Bold',
     color: '#1C1C1E',
     marginBottom: 8,
   },
@@ -601,5 +611,6 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     lineHeight: 20,
     fontSize: 14,
+    fontFamily: 'Outfit_400Regular',
   }
 });

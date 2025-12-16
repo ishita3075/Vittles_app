@@ -44,6 +44,15 @@ import RestaurantDetails from "./screens/RestaurantDetails";
 // Assets
 import vit from './assets/Vittles_2.jpg';
 
+// Fonts
+import {
+  useFonts,
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold
+} from '@expo-google-fonts/outfit';
+
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -256,20 +265,31 @@ const RootNavigator = () => {
 // --- App Root ---
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+  });
+
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <DataProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <NavigationContainer>
-                <RootNavigator />
-                <CartConflictModal />
-              </NavigationContainer>
-            </WishlistProvider>
-          </CartProvider>
-        </DataProvider>
-      </AuthProvider>
+      {!fontsLoaded ? (
+        <LoadingScreen />
+      ) : (
+        <AuthProvider>
+          <DataProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <NavigationContainer>
+                  <RootNavigator />
+                  <CartConflictModal />
+                </NavigationContainer>
+              </WishlistProvider>
+            </CartProvider>
+          </DataProvider>
+        </AuthProvider>
+      )}
     </ThemeProvider>
   );
 }

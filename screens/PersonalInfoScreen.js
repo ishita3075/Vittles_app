@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: "Outfit_700Bold",
     color: '#FFF',
   },
   editBtn: {
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   editBtnText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
     fontSize: 13,
   },
 
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 36,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     color: COLORS.darkNavy,
   },
   cameraIcon: {
@@ -355,13 +355,13 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     color: COLORS.darkNavy,
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: "Outfit_500Medium",
     color: COLORS.grayText,
   },
 
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
     color: COLORS.grayText,
     marginBottom: 8,
     marginLeft: 4,
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: "Outfit_500Medium",
     color: COLORS.darkNavy,
     height: '100%',
   },
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
   },
   changePassButton: {
     flexDirection: 'row',
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   changePassText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
     color: COLORS.steelBlue,
   },
 });

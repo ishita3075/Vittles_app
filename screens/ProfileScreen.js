@@ -383,23 +383,24 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
   profileInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 20,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
     marginBottom: 8,
+    fontFamily: 'Outfit_400Regular',
   },
   editProfileLink: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
 
   // Stats Row
@@ -417,11 +418,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 12,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Menu Groups
@@ -431,7 +433,7 @@ const styles = StyleSheet.create({
   },
   menuGroupTitle: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     marginBottom: 12,
     marginLeft: 4,
     textTransform: 'uppercase',
@@ -461,7 +463,7 @@ const styles = StyleSheet.create({
   menuText: {
     flex: 1,
     fontSize: 15,
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
   },
   menuBadge: {
     paddingHorizontal: 8,
@@ -472,7 +474,7 @@ const styles = StyleSheet.create({
   menuBadgeText: {
     color: '#FFF',
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
 
   // Sign Out
@@ -486,7 +488,7 @@ const styles = StyleSheet.create({
   },
   signOutButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
 
   // Modal Styles
@@ -546,7 +548,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     marginBottom: 10,
   },
   modalMessage: {
@@ -554,6 +556,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 24,
+    fontFamily: 'Outfit_400Regular',
   },
   modalConfirmBtn: {
     width: '100%',
@@ -569,7 +572,7 @@ const styles = StyleSheet.create({
   modalBtnText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
   modalCancelBtn: {
     paddingVertical: 10,
@@ -578,6 +581,6 @@ const styles = StyleSheet.create({
   },
   modalCancelText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
 });

@@ -58,13 +58,13 @@ const OrderDetailsScreen = () => {
   if (!order) {
     return (
       <View style={styles.container}>
-         <StatusBar barStyle="light-content" backgroundColor={COLORS_THEME.darkNavy} />
-         <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Order information not found.</Text>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButtonSimple}>
-               <Text style={{color: COLORS_THEME.steelBlue}}>Go Back</Text>
-            </TouchableOpacity>
-         </View>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS_THEME.darkNavy} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Order information not found.</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButtonSimple}>
+            <Text style={{ color: COLORS_THEME.steelBlue }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -90,7 +90,7 @@ const OrderDetailsScreen = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
+
       {/* Header */}
       <View style={styles.headerContainer}>
         <LinearGradient
@@ -111,90 +111,90 @@ const OrderDetailsScreen = () => {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-          
+
           {/* Status Banner */}
           <View style={[styles.statusCard, { borderLeftColor: getStatusColor(order.status) }]}>
             <View style={[styles.statusIconBox, { backgroundColor: getStatusColor(order.status) + '15' }]}>
-               <Ionicons 
-                 name={getStatusIcon(order.status)} 
-                 size={28} 
-                 color={getStatusColor(order.status)} 
-               />
+              <Ionicons
+                name={getStatusIcon(order.status)}
+                size={28}
+                color={getStatusColor(order.status)}
+              />
             </View>
-            <View style={{flex: 1}}>
-               <Text style={[styles.statusTitle, { color: getStatusColor(order.status) }]}>Order {order.status}</Text>
-               <Text style={styles.statusSubtitle}>Placed on {order.date}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.statusTitle, { color: getStatusColor(order.status) }]}>Order {order.status}</Text>
+              <Text style={styles.statusSubtitle}>Placed on {order.date}</Text>
             </View>
           </View>
 
           {/* Restaurant Info */}
           <View style={styles.section}>
-             <Text style={styles.sectionHeader}>RESTAURANT</Text>
-             <View style={styles.card}>
-                <View style={styles.row}>
-                   <View style={styles.storeIcon}>
-                      <Ionicons name="restaurant" size={20} color={COLORS_THEME.steelBlue} />
-                   </View>
-                   <View>
-                      <Text style={styles.storeName}>{order.restaurant}</Text>
-                      <Text style={styles.orderId}>Order ID: #{order.id}</Text>
-                   </View>
+            <Text style={styles.sectionHeader}>RESTAURANT</Text>
+            <View style={styles.card}>
+              <View style={styles.row}>
+                <View style={styles.storeIcon}>
+                  <Ionicons name="restaurant" size={20} color={COLORS_THEME.steelBlue} />
                 </View>
-             </View>
+                <View>
+                  <Text style={styles.storeName}>{order.restaurant}</Text>
+                  <Text style={styles.orderId}>Order ID: #{order.id}</Text>
+                </View>
+              </View>
+            </View>
           </View>
 
           {/* Items List */}
           <View style={styles.section}>
-             <Text style={styles.sectionHeader}>ITEMS</Text>
-             <View style={styles.card}>
-               {order.itemsList && order.itemsList.length > 0 ? (
-                 order.itemsList.map((item, idx) => (
-                   <View key={idx} style={[styles.itemRow, idx === order.itemsList.length - 1 && { borderBottomWidth: 0 }]}>
-                      <View style={styles.qtyBadge}>
-                        <Text style={styles.qtyText}>{item.quantity || 1}x</Text>
-                      </View>
-                      <View style={{flex: 1}}>
-                        <Text style={styles.itemName}>{item.menuName || item.name || "Item"}</Text>
-                      </View>
-                      <Text style={styles.itemPrice}>₹{(item.price || 0) * (item.quantity || 1)}</Text>
-                   </View>
-                 ))
-               ) : (
-                 <View style={styles.emptyItems}>
-                    <Text style={styles.noItemsText}>{order.items} Items (Details unavailable)</Text>
-                 </View>
-               )}
-             </View>
+            <Text style={styles.sectionHeader}>ITEMS</Text>
+            <View style={styles.card}>
+              {order.itemsList && order.itemsList.length > 0 ? (
+                order.itemsList.map((item, idx) => (
+                  <View key={idx} style={[styles.itemRow, idx === order.itemsList.length - 1 && { borderBottomWidth: 0 }]}>
+                    <View style={styles.qtyBadge}>
+                      <Text style={styles.qtyText}>{item.quantity || 1}x</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemName}>{item.menuName || item.name || "Item"}</Text>
+                    </View>
+                    <Text style={styles.itemPrice}>₹{(item.price || 0) * (item.quantity || 1)}</Text>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyItems}>
+                  <Text style={styles.noItemsText}>{order.items} Items (Details unavailable)</Text>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Bill Summary */}
           <View style={styles.section}>
-             <Text style={styles.sectionHeader}>BILL SUMMARY</Text>
-             <View style={styles.card}>
-               <View style={styles.billRow}>
-                 <Text style={styles.billLabel}>Item Total</Text>
-                 <Text style={styles.billValue}>{order.total}</Text>
-               </View>
-               <View style={styles.billRow}>
-                 <Text style={styles.billLabel}>Delivery Fee</Text>
-                 <Text style={styles.billValue}>₹0.00</Text>
-               </View>
-               <View style={styles.billRow}>
-                 <Text style={styles.billLabel}>Taxes</Text>
-                 <Text style={styles.billValue}>₹0.00</Text>
-               </View>
-               
-               <View style={styles.divider} />
-               
-               <View style={styles.totalRow}>
-                 <Text style={styles.totalLabel}>Total Paid</Text>
-                 <Text style={styles.totalValue}>{order.total}</Text>
-               </View>
-             </View>
+            <Text style={styles.sectionHeader}>BILL SUMMARY</Text>
+            <View style={styles.card}>
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Item Total</Text>
+                <Text style={styles.billValue}>{order.total}</Text>
+              </View>
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Delivery Fee</Text>
+                <Text style={styles.billValue}>₹0.00</Text>
+              </View>
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Taxes</Text>
+                <Text style={styles.billValue}>₹0.00</Text>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total Paid</Text>
+                <Text style={styles.totalValue}>{order.total}</Text>
+              </View>
+            </View>
           </View>
 
           {/* Help Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.helpButton}
             onPress={() => navigation.navigate("Account", { screen: "HelpSupport" })}
           >
@@ -202,7 +202,7 @@ const OrderDetailsScreen = () => {
             <Text style={styles.helpButtonText}>Need help with this order?</Text>
           </TouchableOpacity>
 
-          <View style={{height: 40}} />
+          <View style={{ height: 40 }} />
         </Animated.View>
       </ScrollView>
     </View>
@@ -211,7 +211,7 @@ const OrderDetailsScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS_THEME.background },
-  
+
   // Header
   headerContainer: {
     height: 110,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: '#FFF',
   },
 
@@ -274,19 +274,20 @@ const styles = StyleSheet.create({
   },
   statusTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     marginBottom: 2,
   },
   statusSubtitle: {
     fontSize: 13,
     color: COLORS_THEME.grayText,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Sections
   section: { marginBottom: 24 },
   sectionHeader: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.grayText,
     marginBottom: 10,
     marginLeft: 4,
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  
+
   // Restaurant
   row: { flexDirection: 'row', alignItems: 'center' },
   storeIcon: {
@@ -318,13 +319,14 @@ const styles = StyleSheet.create({
   },
   storeName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy,
   },
   orderId: {
     fontSize: 12,
     color: COLORS_THEME.grayText,
     marginTop: 2,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Items
@@ -344,17 +346,17 @@ const styles = StyleSheet.create({
   },
   qtyText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.steelBlue,
   },
   itemName: {
     fontSize: 14,
     color: COLORS_THEME.darkNavy,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
   itemPrice: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.darkNavy,
   },
   emptyItems: {
@@ -364,6 +366,7 @@ const styles = StyleSheet.create({
   noItemsText: {
     fontStyle: 'italic',
     color: COLORS_THEME.grayText,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Bill
@@ -372,12 +375,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  billLabel: { fontSize: 14, color: COLORS_THEME.grayText },
-  billValue: { fontSize: 14, fontWeight: '500', color: COLORS_THEME.darkNavy },
+  billLabel: { fontSize: 14, color: COLORS_THEME.grayText, fontFamily: 'Outfit_400Regular' },
+  billValue: { fontSize: 14, fontFamily: 'Outfit_500Medium', color: COLORS_THEME.darkNavy },
   divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 12 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  totalLabel: { fontSize: 16, fontWeight: '700', color: COLORS_THEME.darkNavy },
-  totalValue: { fontSize: 18, fontWeight: '800', color: COLORS_THEME.darkNavy },
+  totalLabel: { fontSize: 16, fontFamily: 'Outfit_700Bold', color: COLORS_THEME.darkNavy },
+  totalValue: { fontSize: 18, fontFamily: 'Outfit_800ExtraBold', color: COLORS_THEME.darkNavy },
 
   // Help Button
   helpButton: {
@@ -390,7 +393,7 @@ const styles = StyleSheet.create({
   helpButtonText: {
     marginLeft: 8,
     color: COLORS_THEME.steelBlue,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     fontSize: 14,
   },
 
@@ -404,6 +407,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS_THEME.grayText,
     marginBottom: 16,
+    fontFamily: 'Outfit_400Regular',
   },
   backButtonSimple: {
     padding: 10,

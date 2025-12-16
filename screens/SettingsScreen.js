@@ -20,16 +20,16 @@ export default function SettingsScreen() {
   };
 
   const settingItems = [
-    { 
-      key: "darkMode", 
-      label: "Dark Mode", 
+    {
+      key: "darkMode",
+      label: "Dark Mode",
       icon: isDark ? "moon" : "sunny",
       description: "Switch between light and dark theme"
     },
   ];
 
   const actionItems = [
-   
+
   ];
 
   const handleSettingToggle = (key) => {
@@ -49,29 +49,29 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>App Settings</Text>
-          
+
           {settingItems.map((item) => (
-            <View 
-              key={item.key} 
+            <View
+              key={item.key}
               style={[
-                styles.settingItem, 
-                { 
+                styles.settingItem,
+                {
                   backgroundColor: colors.card,
                   shadowColor: colors.shadow
                 }
               ]}
             >
               <View style={styles.settingLeft}>
-                <Ionicons 
-                  name={item.icon} 
-                  size={22} 
-                  color={item.key === "darkMode" ? colors.primary : colors.textSecondary} 
+                <Ionicons
+                  name={item.icon}
+                  size={22}
+                  color={item.key === "darkMode" ? colors.primary : colors.textSecondary}
                 />
                 <View style={styles.settingInfo}>
                   <Text style={[styles.settingLabel, { color: colors.text }]}>
@@ -92,15 +92,15 @@ export default function SettingsScreen() {
           ))}
 
           {actionItems.map((item, index) => (
-            <TouchableOpacity 
-              key={index} 
+            <TouchableOpacity
+              key={index}
               style={[
-                styles.actionItem, 
-                { 
+                styles.actionItem,
+                {
                   backgroundColor: colors.card,
                   shadowColor: colors.shadow
                 }
-              ]} 
+              ]}
               onPress={item.onPress}
             >
               <View style={styles.actionLeft}>
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: "Outfit_600SemiBold",
     marginBottom: 16,
   },
   settingItem: {
@@ -163,11 +163,12 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: "Outfit_600SemiBold",
     marginBottom: 4,
   },
   settingDescription: {
     fontSize: 14,
+    fontFamily: 'Outfit_400Regular',
   },
   actionItem: {
     flexDirection: "row",
@@ -188,8 +189,10 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontSize: 16,
     marginLeft: 12,
+    fontFamily: 'Outfit_400Regular',
   },
   actionValue: {
     fontSize: 14,
+    fontFamily: 'Outfit_400Regular',
   },
 });

@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 32,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: '#FFF',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
     letterSpacing: 0.5,
   },
 
@@ -270,13 +270,14 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: '#111827',
     marginBottom: 6,
   },
   instructionText: {
     fontSize: 15,
     color: '#6B7280',
+    fontFamily: 'Outfit_400Regular',
   },
 
   errorContainer: {
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 13,
     flex: 1,
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
   },
 
   forgotPassContainer: {
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
   },
   forgotPassText: {
     color: colors.primary,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     fontSize: 14,
   },
 
@@ -316,10 +317,11 @@ const styles = StyleSheet.create({
   footerText: {
     color: '#6B7280',
     fontSize: 14,
+    fontFamily: 'Outfit_400Regular',
   },
   signupLink: {
     color: colors.primary,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     fontSize: 14,
   }
 

@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from "../contexts/ThemeContext";
 import { getOrdersByCustomer } from "../api";
 import { useAuth } from "../contexts/AuthContext";
@@ -277,6 +278,7 @@ const OrderCard = ({ order, navigation, index, onReviewPress }) => {
 
 export default function OrderHistoryScreen({ navigation }) {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -472,18 +474,10 @@ export default function OrderHistoryScreen({ navigation }) {
           locations={[0, 0.5, 1]}
           style={styles.headerGradient}
         >
-          <View style={styles.navBar}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.navigate("Profile")}
-            >
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Orders</Text>
-            <View style={{ width: 40 }} />
+          <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 60, alignItems: 'center' }}>
+            <Text style={styles.headerSubtitle}>Past meals & yummy deals</Text>
+            <View style={styles.decorCircle} />
           </View>
-          <Text style={styles.headerSubtitle}>Past meals & yummy deals</Text>
-          <View style={styles.decorCircle} />
         </LinearGradient>
       </View>
 
@@ -532,7 +526,20 @@ export default function OrderHistoryScreen({ navigation }) {
           )}
         />
       </View>
-    </View>
+
+      {/* Floating Header Actions (Absolute & ZIndex Top) */}
+      <View style={[styles.navBar, { marginTop: Platform.OS === 'android' ? 30 : insets.top }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate("Profile")}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Orders</Text>
+        <View style={{ width: 40 }} />
+      </View>
+    </View >
   );
 }
 
@@ -557,10 +564,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   navBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
+    paddingHorizontal: 20,
+    zIndex: 9999, // Ensure clickable
+    elevation: 50, // Higher elevation for Top Overlay
   },
   backButton: {
     width: 40,
@@ -572,7 +585,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: '#FFF',
   },
   headerSubtitle: {
@@ -580,6 +593,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     marginTop: 16,
     textAlign: 'center',
+    fontFamily: 'Outfit_400Regular',
   },
   decorCircle: {
     position: 'absolute',
@@ -626,14 +640,14 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     marginBottom: 4,
     color: COLORS_THEME.darkNavy,
   },
   statLabel: {
     fontSize: 11,
     color: COLORS_THEME.grayText,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     textTransform: 'uppercase',
   },
   vertLine: {
@@ -659,6 +673,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 15,
     color: COLORS_THEME.darkNavy,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Filters
@@ -675,7 +690,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
 
   // Order Card
@@ -712,13 +727,14 @@ const styles = StyleSheet.create({
   },
   restaurantName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     marginBottom: 2,
     color: COLORS_THEME.darkNavy,
   },
   orderDate: {
     fontSize: 12,
     color: COLORS_THEME.grayText,
+    fontFamily: 'Outfit_400Regular',
   },
   statusBadge: {
     paddingHorizontal: 10,
@@ -727,7 +743,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     textTransform: 'uppercase',
   },
   divider: {
@@ -744,12 +760,12 @@ const styles = StyleSheet.create({
   },
   itemsText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
     color: COLORS_THEME.grayText,
   },
   totalPrice: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: COLORS_THEME.darkNavy,
   },
 
@@ -769,7 +785,7 @@ const styles = StyleSheet.create({
   },
   outlineBtnText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.darkNavy,
   },
   reviewBtn: {
@@ -785,7 +801,7 @@ const styles = StyleSheet.create({
   },
   reviewBtnText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.steelBlue,
   },
   fillBtn: {

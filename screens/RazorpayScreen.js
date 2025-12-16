@@ -66,7 +66,7 @@ const RazorpayScreen = ({ route, navigation }) => {
             body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: ${colors.background}; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
             .loader { border: 4px solid #e0e0e0; border-top: 4px solid ${colors.primary}; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            p { margin-top: 20px; color: ${colors.textSecondary}; font-weight: 500; font-size: 14px; }
+            p { margin-top: 20px; color: ${colors.textSecondary}; font-weight: 500; font-size: 14px; font-family: 'Outfit', sans-serif; }
           </style>
         </head>
         <body>
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
     color: colors.primary,
   },
 

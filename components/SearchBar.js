@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontWeight: "400",
+    fontFamily: 'Outfit_400Regular',
     paddingVertical: 0,
     includeFontPadding: false,
     textAlignVertical: 'center',

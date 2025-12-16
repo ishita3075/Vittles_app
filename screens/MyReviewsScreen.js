@@ -17,6 +17,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CustomHeader from "../components/CustomHeader";
 
 // --- CONFIGURATION ---
@@ -48,6 +49,7 @@ const FILTERS = ["All", "5 Stars", "High Rated", "Low Rated"];
 
 export default function MyReviewsScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   // --- STATE: Initialize with Empty Array ---
   const [reviews, setReviews] = useState([]);
@@ -141,8 +143,12 @@ export default function MyReviewsScreen() {
             <View style={styles.circleSmall} />
           </Animated.View>
 
-          <View style={styles.headerNavbar}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+          <View style={[styles.headerNavbar, { marginTop: Platform.OS === 'android' ? 30 : insets.top + 10 }]}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.iconBtn}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
               <Ionicons name="arrow-back" size={20} color="#FFF" />
             </TouchableOpacity>
             <Text style={styles.navTitle}>My Ratings</Text>
@@ -342,12 +348,13 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 32,
   },
   headerNavbar: {
-    marginTop: Platform.OS === 'android' ? 30 : 45,
+    // marginTop handled inline with safe area
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    zIndex: 10
+    zIndex: 999, // Ensure it's on top
+    elevation: 20,
   },
   headerInfo: {
     paddingHorizontal: 24,
@@ -360,9 +367,9 @@ const styles = StyleSheet.create({
 
   // Buttons & Text
   iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  navTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-  headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: '600' },
-  headerBigText: { fontSize: 28, fontWeight: '700', color: '#FFF', marginTop: 4 },
+  navTitle: { fontSize: 16, fontFamily: 'Outfit_700Bold', color: '#FFF' },
+  headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'Outfit_600SemiBold' },
+  headerBigText: { fontSize: 28, fontFamily: 'Outfit_700Bold', color: '#FFF', marginTop: 4 },
 
   // --- STATS CARD ---
   statsCard: {
@@ -375,28 +382,28 @@ const styles = StyleSheet.create({
     marginTop: -10,
   },
   statsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statsTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textMain },
-  statsSub: { fontSize: 12, color: COLORS.textSub },
+  statsTitle: { fontSize: 16, fontFamily: 'Outfit_700Bold', color: COLORS.textMain },
+  statsSub: { fontSize: 12, color: COLORS.textSub, fontFamily: 'Outfit_400Regular' },
   scoreBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.gold, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, gap: 4 },
-  scoreText: { fontSize: 16, fontWeight: '800', color: '#FFF' },
+  scoreText: { fontSize: 16, fontFamily: 'Outfit_800ExtraBold', color: '#FFF' },
   divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 16 },
   chartContainer: { gap: 8 },
   chartRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  chartLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textSub, width: 30 },
+  chartLabel: { fontSize: 12, fontFamily: 'Outfit_600SemiBold', color: COLORS.textSub, width: 30 },
   barTrack: { flex: 1, height: 8, backgroundColor: COLORS.background, borderRadius: 4, overflow: 'hidden' },
   barFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 4 },
-  chartCount: { fontSize: 12, fontWeight: '600', color: COLORS.textMain, width: 20, textAlign: 'right' },
+  chartCount: { fontSize: 12, fontFamily: 'Outfit_600SemiBold', color: COLORS.textMain, width: 20, textAlign: 'right' },
 
   // --- FILTERS ---
   filterScroll: { maxHeight: 40, marginBottom: 24 },
   filterContent: { paddingHorizontal: 20, gap: 10 },
   filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border },
   filterChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  filterText: { fontSize: 13, fontWeight: '600', color: COLORS.textSub },
+  filterText: { fontSize: 13, fontFamily: 'Outfit_600SemiBold', color: COLORS.textSub },
   filterTextActive: { color: '#FFF' },
 
   // --- LIST ---
-  sectionTitle: { fontSize: 12, fontWeight: '700', color: COLORS.textSub, marginLeft: 24, marginBottom: 12, letterSpacing: 1 },
+  sectionTitle: { fontSize: 12, fontFamily: 'Outfit_700Bold', color: COLORS.textSub, marginLeft: 24, marginBottom: 12, letterSpacing: 1 },
 
   reviewCard: {
     backgroundColor: COLORS.card,
@@ -408,26 +415,26 @@ const styles = StyleSheet.create({
   },
   cardHeaderRow: { flexDirection: 'row', marginBottom: 16 },
   avatar: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarText: { fontSize: 20, fontWeight: '700', color: '#FFF' },
+  avatarText: { fontSize: 20, fontFamily: 'Outfit_700Bold', color: '#FFF' },
   infoCol: { flex: 1, justifyContent: 'center' },
-  restName: { fontSize: 15, fontWeight: '700', color: COLORS.textMain, marginBottom: 4 },
+  restName: { fontSize: 15, fontFamily: 'Outfit_700Bold', color: COLORS.textMain, marginBottom: 4 },
   metaRow: { flexDirection: 'row', alignItems: 'center' },
-  categoryBadge: { fontSize: 12, color: COLORS.textSub, backgroundColor: COLORS.background, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
+  categoryBadge: { fontSize: 12, color: COLORS.textSub, backgroundColor: COLORS.background, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden', fontFamily: 'Outfit_400Regular' },
   dot: { marginHorizontal: 6, color: COLORS.border },
-  costText: { fontSize: 12, color: COLORS.textSub, fontWeight: '600' },
+  costText: { fontSize: 12, color: COLORS.textSub, fontFamily: 'Outfit_600SemiBold' },
   ratingBadge: { backgroundColor: COLORS.primary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 2, height: 26 },
-  ratingBadgeText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
+  ratingBadgeText: { color: '#FFF', fontSize: 12, fontFamily: 'Outfit_700Bold' },
 
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: COLORS.background, paddingTop: 12 },
-  dateText: { fontSize: 12, color: COLORS.textSub, fontStyle: 'italic' },
+  dateText: { fontSize: 12, color: COLORS.textSub, fontStyle: 'italic', fontFamily: 'Outfit_400Regular' },
   deleteBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, opacity: 0.8 },
-  deleteText: { fontSize: 12, color: COLORS.danger, fontWeight: '600' },
+  deleteText: { fontSize: 12, color: COLORS.danger, fontFamily: 'Outfit_600SemiBold' },
 
   // --- EMPTY STATE ---
   emptyContainer: { alignItems: 'center', marginTop: 40, opacity: 0.8, paddingHorizontal: 20 },
   emptyIconCircle: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E0F2FE', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textMain, marginTop: 4 },
-  emptySub: { fontSize: 14, color: COLORS.textSub, marginBottom: 16, textAlign: 'center' },
+  emptyTitle: { fontSize: 16, fontFamily: 'Outfit_700Bold', color: COLORS.textMain, marginTop: 4 },
+  emptySub: { fontSize: 14, color: COLORS.textSub, marginBottom: 16, textAlign: 'center', fontFamily: 'Outfit_400Regular' },
   clearBtn: { paddingHorizontal: 20, paddingVertical: 10, backgroundColor: COLORS.primary, borderRadius: 20 },
-  clearBtnText: { color: '#FFF', fontWeight: '700' },
+  clearBtnText: { color: '#FFF', fontFamily: 'Outfit_700Bold' },
 });

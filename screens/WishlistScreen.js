@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     },
     emptyTitle: {
         fontSize: 20,
-        fontWeight: '800',
+        fontFamily: "Outfit_800ExtraBold",
         marginBottom: 12,
         textAlign: 'center',
     },
@@ -88,5 +88,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         textAlign: 'center',
         lineHeight: 22,
+        fontFamily: 'Outfit_400Regular',
     },
 });

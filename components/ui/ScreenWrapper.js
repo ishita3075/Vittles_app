@@ -4,11 +4,10 @@ import {
     StyleSheet,
     ImageBackground,
     Dimensions,
-    Platform,
     StatusBar,
-    ViewPropTypes
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../styles/colors';
 
 const { width, height } = Dimensions.get('window');
@@ -17,19 +16,43 @@ const ScreenWrapper = ({
     children,
     backgroundUri = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop",
     overlayColor = colors.darkOverlay,
+    useCustomBackground = true, // Toggle for image background
     style
 }) => {
-    return (
-        <View style={[styles.container, style]}>
-            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    const insets = useSafeAreaInsets();
 
+    const WrapperContent = (
+        <View style={[
+            styles.contentContainer,
+            { paddingTop: insets.top },
+            style
+        ]}>
+            <StatusBar
+                barStyle="light-content"
+                translucent
+                backgroundColor="transparent"
+            />
+            {children}
+        </View>
+    );
+
+    if (!useCustomBackground) {
+        return (
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
+                {WrapperContent}
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
             <ImageBackground
                 source={{ uri: backgroundUri }}
                 style={styles.background}
                 resizeMode="cover"
             >
                 <LinearGradient
-                    colors={[overlayColor, overlayColor]} // Solid overlay but using gradient for potential future fade
+                    colors={[overlayColor, overlayColor]}
                     style={styles.overlay}
                 />
 
@@ -37,7 +60,7 @@ const ScreenWrapper = ({
                 <View style={styles.circle1} />
                 <View style={styles.circle2} />
 
-                {children}
+                {WrapperContent}
             </ImageBackground>
         </View>
     );
@@ -54,6 +77,9 @@ const styles = StyleSheet.create({
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
+    },
+    contentContainer: {
+        flex: 1,
     },
     circle1: {
         position: "absolute",

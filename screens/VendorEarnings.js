@@ -60,7 +60,7 @@ const SummaryCard = ({ label, value, icon, color, delay }) => {
 
   return (
     <Animated.View style={[
-      styles.summaryCard, 
+      styles.summaryCard,
       { opacity: anim, transform: [{ scale: anim }] }
     ]}>
       <View style={[styles.summaryIconBox, { backgroundColor: color + '15' }]}>
@@ -95,7 +95,7 @@ const ProgressBar = ({ label, value, target, color }) => {
       <View style={styles.progressHeader}>
         <Text style={styles.progressLabel}>{label}</Text>
         <Text style={styles.progressValue}>
-          {Math.round(percent * 100)}% <Text style={{color: COLORS_THEME.grayText}}>of ₹{target/1000}k</Text>
+          {Math.round(percent * 100)}% <Text style={{ color: COLORS_THEME.grayText }}>of ₹{target / 1000}k</Text>
         </Text>
       </View>
       <View style={styles.progressTrack}>
@@ -156,8 +156,8 @@ export default function VendorEarnings({ navigation }) {
     last30.setDate(last30.getDate() - 30);
 
     let today = 0,
-        week = 0,
-        month = 0;
+      week = 0,
+      month = 0;
 
     // --- Revenue Calculation ---
     orders.forEach(order => {
@@ -294,61 +294,61 @@ export default function VendorEarnings({ navigation }) {
           <Text style={styles.loadingText}>Calculating revenue...</Text>
         </View>
       ) : (
-        <ScrollView 
-          showsVerticalScrollIndicator={false} 
+        <ScrollView
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-            
+
             {/* --------------------- SUMMARY --------------------- */}
             <Text style={styles.sectionHeader}>OVERVIEW</Text>
             <View style={styles.summaryRow}>
-              <SummaryCard 
-                label="TODAY" 
-                value={summary.today} 
-                icon="today-outline" 
-                color={COLORS_THEME.success} 
-                delay={0} 
+              <SummaryCard
+                label="TODAY"
+                value={summary.today}
+                icon="today-outline"
+                color={COLORS_THEME.success}
+                delay={0}
               />
-              <SummaryCard 
-                label="WEEK" 
-                value={summary.week} 
-                icon="calendar-outline" 
-                color={COLORS_THEME.steelBlue} 
-                delay={100} 
+              <SummaryCard
+                label="WEEK"
+                value={summary.week}
+                icon="calendar-outline"
+                color={COLORS_THEME.steelBlue}
+                delay={100}
               />
-              <SummaryCard 
-                label="MONTH" 
-                value={summary.month} 
-                icon="bar-chart-outline" 
-                color={COLORS_THEME.warning} 
-                delay={200} 
+              <SummaryCard
+                label="MONTH"
+                value={summary.month}
+                icon="bar-chart-outline"
+                color={COLORS_THEME.warning}
+                delay={200}
               />
             </View>
 
             {/* -------------------- PROGRESS -------------------- */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                 <Ionicons name="trending-up" size={20} color={COLORS_THEME.darkNavy} />
-                 <Text style={styles.cardTitle}>Goal Performance</Text>
+                <Ionicons name="trending-up" size={20} color={COLORS_THEME.darkNavy} />
+                <Text style={styles.cardTitle}>Goal Performance</Text>
               </View>
-              <ProgressBar 
-                label="Daily Target" 
-                value={summary.today} 
-                target={2000} 
-                color={COLORS_THEME.success} 
+              <ProgressBar
+                label="Daily Target"
+                value={summary.today}
+                target={2000}
+                color={COLORS_THEME.success}
               />
-              <ProgressBar 
-                label="Weekly Target" 
-                value={summary.week} 
-                target={10000} 
-                color={COLORS_THEME.aeroBlue} 
+              <ProgressBar
+                label="Weekly Target"
+                value={summary.week}
+                target={10000}
+                color={COLORS_THEME.aeroBlue}
               />
-              <ProgressBar 
-                label="Monthly Target" 
-                value={summary.month} 
-                target={40000} 
-                color={COLORS_THEME.warning} 
+              <ProgressBar
+                label="Monthly Target"
+                value={summary.month}
+                target={40000}
+                color={COLORS_THEME.warning}
               />
             </View>
 
@@ -359,7 +359,7 @@ export default function VendorEarnings({ navigation }) {
                 <View key={`${item.id}-${index}`} style={styles.listItem}>
 
                   <View style={[styles.listIcon, { backgroundColor: COLORS_THEME.aeroBlueLight }]}>
-                     <Ionicons name="receipt-outline" size={20} color={COLORS_THEME.steelBlue} />
+                    <Ionicons name="receipt-outline" size={20} color={COLORS_THEME.steelBlue} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemTitle}>Order #{item.id}</Text>
@@ -370,8 +370,8 @@ export default function VendorEarnings({ navigation }) {
               ))}
             </View>
 
-            
-            
+
+
             <View style={{ height: 40 }} />
           </Animated.View>
         </ScrollView>
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: '#FFF',
   },
 
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.grayText,
     marginBottom: 12,
     marginTop: 24,
@@ -461,13 +461,13 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: COLORS_THEME.darkNavy,
     marginBottom: 2,
   },
   summaryLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.grayText,
     textTransform: 'uppercase',
   },
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy,
   },
 
@@ -507,12 +507,12 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.darkNavy,
   },
   progressValue: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.steelBlue,
   },
   progressTrack: {
@@ -557,22 +557,23 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.darkNavy,
     marginBottom: 2,
   },
   itemSub: {
     fontSize: 12,
     color: COLORS_THEME.grayText,
+    fontFamily: 'Outfit_400Regular',
   },
   itemAmount: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy,
   },
   statusText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     marginTop: 2,
   },
 

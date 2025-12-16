@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: "#E5E7EB",
   },
-  headerTitle: { fontSize: 18, fontWeight: "800" },
+  headerTitle: { fontSize: 18, fontFamily: 'Outfit_800ExtraBold' },
 
   dayCard: {
     padding: 14,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 10,
   },
-  dayTitle: { fontSize: 16, fontWeight: "800" },
+  dayTitle: { fontSize: 16, fontFamily: 'Outfit_800ExtraBold' },
 
   closedToggle: {
     flexDirection: "row",
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 20,
   },
-  closedToggleText: { marginLeft: 6, fontWeight: "700", fontSize: 13 },
+  closedToggleText: { marginLeft: 6, fontFamily: 'Outfit_700Bold', fontSize: 13 },
 
   timeRow: {
     flexDirection: "row",
@@ -232,8 +232,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: "#E5E7EB20",
   },
-  timeLabel: { fontSize: 13 },
-  timeValue: { marginTop: 4, fontSize: 16, fontWeight: "700" },
+  timeLabel: { fontSize: 13, fontFamily: 'Outfit_400Regular' },
+  timeValue: { marginTop: 4, fontSize: 16, fontFamily: 'Outfit_700Bold' },
 
   saveBtn: {
     marginTop: 20,
@@ -241,5 +241,5 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 14,
   },
-  saveText: { textAlign: "center", color: "#FFF", fontWeight: "800", fontSize: 16 },
+  saveText: { textAlign: "center", color: "#FFF", fontFamily: 'Outfit_800ExtraBold', fontSize: 16 },
 });

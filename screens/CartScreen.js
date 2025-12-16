@@ -26,6 +26,7 @@ import CustomHeader from "../components/CustomHeader";
 import { LinearGradient } from 'expo-linear-gradient';
 import { getVendorMenu } from '../api';
 import { colors } from '../styles/colors';
+import BackButton from "../components/ui/BackButton";
 
 const { width } = Dimensions.get('window');
 
@@ -288,35 +289,44 @@ export default function CartScreen() {
     </View>
   );
 
+
   if (totalItems === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-        {/* Simple Header for Empty State */}
+        {/* Standardized Header */}
         <View style={styles.emptyHeader}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButtonDark}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>My Cart</Text>
-          <View style={{ width: 40 }} />
+          <BackButton mode="standard" style={{ marginLeft: 16, marginTop: insets.top + 10 }} />
         </View>
 
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconBg, { backgroundColor: colors.card }]}>
             <Ionicons name="cart-outline" size={64} color={colors.primary} style={{ opacity: 0.8 }} />
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>Your Cart is Empty</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+          <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Outfit_700Bold' }]}>Your Cart is Empty</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Outfit_400Regular' }]}>
             Looks like you haven't added anything yet.
           </Text>
-          <TouchableOpacity
-            style={[styles.browseButton, { backgroundColor: colors.primary }]}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.browseText}>Start Ordering</Text>
-          </TouchableOpacity>
+
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.browseButton, { backgroundColor: colors.primary }]}
+              onPress={() => navigation.navigate("Home")} // FIX: ensuring navigation works
+              activeOpacity={0.9}
+            >
+              <Text style={[styles.browseText, { fontFamily: 'Outfit_600SemiBold' }]}>Start Ordering</Text>
+            </TouchableOpacity>
+
+            {/* Secondary Action */}
+            <TouchableOpacity
+              style={[styles.recButton, { borderColor: colors.primary }]}
+              onPress={() => navigation.navigate("MainTabs", { screen: "Explore" })}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.recButtonText, { color: colors.primary, fontFamily: 'Outfit_600SemiBold' }]}>See Recommendations</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -471,7 +481,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     color: '#FFF',
     letterSpacing: 0.5,
   },
@@ -486,7 +496,7 @@ const styles = StyleSheet.create({
   clearText: {
     color: 'rgba(255,255,255,0.9)',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
   },
 
   // Restaurant Banner
@@ -513,14 +523,14 @@ const styles = StyleSheet.create({
   },
   restaurantLabel: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: "Outfit_500Medium",
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   restaurantName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
   },
 
   // Scroll Content
@@ -574,7 +584,7 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
     flex: 1,
     marginRight: 8,
     lineHeight: 22,
@@ -588,6 +598,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginBottom: 8,
+    fontFamily: 'Outfit_400Regular',
   },
   itemFooter: {
     flexDirection: 'row',
@@ -596,7 +607,7 @@ const styles = StyleSheet.create({
   },
   itemPrice: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
   },
 
   // Quantity Controls
@@ -616,7 +627,7 @@ const styles = StyleSheet.create({
   },
   qtyText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
     marginHorizontal: 12,
     minWidth: 16,
     textAlign: 'center',
@@ -629,13 +640,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     marginLeft: 16,
     marginBottom: 12,
   },
   recListContent: {
     paddingHorizontal: 16,
-    paddingRight: 8,
+    paddingRight: 16, // Balance right padding
+    paddingBottom: 24, // Add space for shadow
   },
   recCard: {
     width: 140,
@@ -858,9 +870,9 @@ const styles = StyleSheet.create({
   },
   browseButton: {
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 30,
-    shadowColor: '#000',
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -869,6 +881,22 @@ const styles = StyleSheet.create({
   browseText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
+  },
+  actionButtons: {
+    width: '100%',
+    gap: 12,
+  },
+  recButton: {
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    backgroundColor: 'transparent',
+    marginTop: 12
+  },
+  recButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

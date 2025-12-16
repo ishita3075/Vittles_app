@@ -24,6 +24,8 @@ import { getVendorMenu } from '../api';
 import { useTheme } from '../contexts/ThemeContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BackButton from "../components/ui/BackButton";
+import WishlistButton from "../components/ui/WishlistButton";
 
 const { width, height } = Dimensions.get('window');
 
@@ -291,22 +293,17 @@ export default function RestaurantDetails() {
       <StatusBar barStyle={isSearching ? "dark-content" : "light-content"} translucent backgroundColor="transparent" />
 
       {/* 1. INITIAL NAV (White Icons on Image) - Fades OUT on scroll */}
-      <Animated.View style={[styles.navContainer, { opacity: navIconsOpacity, zIndex: isSearching ? 0 : 100 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" style={styles.shadowIcon} />
-        </TouchableOpacity>
+      <Animated.View style={[styles.navContainer, { opacity: navIconsOpacity, zIndex: isSearching ? 0 : 100, top: Platform.OS === 'ios' ? 50 : 20 + insets.top }]}>
+        <BackButton mode="glass" onPress={() => navigation.goBack()} />
 
-        <View style={{ flexDirection: 'row' }}>
-          <TouchableOpacity onPress={() => toggleWishlist(restaurant)} style={[styles.iconBtn, { marginRight: 8 }]}>
-            <Ionicons
-              name={isFavorite ? "heart" : "heart-outline"}
-              size={24}
-              color={isFavorite ? "#EF4444" : "#FFF"}
-              style={styles.shadowIcon}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={openSearch} style={styles.iconBtn}>
-            <Ionicons name="search" size={24} color="#FFF" style={styles.shadowIcon} />
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <WishlistButton
+            isActive={isFavorite}
+            onPress={() => toggleWishlist(restaurant)}
+            style={{ marginRight: 8, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }}
+          />
+          <TouchableOpacity onPress={openSearch} style={styles.iconBtnGlass}>
+            <Ionicons name="search" size={24} color="#FFF" />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -338,21 +335,19 @@ export default function RestaurantDetails() {
       <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity, backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         {/* Row for Back, Title, Search in Sticky Mode */}
         {!isSearching && (
-          <View style={styles.stickyRow}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.stickyIconBtn}>
-              <Ionicons name="arrow-back" size={24} color={colors.primary} />
-            </TouchableOpacity>
+          <View style={[styles.stickyRow, { paddingTop: insets.top }]}>
+            <BackButton mode="standard" onPress={() => navigation.goBack()} />
 
             <Text style={[styles.stickyTitle, { color: colors.primary }]} numberOfLines={1}>{restaurant.name}</Text>
 
-            <View style={{ flexDirection: 'row' }}>
-              <TouchableOpacity onPress={() => toggleWishlist(restaurant)} style={styles.stickyIconBtn}>
-                <Ionicons
-                  name={isFavorite ? "heart" : "heart-outline"}
-                  size={24}
-                  color={isFavorite ? "#EF4444" : colors.primary}
-                />
-              </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <WishlistButton
+                isActive={isFavorite}
+                onPress={() => toggleWishlist(restaurant)}
+                activeColor="#EF4444"
+                inactiveColor={colors.primary}
+                style={{ marginRight: 0 }}
+              />
               <TouchableOpacity onPress={openSearch} style={styles.stickyIconBtn}>
                 <Ionicons name="search" size={24} color={colors.primary} />
               </TouchableOpacity>
@@ -433,7 +428,7 @@ export default function RestaurantDetails() {
             ) : (
               Object.keys(groupedMenu).map((category) => (
                 <View key={category} style={styles.categorySection}>
-                  <Text style={[styles.categoryTitle, { color: colors.text }]}>{category} ({groupedMenu[category].length})</Text>
+                  <Text style={[styles.categoryTitle, { color: colors.text }]}>{category}</Text>
                   {groupedMenu[category].map((item, idx) => {
                     const cartItem = cart.find(c => c.id === item.id);
                     return (
@@ -586,7 +581,7 @@ const styles = StyleSheet.create({
   },
   stickyTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 10,
@@ -605,21 +600,21 @@ const styles = StyleSheet.create({
   // Info Section
   infoSection: { marginBottom: 24 },
   nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  resName: { fontSize: 24, fontWeight: '800', flex: 1, marginRight: 10, lineHeight: 28 },
+  resName: { fontSize: 24, fontFamily: "Outfit_800ExtraBold", flex: 1, marginRight: 10, lineHeight: 32, paddingBottom: 4 },
   ratingBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 6 },
-  ratingText: { color: '#FFF', fontWeight: '800', fontSize: 12 },
-  resCuisine: { fontSize: 14, marginBottom: 8 },
+  ratingText: { color: '#FFF', fontFamily: "Outfit_800ExtraBold", fontSize: 12 },
+  resCuisine: { fontSize: 14, marginBottom: 8, fontFamily: 'Outfit_400Regular' },
   metaInfoRow: { flexDirection: 'row', alignItems: 'center' },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 12, fontWeight: '600' },
+  metaText: { fontSize: 12, fontFamily: "Outfit_600SemiBold" },
   metaDot: { marginHorizontal: 8 },
 
   // Menu List
   menuHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 10 },
-  menuTitle: { fontSize: 13, fontWeight: '800', letterSpacing: 1.5, marginRight: 12 },
+  menuTitle: { fontSize: 13, fontFamily: "Outfit_800ExtraBold", letterSpacing: 1.5, marginRight: 12 },
   menuLine: { flex: 1, height: 1 },
   categorySection: { marginBottom: 24 },
-  categoryTitle: { fontSize: 18, fontWeight: '800', marginBottom: 16 },
+  categoryTitle: { fontSize: 18, fontFamily: "Outfit_800ExtraBold", marginBottom: 16 },
 
   // --- MENU ITEM ---
   menuItemContainer: { flexDirection: 'row', paddingVertical: 16, borderBottomWidth: 1 },
@@ -630,11 +625,11 @@ const styles = StyleSheet.create({
   vegIconDot: { width: 8, height: 8, borderRadius: 4 },
 
   bestsellerBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  bestsellerText: { fontSize: 9, fontWeight: '700', marginLeft: 3 },
+  bestsellerText: { fontSize: 9, fontFamily: "Outfit_700Bold", marginLeft: 3 },
 
-  menuName: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  menuPrice: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
-  menuDescription: { fontSize: 12, lineHeight: 18 },
+  menuName: { fontSize: 16, fontFamily: "Outfit_700Bold", marginBottom: 4 },
+  menuPrice: { fontSize: 14, fontFamily: "Outfit_600SemiBold", marginBottom: 6 },
+  menuDescription: { fontSize: 12, lineHeight: 18, fontFamily: 'Outfit_400Regular' },
 
   menuImageWrapper: { width: 120, alignItems: 'center' },
   imageContainer: { width: 110, height: 110, borderRadius: 12, overflow: 'hidden', marginBottom: 12 },
@@ -645,30 +640,40 @@ const styles = StyleSheet.create({
   addButtonContainer: { position: 'absolute', bottom: -6, width: 90, height: 32, alignItems: 'center' },
   addBtnWrapper: { width: '100%', height: '100%', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 3, borderRadius: 8 },
   addBtn: { flex: 1, borderRadius: 8, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', borderWidth: 1 },
-  addBtnText: { fontSize: 14, fontWeight: '800', marginRight: 2 },
+  addBtnText: { fontSize: 14, fontFamily: "Outfit_800ExtraBold", marginRight: 2 },
 
   qtyContainer: { width: '100%', height: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 8, paddingHorizontal: 6, borderWidth: 1 },
   qtyBtn: { padding: 2 },
-  qtyText: { fontWeight: '800', fontSize: 14 },
+  qtyText: { fontFamily: "Outfit_800ExtraBold", fontSize: 14 },
 
   unavailableBadge: { width: 90, height: 32, borderWidth: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  unavailableText: { fontSize: 11, fontWeight: '600' },
+  unavailableText: { fontSize: 11, fontFamily: "Outfit_600SemiBold" },
 
   // Empty State
   emptySearchContainer: { alignItems: 'center', paddingVertical: 40 },
-  emptySearchText: { marginTop: 12, fontSize: 14, fontStyle: 'italic' },
+  emptySearchText: { marginTop: 12, fontSize: 14, fontStyle: 'italic', fontFamily: 'Outfit_400Regular' },
 
   // Floating Cart
   floatingCartContainer: { position: 'absolute', bottom: 24, left: 16, right: 16, zIndex: 50 },
   cartButton: { borderRadius: 16, overflow: 'hidden', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 8 },
   cartGradient: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20 },
-  cartItemCount: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
-  cartTotalAmount: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-  plusTaxes: { fontSize: 10, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
+  cartItemCount: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontFamily: "Outfit_700Bold", letterSpacing: 0.5 },
+  cartTotalAmount: { color: '#FFF', fontSize: 16, fontFamily: "Outfit_800ExtraBold" },
+  plusTaxes: { fontSize: 10, fontFamily: "Outfit_500Medium", color: 'rgba(255,255,255,0.6)' },
   viewCartBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  viewCartText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
+  viewCartText: { color: '#FFF', fontSize: 15, fontFamily: "Outfit_700Bold" },
 
   // Skeleton
   skeletonContainer: { flexDirection: 'row', paddingVertical: 24, borderBottomWidth: 1, borderColor: '#f0f0f0' },
+  iconBtnGlass: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.2)', // Fallback
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   skeletonBox: { borderRadius: 4, backgroundColor: '#E5E7EB' },
 });

@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontFamily: "Outfit_700Bold",
     color: '#FFF',
     textAlign: 'center',
   },
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     marginBottom: 12,
     marginLeft: 4,
     letterSpacing: 0.5,
@@ -369,12 +369,12 @@ const styles = StyleSheet.create({
   },
   contactTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     marginBottom: 4,
   },
   contactSubtitle: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: "Outfit_500Medium",
   },
 
   // FAQ
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   },
   faqQuestion: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: "Outfit_600SemiBold",
     flex: 1,
     marginRight: 12,
   },
@@ -405,6 +405,7 @@ const styles = StyleSheet.create({
   faqAnswer: {
     fontSize: 14,
     lineHeight: 22,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Form Inputs
@@ -416,7 +417,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
     color: COLORS.grayText,
     marginBottom: 8,
     marginLeft: 4,
@@ -430,7 +431,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: "Outfit_500Medium",
   },
 
   // Button
@@ -453,6 +454,6 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: "Outfit_700Bold",
   },
 });

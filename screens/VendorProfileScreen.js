@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
   profileInfo: { flex: 1 },
   userName: {
     fontSize: 20,
-    fontWeight: "800",
+    fontFamily: 'Outfit_800ExtraBold',
     marginBottom: 4,
     color: COLORS_THEME.darkNavy,
   },
@@ -465,6 +465,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 8,
     color: COLORS_THEME.grayText,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Stats
@@ -489,21 +490,21 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: 'Outfit_800ExtraBold',
     color: COLORS_THEME.darkNavy,
     marginBottom: 2
   },
   statLabel: {
     fontSize: 11,
     color: COLORS_THEME.grayText,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
 
   // Menus
   menuGroupContainer: { marginBottom: 20, paddingHorizontal: 20 },
   menuGroupTitle: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: 'Outfit_700Bold',
     marginBottom: 12,
     marginLeft: 4,
     textTransform: "uppercase",
@@ -536,7 +537,7 @@ const styles = StyleSheet.create({
   menuText: {
     flex: 1,
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.darkNavy,
   },
   menuBadge: {
@@ -546,7 +547,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 8
   },
-  menuBadgeText: { color: "#FFF", fontSize: 11, fontWeight: "700" },
+  menuBadgeText: { color: "#FFF", fontSize: 11, fontFamily: 'Outfit_700Bold' },
 
   // Buttons
   signOutButton: {
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.1)'
   },
-  signOutButtonText: { color: COLORS_THEME.error, fontSize: 15, fontWeight: "800" },
+  signOutButtonText: { color: COLORS_THEME.error, fontSize: 15, fontFamily: 'Outfit_800ExtraBold' },
 
   // Modal
   modalOverlay: {
@@ -595,11 +596,11 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   modalIconGradient: { width: "100%", height: "100%", borderRadius: 36, justifyContent: "center", alignItems: "center" },
-  modalTitle: { fontSize: 22, fontWeight: "800", marginBottom: 8, color: COLORS_THEME.darkNavy },
-  modalMessage: { fontSize: 15, textAlign: "center", marginBottom: 24, lineHeight: 22, color: COLORS_THEME.grayText },
+  modalTitle: { fontSize: 22, fontFamily: 'Outfit_800ExtraBold', marginBottom: 8, color: COLORS_THEME.darkNavy },
+  modalMessage: { fontSize: 15, textAlign: "center", marginBottom: 24, lineHeight: 22, color: COLORS_THEME.grayText, fontFamily: 'Outfit_400Regular' },
   modalConfirmBtn: { width: "100%", borderRadius: 14, overflow: "hidden", marginBottom: 12 },
   modalBtnGradient: { paddingVertical: 14, alignItems: "center" },
-  modalBtnText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  modalBtnText: { color: "#FFF", fontSize: 16, fontFamily: 'Outfit_700Bold' },
   modalCancelBtn: { paddingVertical: 10 },
-  modalCancelText: { fontSize: 15, fontWeight: "600", color: COLORS_THEME.grayText },
+  modalCancelText: { fontSize: 15, fontFamily: 'Outfit_600SemiBold', color: COLORS_THEME.grayText },
 });

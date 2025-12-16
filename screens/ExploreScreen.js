@@ -291,13 +291,14 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontFamily: 'Outfit_700Bold',
     color: "#333",
   },
   subtitle: {
     fontSize: 16,
     color: "#666",
     marginTop: 5,
+    fontFamily: 'Outfit_400Regular',
   },
   searchContainer: {
     flexDirection: "row",
@@ -321,6 +322,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333",
+    fontFamily: 'Outfit_400Regular',
   },
   section: {
     marginBottom: 25,
@@ -334,13 +336,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontFamily: 'Outfit_700Bold',
     color: "#333",
   },
   seeAllText: {
     fontSize: 14,
     color: "#FF6B6B",
-    fontWeight: "600",
+    fontFamily: 'Outfit_600SemiBold',
   },
   categoriesList: {
     marginTop: 5,
@@ -367,7 +369,7 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: 'Outfit_600SemiBold',
     color: "#666",
   },
   categoryNameSelected: {
@@ -396,7 +398,7 @@ const styles = StyleSheet.create({
   },
   dishName: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: 'Outfit_700Bold',
     color: "#333",
     flex: 1,
     marginRight: 10,
@@ -404,12 +406,13 @@ const styles = StyleSheet.create({
   orders: {
     fontSize: 12,
     color: "#FF6B6B",
-    fontWeight: "600",
+    fontFamily: 'Outfit_600SemiBold',
   },
   restaurantName: {
     fontSize: 12,
     color: "#666",
     fontStyle: "italic",
+    fontFamily: 'Outfit_400Regular',
   },
   restaurantCard: {
     backgroundColor: "#fff",
@@ -436,7 +439,7 @@ const styles = StyleSheet.create({
   },
   restaurantName: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: 'Outfit_700Bold',
     color: "#333",
     marginBottom: 2,
   },
@@ -444,11 +447,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginBottom: 5,
+    fontFamily: 'Outfit_400Regular',
   },
   famousDishes: {
     fontSize: 12,
     color: "#888",
     fontStyle: "italic",
+    fontFamily: 'Outfit_400Regular',
   },
   ratingContainer: {
     flexDirection: "row",
@@ -460,7 +465,7 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: 'Outfit_600SemiBold',
     color: "#333",
     marginLeft: 4,
   },
@@ -475,11 +480,11 @@ const styles = StyleSheet.create({
   deliveryTime: {
     fontSize: 12,
     color: "#666",
-    fontWeight: "500",
+    fontFamily: 'Outfit_500Medium',
   },
   price: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: 'Outfit_600SemiBold',
     color: "#333",
   },
   noResults: {
@@ -491,7 +496,7 @@ const styles = StyleSheet.create({
   },
   noResultsText: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: 'Outfit_600SemiBold',
     color: "#666",
     marginTop: 10,
   },

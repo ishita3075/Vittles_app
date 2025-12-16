@@ -10,7 +10,7 @@ const SkeletonCard = ({ colors }) => (
   <View style={[styles.skeletonContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
     {/* Image Skeleton */}
     <View style={[styles.skeletonImage, { backgroundColor: colors.border + '40' }]} />
-    
+
     {/* Info Skeleton */}
     <View style={styles.skeletonInfo}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -75,8 +75,8 @@ const NearbyRestaurants = ({ restaurants, loading, onRestaurantPress }) => {
       <FlatList
         data={restaurants}
         renderItem={({ item }) => (
-          <RestaurantCard 
-            restaurant={item} 
+          <RestaurantCard
+            restaurant={item}
             onPress={() => onRestaurantPress?.(item)}
           />
         )}
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 0, // Removed excessive bottom padding
   },
-  
+
   // Skeleton Styles
   skeletonContainer: {
     borderRadius: 20,
@@ -129,12 +129,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontFamily: 'Outfit_700Bold',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 15,
+    fontFamily: 'Outfit_400Regular',
     textAlign: 'center',
     lineHeight: 22,
   },

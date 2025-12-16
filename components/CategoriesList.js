@@ -11,13 +11,17 @@ const chunkArray = (array, size) => {
   return result;
 };
 
+import { useTheme } from "../contexts/ThemeContext";
+
 const CategoriesList = ({ categories, selectedCategory, onCategorySelect }) => {
+  const { colors } = useTheme();
   const categoryPairs = chunkArray(categories, 2);
 
   return (
     <View style={styles.categoriesSection}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.sectionTitle}>Categories</Text>
+      <View style={[styles.headerContainer, { flexDirection: 'row', alignItems: 'center' }]}>
+        <View style={{ width: 4, height: 20, backgroundColor: colors.primary, marginRight: 8, borderRadius: 2 }} />
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Categories</Text>
       </View>
 
       <ScrollView
@@ -53,9 +57,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#1C1C1E",
-    letterSpacing: 0.5,
+    fontFamily: 'Outfit_600SemiBold', // Softer
+    letterSpacing: 0,
   },
   scrollContent: {
     paddingHorizontal: 12,

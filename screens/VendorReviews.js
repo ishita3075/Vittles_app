@@ -110,7 +110,7 @@ export default function VendorReviews({ navigation }) {
 
   const renderStars = (count) => (
     <View style={{ flexDirection: "row", marginTop: 2 }}>
-      {[1,2,3,4,5].map(i => (
+      {[1, 2, 3, 4, 5].map(i => (
         <Ionicons
           key={i}
           name={i <= count ? "star" : "star-outline"}
@@ -219,8 +219,8 @@ const styles = StyleSheet.create({
   headerGradient: { flex: 1, paddingTop: 40, paddingHorizontal: 20 },
   headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   backButton: { padding: 8 },
-  headerTitle: { color: "#FFF", fontSize: 20, fontWeight: "700" },
-  headerSubtitle: { color: "#EEE", fontSize: 12 },
+  headerTitle: { color: "#FFF", fontSize: 20, fontFamily: 'Outfit_700Bold' },
+  headerSubtitle: { color: "#EEE", fontSize: 12, fontFamily: 'Outfit_400Regular' },
 
   filterWrapper: { padding: 16 },
   filterChip: {
@@ -245,8 +245,8 @@ const styles = StyleSheet.create({
     justifyContent: "center", alignItems: "center",
     backgroundColor: "#F3F4F6", marginRight: 12
   },
-  userName: { fontWeight: "700", fontSize: 15 },
-  date: { fontSize: 11, color: COLORS_THEME.grayText },
+  userName: { fontFamily: 'Outfit_700Bold', fontSize: 15 },
+  date: { fontSize: 11, color: COLORS_THEME.grayText, fontFamily: 'Outfit_400Regular' },
   divider: { height: 1, backgroundColor: "#EEE", marginVertical: 12 },
-  comment: { fontSize: 14, lineHeight: 20 }
+  comment: { fontSize: 14, lineHeight: 20, fontFamily: 'Outfit_400Regular' }
 });

@@ -43,11 +43,11 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 8, // Increased for more depth
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.12, // Slightly more definition
+    shadowRadius: 10, // Softer, further spread
+    elevation: 8, // Higher elevation for platform look
   },
   image: {
     width: '65%',
@@ -60,15 +60,17 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 12,
-    fontWeight: "500",
+    fontFamily: 'Outfit_500Medium',
     color: "#4B5563",
     textAlign: "center",
-    height: 34, // Fixed height for 2 lines of text to ensure alignment
+    height: 40, // Increased further to fit 2 lines with larger line height
+    lineHeight: 18, // Increased line height for descenders
     textAlignVertical: 'top',
+    paddingBottom: 2,
   },
   selectedText: {
     color: colors.primary,
-    fontWeight: "700",
+    fontFamily: 'Outfit_700Bold',
   },
 });
 

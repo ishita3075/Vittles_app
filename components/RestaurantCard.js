@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   glassText: {
     color: '#FFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
   infoContainer: {
     padding: 16,
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 20, // Larger font
-    fontWeight: '800', // Extra bold
+    fontFamily: 'Outfit_700Bold',
     color: '#111827',
     flex: 1,
     marginRight: 8,
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   ratingText: {
     color: '#FFF',
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
   footerRow: {
     flexDirection: 'row',
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 13,
     color: '#374151',
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
 });
 

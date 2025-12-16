@@ -584,12 +584,12 @@ const styles = StyleSheet.create({
   greetingText: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
   storeNameText: {
     color: '#FFF',
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
   statusPill: {
     flexDirection: 'row',
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
   statusText: {
     color: '#FFF',
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     letterSpacing: 0.5,
   },
   revenueContainer: {
@@ -618,14 +618,14 @@ const styles = StyleSheet.create({
   revenueLabel: {
     color: 'rgba(255,255,255,0.7)',
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     letterSpacing: 1.5,
     marginBottom: 4,
   },
   revenueValue: {
     color: '#FFF',
     fontSize: 42,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     letterSpacing: -1,
   },
 
@@ -650,13 +650,14 @@ const styles = StyleSheet.create({
   },
   controlTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     marginBottom: 4,
     color: COLORS_THEME.darkNavy,
   },
   controlSub: {
     fontSize: 13,
     color: COLORS_THEME.grayText,
+    fontFamily: 'Outfit_400Regular',
   },
   switchTrack: {
     width: 52,
@@ -708,13 +709,13 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy,
   },
   statLabel: {
     fontSize: 11,
     color: COLORS_THEME.grayText,
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
   },
 
   // 3. Orders Section
@@ -729,7 +730,7 @@ const styles = StyleSheet.create({
   },
   sectionTitleDark: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy,
   },
   countBadge: {
@@ -741,7 +742,7 @@ const styles = StyleSheet.create({
   countText: {
     color: '#FFF',
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
 
   // Order Ticket
@@ -775,14 +776,14 @@ const styles = StyleSheet.create({
   },
   ticketLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: '#9CA3AF',
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   customerName: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: COLORS_THEME.darkNavy,
   },
   statusBadge: {
@@ -792,7 +793,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     letterSpacing: 0.5,
   },
   divider: {
@@ -816,7 +817,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 15,
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
     color: COLORS_THEME.darkNavy,
   },
   ticketFooter: {
@@ -829,10 +830,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS_THEME.grayText,
     marginBottom: 2,
+    fontFamily: 'Outfit_400Regular',
   },
   priceText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy,
   },
   actionBtn: {
@@ -845,7 +847,7 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     color: '#FFF',
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     fontSize: 13,
   },
   completedBadge: {
@@ -859,7 +861,7 @@ const styles = StyleSheet.create({
   },
   completedText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
 
   // Empty State
@@ -879,7 +881,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy,
   },
   emptyText: {
@@ -887,5 +889,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     color: COLORS_THEME.grayText,
+    fontFamily: 'Outfit_400Regular',
   },
 });

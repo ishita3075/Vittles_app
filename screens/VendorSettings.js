@@ -50,18 +50,18 @@ const SettingsInput = ({ label, value, onChangeText, placeholder, keyboardType, 
   <View style={[styles.inputGroup, multiline && { height: 'auto' }]}>
     <Text style={styles.inputLabel}>{label}</Text>
     <View style={[
-      styles.inputContainer, 
+      styles.inputContainer,
       multiline && { height: 100, alignItems: 'flex-start' }
     ]}>
-      <Ionicons 
-        name={icon} 
-        size={20} 
-        color={COLORS_THEME.steelBlue} 
-        style={{ marginRight: 12, marginTop: multiline ? 14 : 0 }} 
+      <Ionicons
+        name={icon}
+        size={20}
+        color={COLORS_THEME.steelBlue}
+        style={{ marginRight: 12, marginTop: multiline ? 14 : 0 }}
       />
       <TextInput
         style={[
-          styles.input, 
+          styles.input,
           multiline && { height: '100%', textAlignVertical: 'top', paddingTop: 12 }
         ]}
         placeholder={placeholder}
@@ -94,10 +94,10 @@ export default function VendorSettings({ navigation }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, { 
-      toValue: 1, 
-      duration: 600, 
-      useNativeDriver: true 
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true
     }).start();
   }, []);
 
@@ -207,18 +207,18 @@ export default function VendorSettings({ navigation }) {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Animated.View style={{ opacity: fadeAnim }}>
-          
+
           {/* 2. Profile Image */}
           <View style={styles.avatarSection}>
-            <TouchableOpacity 
-              style={styles.avatarContainer} 
+            <TouchableOpacity
+              style={styles.avatarContainer}
               onPress={handlePickAvatar}
               activeOpacity={0.8}
             >
               {avatarUri ? (
                 // <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
                 <View style={styles.placeholderAvatar}>
-                   <Ionicons name="restaurant" size={40} color={COLORS_THEME.steelBlue} />
+                  <Ionicons name="restaurant" size={40} color={COLORS_THEME.steelBlue} />
                 </View>
               ) : (
                 <View style={styles.placeholderAvatar}>
@@ -282,15 +282,15 @@ export default function VendorSettings({ navigation }) {
 
               {/* Actions */}
               <View style={styles.actionRow}>
-                <TouchableOpacity 
-                  style={styles.cancelBtn} 
+                <TouchableOpacity
+                  style={styles.cancelBtn}
                   onPress={() => navigation.goBack()}
                 >
                   <Text style={styles.cancelText}>Cancel</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.saveBtn, { opacity: saving ? 0.7 : 1 }]} 
+
+                <TouchableOpacity
+                  style={[styles.saveBtn, { opacity: saving ? 0.7 : 1 }]}
                   onPress={handleSave}
                   disabled={saving}
                 >
@@ -319,7 +319,7 @@ export default function VendorSettings({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS_THEME.background },
-  
+
   // Header
   headerContainer: {
     height: 110,
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: '#FFF',
   },
 
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   },
   addPhotoText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.steelBlue,
     marginTop: 4,
   },
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.grayText,
     marginBottom: 8,
     marginLeft: 4,
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     marginBottom: 6,
     color: COLORS_THEME.darkNavy,
     marginLeft: 4,
@@ -453,6 +453,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS_THEME.darkNavy,
     paddingVertical: 0,
+    fontFamily: 'Outfit_400Regular',
   },
   // REMOVED: switchRow, switchLabel, switchSub styles
 
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS_THEME.white,
   },
   cancelText: {
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     fontSize: 14,
     color: COLORS_THEME.grayText,
   },
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
   },
   saveText: {
     color: '#FFF',
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     fontSize: 14,
   },
 });

@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: '#111827',
     marginBottom: 12,
     letterSpacing: -0.5,
@@ -395,6 +395,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6B7280',
     lineHeight: 24,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Navigation
@@ -407,7 +408,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
   },
 
   // Success State
@@ -445,7 +446,7 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontSize: 24,
-    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
     color: '#111827',
     marginBottom: 8,
   },
@@ -454,6 +455,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     marginBottom: 16,
+    fontFamily: 'Outfit_400Regular',
   },
   emailContainer: {
     flexDirection: 'row',
@@ -467,7 +469,7 @@ const styles = StyleSheet.create({
   },
   emailText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
   },
   secondaryActionBtn: {
     paddingVertical: 12,
@@ -476,13 +478,13 @@ const styles = StyleSheet.create({
   secondaryActionText: {
     color: '#9CA3AF',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
   },
   resendButton: {
     marginTop: 20,
   },
   resendLink: {
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     fontSize: 14,
   }
 });

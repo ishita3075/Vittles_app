@@ -23,7 +23,7 @@ const FoodCategoryScreen = ({ route, navigation }) => {
         data={restaurants}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.restaurantCard}
             onPress={() => navigation.navigate('RestaurantDetails', { restaurant: item })}
           >
@@ -62,12 +62,13 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     marginBottom: 4,
   },
   details: {
     fontSize: 14,
     color: '#666',
+    fontFamily: 'Outfit_400Regular',
   },
 });
 

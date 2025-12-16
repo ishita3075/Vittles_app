@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: 'Outfit_700Bold',
     color: "#0A2342", // Deep Navy to contrast with pale blue gradient
   },
   textColumn: {
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   greetingText: {
     color: 'rgba(255,255,255,0.85)',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     letterSpacing: 0.5,
     marginBottom: 2,
     textTransform: 'uppercase',
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   nameText: {
     color: '#FFFFFF',
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'Outfit_700Bold',
     textShadowColor: 'rgba(0, 0, 0, 0.15)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
@@ -341,12 +341,12 @@ const styles = StyleSheet.create({
   badgeText: {
     color: "#5A94C4", // Steel Blue text
     fontSize: 10,
-    fontWeight: "900",
+    fontFamily: 'Outfit_700Bold',
   },
   subtitle: {
     color: 'rgba(255, 253, 253, 0.9)',
     fontSize: 15,
-    fontWeight: '500',
+    fontFamily: 'Outfit_500Medium',
     marginBottom: 16,
     paddingLeft: 4,
   },

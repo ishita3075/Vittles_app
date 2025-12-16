@@ -356,17 +356,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: '#FFF',
     letterSpacing: 0.5,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
   // Content
@@ -374,7 +366,7 @@ const styles = StyleSheet.create({
   section: { marginBottom: 28 },
   sectionHeader: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     marginBottom: 12,
     color: COLORS_THEME.grayText,
     marginLeft: 4,
@@ -396,7 +388,7 @@ const styles = StyleSheet.create({
   inputGroup: { marginBottom: 16 },
   inputLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     color: COLORS_THEME.darkNavy,
     marginBottom: 6,
     marginLeft: 4,
@@ -416,6 +408,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS_THEME.darkNavy,
     paddingVertical: 0,
+    fontFamily: 'Outfit_400Regular',
   },
 
   // Payment
@@ -443,8 +436,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  paymentItemTitle: { fontSize: 15, fontWeight: '700' },
-  paymentItemSubtitle: { fontSize: 12, color: COLORS_THEME.grayText, marginTop: 2 },
+  paymentItemTitle: { fontSize: 15, fontFamily: 'Outfit_700Bold' },
+  paymentItemSubtitle: { fontSize: 12, color: COLORS_THEME.grayText, marginTop: 2, fontFamily: 'Outfit_400Regular' },
   radioCircle: {
     width: 22,
     height: 22,
@@ -484,18 +477,18 @@ const styles = StyleSheet.create({
   summaryQty: {
     fontSize: 13,
     color: COLORS_THEME.steelBlue,
-    fontWeight: '700'
+    fontFamily: 'Outfit_700Bold'
   },
   summaryName: {
     fontSize: 15,
     color: COLORS_THEME.darkNavy,
-    fontWeight: '600',
+    fontFamily: 'Outfit_600SemiBold',
     marginRight: 12,
     flex: 1,
   },
   summaryPrice: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
     color: COLORS_THEME.darkNavy
   },
 
@@ -503,12 +496,12 @@ const styles = StyleSheet.create({
   dashedDivider: { marginVertical: 12 },
 
   billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  billLabel: { fontSize: 14, color: COLORS_THEME.grayText },
-  billValue: { fontSize: 14, fontWeight: '500', color: COLORS_THEME.darkNavy },
+  billLabel: { fontSize: 14, color: COLORS_THEME.grayText, fontFamily: 'Outfit_400Regular' },
+  billValue: { fontSize: 14, fontFamily: 'Outfit_500Medium', color: COLORS_THEME.darkNavy },
 
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  totalLabel: { fontSize: 16, fontWeight: '700', color: COLORS_THEME.darkNavy },
-  totalValue: { fontSize: 18, fontWeight: '800', color: COLORS_THEME.darkNavy },
+  totalLabel: { fontSize: 16, fontFamily: 'Outfit_700Bold', color: COLORS_THEME.darkNavy },
+  totalValue: { fontSize: 18, fontFamily: 'Outfit_800ExtraBold', color: COLORS_THEME.darkNavy },
 
   // Footer
   footer: {
@@ -528,8 +521,8 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   footerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  footerLabel: { fontSize: 11, fontWeight: '600', color: COLORS_THEME.grayText, textTransform: 'uppercase' },
-  footerAmount: { fontSize: 22, fontWeight: '800', color: COLORS_THEME.darkNavy },
+  footerLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: COLORS_THEME.grayText, textTransform: 'uppercase' },
+  footerAmount: { fontSize: 22, fontFamily: 'Outfit_800ExtraBold', color: COLORS_THEME.darkNavy },
 
   payButtonWrapper: {
     borderRadius: 14,
@@ -547,7 +540,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     gap: 8,
   },
-  payButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  payButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Outfit_700Bold' },
 });
 
 export default CheckoutScreen;
